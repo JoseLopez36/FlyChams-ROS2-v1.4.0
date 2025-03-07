@@ -14,9 +14,6 @@ namespace flychams::coordination
         // Get parameters from parameter server
         // Get update rates
         float update_rate = RosUtils::getParameterOr<float>(node_, "agent_positioning.positioning_update_rate", 5.0f);
-        // Get ROI parameters
-        kappa_s_ = RosUtils::getParameterOr<float>(node_, "tracking.kappa_s", 0.8f);
-        s_min_pix_ = RosUtils::getParameterOr<float>(node_, "tracking.s_min_pix", 200.0f);
         // Get solver parameters
         float convergence_tolerance = RosUtils::getParameterOr<float>(node_, "agent_positioning.solver_params.convergence_tolerance", 1.0e-6f);
         int max_iterations = RosUtils::getParameterOr<int>(node_, "agent_positioning.solver_params.max_iterations", 100);
@@ -37,15 +34,10 @@ namespace flychams::coordination
         solver_->setSolverParams(solver_params);
 
         // Set function parameters
-        const auto& agent_ptr = config_tools_->getAgent(agent_id_);
-        float h_min = agent_ptr->min_admissible_height;
-        float h_max = agent_ptr->max_admissible_height;
-        int tracking_count = static_cast<int>(agent_ptr->tracking_head_ids.size());
-        auto function_params = PositionSolver::FunctionParams(tracking_count, h_min, h_max);
-        for (int i = 0; i < tracking_count; i++)
-        {
-            function_params.camera_params_[i] = config_tools_->getCameraParameters(agent_id_, agent_ptr->tracking_head_ids[i]);
-        }
+        PositionSolver::FunctionParams function_params;
+        function_params.h_min = config_tools_->getAgent(agent_id_)->min_admissible_height;
+        function_params.h_max = config_tools_->getAgent(agent_id_)->max_admissible_height;
+        function_params.tracking_params = config_tools_->getTrackingParameters(agent_id_);
         solver_->setFunctionParams(function_params);
 
         // Initialize solver

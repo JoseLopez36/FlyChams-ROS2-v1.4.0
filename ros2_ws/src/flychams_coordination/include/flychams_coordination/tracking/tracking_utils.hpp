@@ -33,10 +33,14 @@ namespace flychams::coordination
         };
 
     public: // Public methods
-        static float computeFocal(const core::Vector3r& wPt, const float& r, const core::Vector3r& wPc, const float& fMin, const float& fMax, const float& sRef);
+        // MultiCameraTracking
+        static float computeFocal(const core::Vector3r& wPt, const float& r, const core::Vector3r& wPc, const core::CameraParameters& camera_params, const core::ProjectionParameters& projection_params);
         static core::Vector3r computeOrientation(const core::Vector3r& wPt, const core::Vector3r& wPc, const core::Matrix3r& wRc, const core::Vector3r& prev_rpy, const bool& is_first_update);
+        // MultiWindowTracking
+        static core::Crop computeWindowCrop(const core::Vector3r& wPt, const float& r, const core::Vector3r& wPc, const core::Vector2r& p, const core::WindowParameters& window_params, const core::ProjectionParameters& projection_params);
 
     private: // Methods
+        // MultiCameraTracking
         static std::pair<float, float> calculateBaseSolution(const core::Vector3r& dir);
         static std::pair<float, float> calculateInvertedSolution(const core::Vector3r& dir);
         static core::Vector3r calculateContinuousSolution(const float& yaw1, const float& pitch1, const float& yaw2, const float& pitch2, const core::Vector3r& prev_rpy);

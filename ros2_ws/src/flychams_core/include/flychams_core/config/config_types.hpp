@@ -216,6 +216,7 @@ namespace flychams::core
         ID parameter_set_id;
         ID agent_team_id;
         Vector2r altitude_constraint;
+        Vector2i tracking_scene_resolution;
     };
     using MissionConfigPtr = std::shared_ptr<MissionConfig>;
 

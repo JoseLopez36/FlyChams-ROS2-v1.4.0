@@ -365,9 +365,9 @@ namespace flychams::core
     // ════════════════════════════════════════════════════════════════
 
     /**
-     * Tracking parameters
+     * Projection parameters
      */
-    struct TrackingParameters
+    struct ProjectionParameters
     {
         // Apparent target sizes (pix)
         float s_min_pix;
@@ -384,6 +384,8 @@ namespace flychams::core
      */
     struct CameraParameters
     {
+        // Camera ID
+        std::string id;
         // Focal lengths (m)
         float f_min;
         float f_max;
@@ -394,6 +396,8 @@ namespace flychams::core
         // Sensor dimensions (m)
         float sensor_width;
         float sensor_height;
+        // Regularized pixel size (m/pix)
+        float rho;
     };
 
     /**
@@ -402,12 +406,29 @@ namespace flychams::core
     struct WindowParameters
     {
         // Source camera parameters
-        float f; // Fixed focal length (m)
-        float rho; // Regularized pixel size (m/pix)
-        // Resolution factor (0-1)
+        CameraParameters camera_params;
+        // Resolution factors (0-1)
         float lambda_min;
         float lambda_max;
         float lambda_ref;
+        // Full resolution (pix)
+        int full_width;
+        int full_height;
+        // Scene resolution (pix)
+        int scene_width;
+        int scene_height;
+    };
+
+    /**
+     * Tracking parameters
+     */
+    struct TrackingParameters
+    {
+        TrackingMode mode;
+        int n;                                               // Number of tracking heads or windows
+        std::vector<CameraParameters> camera_params;         // Camera parameters for each tracking head
+        std::vector<WindowParameters> window_params;         // Window parameters for each tracking window
+        std::vector<ProjectionParameters> projection_params; // Projection parameters for each tracking head or window
     };
 
     /**
@@ -417,32 +438,41 @@ namespace flychams::core
     {
         Vector2i corner; // Top-left corner of the crop
         Vector2i size;   // Width and height of the crop
+
+        Crop() = default;
+        Crop(int x, int y, int width, int height)
+            : corner(x, y), size(width, height) {
+        }
     };
 
     /**
      * Tracking goal
      */
-    struct MultiGimbalTrackingGoal
+    struct MultiCameraTrackingGoal
     {
         // Head data
         std::vector<std::string> window_ids;     // IDs of the windows where the tracking image will be displayed
         std::vector<std::string> head_ids;       // IDs of the physical heads
-        Matrix3Xr angles;                        // Each column is rpy of a head
-        RowVectorXr focals;                      // Each element is the focal length of a head
-        RowVectorXr sensor_widths;               // Each element is the width of the sensor of a head
+        std::vector<Vector3r> angles;            // Each column is rpy of a head
+        std::vector<float> fovs;                 // Each element is the fov of a head
 
-        MultiGimbalTrackingGoal() = default;
-        MultiGimbalTrackingGoal(int n)
-            : window_ids(n), head_ids(n), angles(3, n), focals(n), sensor_widths(n) {
+        MultiCameraTrackingGoal() = default;
+        MultiCameraTrackingGoal(int n)
+            : window_ids(n), head_ids(n), angles(n), fovs(n) {
         }
     };
 
-    struct MultiCropTrackingGoal
+    struct MultiWindowTrackingGoal
     {
         // Head data
         std::vector<std::string> window_ids;     // IDs of the windows where the tracking image will be displayed
         std::string camera_id;                   // ID of the camera where the crop will be taken from
         std::vector<Crop> crops;                 // Each element is a crop of the original image
+
+        MultiWindowTrackingGoal() = default;
+        MultiWindowTrackingGoal(int n)
+            : window_ids(n), camera_id(), crops(n) {
+        }
     };
 
     struct PriorityHybridTrackingGoal

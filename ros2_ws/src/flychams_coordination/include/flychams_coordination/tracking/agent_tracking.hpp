@@ -44,18 +44,10 @@ namespace flychams::coordination
     private: // Parameters
         // Agent parameters
         core::ID agent_id_;
-        core::ID central_head_id_;
-        core::IDs tracking_head_ids_;
-        int num_tracking_heads_;
-        core::TrackingMode tracking_mode_;
-        // ROI parameters
-        float kappa_s_;
-        float s_min_pix_;
-        // Camera parameters
-        std::vector<core::CameraParameters> camera_params_;
+        // Module parameters
+        core::TrackingParameters tracking_params_;
         // Window IDs
         std::vector<core::ID> tracking_window_ids_;
-        int num_tracking_windows_;
 
     private: // Data
         // Odom
@@ -64,8 +56,12 @@ namespace flychams::coordination
         // Clusters
         std::pair<core::Matrix3Xr, core::RowVectorXr> clusters_;
         bool has_clusters_;
-        // Previous data
-        core::MultiGimbalTrackingGoal prev_multi_gimbal_goal_;
+        // Central camera info
+        core::CameraInfoMsg central_camera_info_;
+        bool has_central_camera_info_;
+        // Computed tracking goal
+        core::TrackingGoalMsg goal_;
+        std::vector<core::Vector3r> prev_angles_;
         bool is_first_update_;
         // Odom and goal mutex
         std::mutex mutex_;
@@ -74,17 +70,18 @@ namespace flychams::coordination
         // Callbacks
         void odomCallback(const core::OdometryMsg::SharedPtr msg);
         void infoCallback(const core::AgentInfoMsg::SharedPtr msg);
+        void cameraInfoCallback(const core::CameraInfoArrayMsg::SharedPtr msg);
         // Update
         void updateTracking();
         // Implementation
-        core::MultiGimbalTrackingGoal computeMultiGimbalTracking(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r);
-        core::MultiCropTrackingGoal computeMultiCropTracking(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r);
-        core::PriorityHybridTrackingGoal computePriorityHybridTracking(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r);
+        void computeMultiCameraTracking(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, core::TrackingGoalMsg& goal);
+        void computeMultiWindowTracking(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const core::CameraInfoMsg& camera_info, core::TrackingGoalMsg& goal);
 
     private:
         // Subscribers
         core::SubscriberPtr<core::OdometryMsg> odom_sub_;
         core::SubscriberPtr<core::AgentInfoMsg> info_sub_;
+        core::SubscriberPtr<core::CameraInfoArrayMsg> camera_info_sub_;
         // Publishers
         core::PublisherPtr<core::TrackingGoalMsg> goal_pub_;
         // Timers

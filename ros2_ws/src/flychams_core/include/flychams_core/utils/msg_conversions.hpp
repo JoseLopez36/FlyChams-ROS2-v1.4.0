@@ -3,6 +3,7 @@
 // Core includes
 #include "flychams_core/types/core_types.hpp"
 #include "flychams_core/types/ros_types.hpp"
+#include "flychams_core/utils/camera_utils.hpp"
 
 namespace flychams::core
 {
@@ -126,47 +127,6 @@ namespace flychams::core
         {
             toMsg(position, ros_goal.position);
             ros_goal.yaw = 0.0f;
-        }
-
-        static void toMsg(const Crop& crop, CropMsg& ros_crop)
-        {
-            ros_crop.x = crop.corner.x();
-            ros_crop.y = crop.corner.y();
-            ros_crop.w = crop.size.x();
-            ros_crop.h = crop.size.y();
-        }
-
-        static void toMsg(const MultiGimbalTrackingGoal& goal, TrackingGoalMsg& ros_goal)
-        {
-            int num_units = static_cast<int>(goal.window_ids.size());
-            ros_goal.window_ids = goal.window_ids;
-            ros_goal.unit_types = std::vector<uint8_t>(num_units, static_cast<uint8_t>(TrackingUnitType::Physical));
-            ros_goal.head_ids = goal.head_ids;
-            ros_goal.orientations.resize(num_units);
-            ros_goal.fovs.resize(num_units);
-            for (int i = 0; i < num_units; i++)
-            {
-                toMsg(MathUtils::eulerToQuaternion(goal.angles.col(i)), ros_goal.orientations[i]);
-                ros_goal.fovs[i] = MathUtils::computeFOV(goal.focals(i), goal.sensor_widths(i));
-            }
-        }
-
-        static void toMsg(const MultiCropTrackingGoal& goal, TrackingGoalMsg& ros_goal)
-        {
-            int num_units = static_cast<int>(goal.window_ids.size());
-            ros_goal.window_ids = goal.window_ids;
-            ros_goal.unit_types = std::vector<uint8_t>(num_units, static_cast<uint8_t>(TrackingUnitType::Digital));
-            ros_goal.camera_id = goal.camera_id;
-            ros_goal.crops.resize(num_units);
-            for (int i = 0; i < num_units; i++)
-            {
-                toMsg(goal.crops[i], ros_goal.crops[i]);
-            }
-        }
-
-        static void toMsg(const PriorityHybridTrackingGoal& goal, TrackingGoalMsg& ros_goal)
-        {
-            // TODO: Implement
         }
 
         static void toMsg(const AgentMetrics& metrics, AgentMetricsMsg& ros_metrics)

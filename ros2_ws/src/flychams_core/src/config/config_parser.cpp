@@ -110,6 +110,14 @@ namespace flychams::core
 						mission->altitude_constraint(1) = altitude_constraint_vec[1];
 					}
 
+					auto tracking_scene_resolution_str = getCellValueOrDefault<std::string>(row.findCell(10), "(1280, 720)");
+					auto tracking_scene_resolution_vec = parseStringToVector<int>(tracking_scene_resolution_str, 2, ',');
+					if (tracking_scene_resolution_vec.size() >= 2)
+					{
+						mission->tracking_scene_resolution(0) = tracking_scene_resolution_vec[0];
+						mission->tracking_scene_resolution(1) = tracking_scene_resolution_vec[1];
+					}
+
 					// Only first found mission is loaded
 					return mission;
 				}
@@ -405,9 +413,9 @@ namespace flychams::core
 					agent->min_admissible_height = mission_altitude_constraint(0);
 					agent->max_admissible_height = std::min(agent->max_altitude, mission_altitude_constraint(1));
 					agent->max_assignments = 0;
-					if (agent->tracking_mode == TrackingMode::MultiGimbalTracking)
+					if (agent->tracking_mode == TrackingMode::MultiCameraTracking)
 						agent->max_assignments = static_cast<int32_t>(agent->tracking_head_ids.size());
-					else if (agent->tracking_mode == TrackingMode::MultiCropTracking)
+					else if (agent->tracking_mode == TrackingMode::MultiWindowTracking)
 						agent->max_assignments = 4;
 					else if (agent->tracking_mode == TrackingMode::PriorityHybridTracking)
 						agent->max_assignments = 4;
@@ -926,7 +934,7 @@ namespace flychams::core
 			const auto& sensor_width = head_ptr->camera->sensor_width;
 			const auto& sensor_height = head_ptr->camera->sensor_height;
 			const auto& focal = head_ptr->initial_focal;
-			const auto& fov = MathUtils::radToDeg(MathUtils::computeFOV(focal, sensor_width));
+			const auto& fov = MathUtils::radToDeg(CameraUtils::computeFov(focal, sensor_width));
 
 			cameras[head_id] = {
 				{"CaptureSettings", {{{"ImageType", 0}, {"Width", width}, {"Height", height}, {"FOV_Degrees", fov}}}},

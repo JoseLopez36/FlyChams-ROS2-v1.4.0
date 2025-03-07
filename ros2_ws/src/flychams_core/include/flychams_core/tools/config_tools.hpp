@@ -139,34 +139,13 @@ namespace flychams::core
         }
 
     public: // Config utilities
-        CameraParameters getCameraParameters(const std::string& agent_id, const std::string& head_id) const
+        ProjectionParameters getProjectionParameters(int width, int height, float rho) const
         {
-            // Extract head config
-            const auto& head_ptr = getHead(agent_id, head_id);
-            const auto& camera_ptr = getCamera(agent_id, head_id);
-
-            // Extract camera parameters
-            const auto& f_min = head_ptr->min_focal;
-            const auto& f_max = head_ptr->max_focal;
-            const auto& f_ref = camera_ptr->default_focal;
-            const auto& width = static_cast<float>(camera_ptr->resolution(0));
-            const auto& height = static_cast<float>(camera_ptr->resolution(1));
-            const auto& sensor_width = camera_ptr->sensor_width;
-            const auto& sensor_height = camera_ptr->sensor_height;
+            ProjectionParameters params;
 
             // Extract ROI parameters
-            const auto& s_min_pix = RosUtils::getParameterOr<float>(node_, "roi_params.s_min_pix", 200.0f); // [pix]
-            const auto& kappa_s = RosUtils::getParameterOr<float>(node_, "roi_params.kappa_s", 0.8f);
-
-            // Create and fill head parameters
-            CameraParameters params;
-
-            // Minimum and maximum focal distances
-            params.f_min = f_min; // [m]
-            params.f_max = f_max; // [m]
-
-            // Default focal distance (taken as reference)
-            params.f_ref = f_ref; // [m]
+            const auto& s_min_pix = RosUtils::getParameterOr<float>(node_, "tracking.s_min_pix", 200.0f); // [pix]
+            const auto& kappa_s = RosUtils::getParameterOr<float>(node_, "tracking.kappa_s", 0.8f);
 
             // Maximum admissible apparent size of the object in the image (in pixels)
             // Assuming 90% of the half-height (or width if smaller)
@@ -183,16 +162,110 @@ namespace flychams::core
             params.s_ref_pix = s_ref_pix; // [pix]
 
             // Conversion to metric distances on the sensor surface
-            float rho_x = sensor_width / width;     // [m/pix]
-            float rho_y = sensor_height / height;   // [m/pix]
-            float rho = std::sqrt(rho_x * rho_y);   // [m/pix]
-            params.s_max = s_max_pix * rho;         // [m]
-            params.s_min = s_min_pix * rho;         // [m]
-            params.s_ref = s_ref_pix * rho;         // [m]
+            params.s_max = s_max_pix * rho; // [m]
+            params.s_min = s_min_pix * rho; // [m]
+            params.s_ref = s_ref_pix * rho; // [m]
 
-            // Other parameters
-            params.sensor_width = sensor_width;
-            params.sensor_height = sensor_height;
+            return params;
+        }
+
+        CameraParameters getCameraParameters(const std::string& agent_id, const std::string& head_id) const
+        {
+            CameraParameters params;
+
+            // Extract head config
+            const auto& head_ptr = getHead(agent_id, head_id);
+            const auto& camera_ptr = getCamera(agent_id, head_id);
+
+            // Camera ID
+            params.id = head_id;
+
+            // Camera focal lengths (m)
+            params.f_min = head_ptr->min_focal;
+            params.f_max = head_ptr->max_focal;
+            params.f_ref = camera_ptr->default_focal;
+
+            // Camera resolution (pix)
+            params.width = camera_ptr->resolution(0);
+            params.height = camera_ptr->resolution(1);
+
+            // Camera sensor dimensions (m)
+            params.sensor_width = camera_ptr->sensor_width;
+            params.sensor_height = camera_ptr->sensor_height;
+
+            // Regularized pixel size (m/pix)
+            float rho_x = params.sensor_width / static_cast<float>(params.width);       // [m/pix]
+            float rho_y = params.sensor_height / static_cast<float>(params.height);     // [m/pix]
+            params.rho = std::sqrt(rho_x * rho_y);                                      // [m/pix]
+
+            return params;
+        }
+
+        WindowParameters getWindowParameters(const std::string& agent_id, const std::string& source_head_id) const
+        {
+            WindowParameters params;
+
+            // Extract source head config
+            params.camera_params = getCameraParameters(agent_id, source_head_id);
+
+            // Full resolution (pix)
+            params.full_width = params.camera_params.width;
+            params.full_height = params.camera_params.height;
+
+            // Scene resolution (pix)
+            const auto& mission_ptr = getMission();
+            params.scene_width = mission_ptr->tracking_scene_resolution(0);
+            params.scene_height = mission_ptr->tracking_scene_resolution(1);
+
+            // Calculate window parameters
+            params.lambda_min = static_cast<float>(params.scene_width) / static_cast<float>(params.full_width);
+            params.lambda_max = 1.0f;
+            params.lambda_ref = 0.5f;
+
+            return params;
+        }
+
+        TrackingParameters getTrackingParameters(const std::string& agent_id)
+        {
+            TrackingParameters params;
+
+            // Get agent config
+            const auto& agent_ptr = getAgent(agent_id);
+            params.mode = agent_ptr->tracking_mode;
+
+            // Proceed based on tracking mode
+            switch (params.mode)
+            {
+            case TrackingMode::MultiCameraTracking:
+                // Get number of tracking heads
+                params.n = static_cast<int>(agent_ptr->tracking_head_ids.size());
+
+                // Set camera and projection parameters
+                params.camera_params.resize(params.n);
+                params.projection_params.resize(params.n);
+                for (int i = 0; i < params.n; i++)
+                {
+                    params.camera_params[i] = getCameraParameters(agent_id, agent_ptr->tracking_head_ids[i]);
+                    params.projection_params[i] = getProjectionParameters(
+                        params.camera_params[i].width, params.camera_params[i].height, params.camera_params[i].rho);
+                }
+                break;
+
+            case TrackingMode::MultiWindowTracking:
+                // Get number of tracking windows
+                params.n = RosUtils::getParameterOr<int>(node_, "tracking.num_tracking_windows", 4);
+
+                // Set window and projection parameters
+                params.window_params.resize(params.n);
+                params.projection_params.resize(params.n);
+                for (int i = 0; i < params.n; i++)
+                {
+                    params.window_params[i] = getWindowParameters(agent_id, agent_ptr->central_head_id);
+                    params.projection_params[i] = getProjectionParameters(
+                        params.window_params[i].scene_width, params.window_params[i].scene_height, params.window_params[i].camera_params.rho);
+                }
+                break;
+            }
 
             return params;
         }

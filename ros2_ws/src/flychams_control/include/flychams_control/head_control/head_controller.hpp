@@ -39,10 +39,13 @@ namespace flychams::control
 		using SharedPtr = std::shared_ptr<HeadController>;
 
 	private: // Parameters
+		// Agent parameters
 		core::ID agent_id_;
+
+		// Central head parameters
 		core::ID central_head_id_;
-		core::IDs tracking_head_ids_;
-		int num_tracking_heads_;
+		core::QuaternionMsg central_head_orientation_;
+		float central_head_fov_;
 
 	private: // Data
 		// Goal

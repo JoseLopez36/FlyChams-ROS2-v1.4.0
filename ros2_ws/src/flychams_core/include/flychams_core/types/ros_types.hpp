@@ -126,6 +126,8 @@ namespace flychams::core
 
     // Transform
     using TransformTf = tf2::Transform;
+    // Vector3
+    using Vector3Tf = tf2::Vector3;
 
     // ════════════════════════════════════════════════════════════════
     // CUSTOM MESSAGE TYPES: FlyChams-specific message types

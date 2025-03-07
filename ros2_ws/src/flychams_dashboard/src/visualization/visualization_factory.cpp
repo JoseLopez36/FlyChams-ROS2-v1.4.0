@@ -39,12 +39,12 @@ namespace flychams::dashboard
         prev_time_ = RosUtils::getTimeNow(node_);
         if (record_metrics)
         {
-            metrics_timer_ = RosUtils::createWallTimerByRate(node_, metrics_update_rate,
+            metrics_timer_ = RosUtils::createWallTimerByRate(node_, metrics_update_rate_,
                 std::bind(&VisualizationFactory::updateMetrics, this));
         }
         if (record_markers)
         {
-            markers_timer_ = RosUtils::createWallTimerByRate(node_, markers_update_rate,
+            markers_timer_ = RosUtils::createWallTimerByRate(node_, markers_update_rate_,
                 std::bind(&VisualizationFactory::updateMarkers, this));
         }
     }
@@ -211,8 +211,8 @@ namespace flychams::dashboard
             // Get agent markers
             auto& markers = agent_markers_[agent_id];
             // Update agent markers
-            MarkersFactory::updateAgentPoint(metrics.curr_x, metrics.curr_y, metrics.curr_z, curr_time, markers[0]);
-            MarkersFactory::updateAgentGoalPoint(metrics.goal_x, metrics.goal_y, metrics.goal_z, curr_time, markers[1]);
+            MarkersFactory::updateAgentPoint(metrics.curr_x, metrics.curr_y, metrics.curr_z, curr_time, markers.markers[0]);
+            MarkersFactory::updateAgentGoalPoint(metrics.goal_x, metrics.goal_y, metrics.goal_z, curr_time, markers.markers[1]);
             // Publish updated agent markers
             agent_markers_pubs_[agent_id]->publish(markers);
         }
@@ -225,7 +225,7 @@ namespace flychams::dashboard
             // Get target markers
             auto& markers = target_markers_[target_id];
             // Update target markers
-            MarkersFactory::updateTargetPoint(metrics.curr_x, metrics.curr_y, metrics.curr_z, curr_time, markers[0]);
+            MarkersFactory::updateTargetPoint(metrics.curr_x, metrics.curr_y, metrics.curr_z, curr_time, markers.markers[0]);
             // Publish updated target markers
             target_markers_pubs_[target_id]->publish(markers);
         }
@@ -238,8 +238,8 @@ namespace flychams::dashboard
             // Get cluster markers
             auto& markers = cluster_markers_[cluster_id];
             // Update cluster markers
-            MarkersFactory::updateClusterCenter(metrics.curr_center_x, metrics.curr_center_y, metrics.curr_center_z, curr_time, markers[0]);
-            MarkersFactory::updateClusterBoundary(metrics.curr_center_x, metrics.curr_center_y, metrics.curr_center_z, metrics.curr_radius, curr_time, markers[1]);
+            MarkersFactory::updateClusterCenter(metrics.curr_center_x, metrics.curr_center_y, metrics.curr_center_z, curr_time, markers.markers[0]);
+            MarkersFactory::updateClusterBoundary(metrics.curr_center_x, metrics.curr_center_y, metrics.curr_center_z, metrics.curr_radius, curr_time, markers.markers[1]);
             // Publish cluster markers
             cluster_markers_pubs_[cluster_id]->publish(markers);
         }

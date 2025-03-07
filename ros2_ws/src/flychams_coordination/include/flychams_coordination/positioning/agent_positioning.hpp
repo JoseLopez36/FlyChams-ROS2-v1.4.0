@@ -43,8 +43,6 @@ namespace flychams::coordination
 
     private: // Parameters
         core::ID agent_id_;
-        float kappa_s_;
-        float s_min_pix_;
 
     private: // Data
         // Odom

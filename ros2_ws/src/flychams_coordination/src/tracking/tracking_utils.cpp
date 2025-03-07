@@ -5,34 +5,38 @@ using namespace flychams::core;
 namespace flychams::coordination
 {
     // ════════════════════════════════════════════════════════════════════════════
-    // IMPLEMENTATION: Tracking utilities
+    // PUBLIC: MultiCameraTracking methods
     // ════════════════════════════════════════════════════════════════════════════
 
-    float TrackingUtils::computeFocal(const core::Vector3r& wPt, const float& r, const core::Vector3r& wPc, const float& fMin, const float& fMax, const float& sRef)
+    float TrackingUtils::computeFocal(const core::Vector3r& wPt, const float& r, const core::Vector3r& wPc, const core::CameraParameters& camera_params, const core::ProjectionParameters& projection_params)
     {
-        // wPt: Target position in world frame
-        // r: Equivalent radius of the target's area of interest
-        // wPc: Camera position in world frame
-        // fMin: Minimum focal length
-        // fMax: Maximum focal length
-        // sRef: Reference apparent size
+        // wPt: Target position in world frame (m)
+        // r: Equivalent radius of the target's area of interest (m)
+        // wPc: Camera position in world frame (m)
+        // camera_params: Camera parameters
+        // projection_params: Projection parameters
+
+        // Extract parameters
+        const auto& f_min = camera_params.f_min;
+        const auto& f_max = camera_params.f_max;
+        const auto& s_ref = projection_params.s_ref;
 
         // Compute distance between target and camera
         float d = (wPt - wPc).norm();
 
         // Attempt to adjust the focal length to achieve the desired apparent size of the object
-        float f = (d / r) * sRef;
+        float f = (d / r) * s_ref;
 
         // Clamp the focal length within the camera's focal limits
-        return std::max(std::min(f, fMax), fMin);
+        return std::max(std::min(f, f_max), f_min);
     }
 
     Vector3r TrackingUtils::computeOrientation(const Vector3r& wPt, const Vector3r& wPc, const Matrix3r& wRc, const Vector3r& prev_rpy, const bool& is_first_update)
     {
-        // wPt: Target position in world frame
-        // wPc: Camera position in world frame
-        // wRc: Camera rotation in world frame
-        // prev_rpy: Previous orientation in RPY format
+        // wPt: Target position in world frame (m)
+        // wPc: Camera position in world frame (m)
+        // wRc: Camera rotation in world frame 
+        // prev_rpy: Previous orientation in RPY format (rad)
         // is_first_update: Whether it is the first update
 
         // Transform target to camera frame
@@ -73,6 +77,55 @@ namespace flychams::coordination
             throw std::invalid_argument("Invalid aiming mode");
         }
     }
+
+    // ════════════════════════════════════════════════════════════════════════════
+    // PUBLIC: MultiWindowTracking methods
+    // ════════════════════════════════════════════════════════════════════════════
+
+    Crop TrackingUtils::computeWindowCrop(const core::Vector3r& wPt, const float& r, const core::Vector3r& wPc, const core::Vector2r& p, const core::WindowParameters& window_params, const core::ProjectionParameters& projection_params)
+    {
+        // wPt: Target position in world frame (m)
+        // r: Equivalent radius of the target's area of interest (m)
+        // wPc: Camera position in world frame (m)
+        // p: Target projection in the camera (pix)
+        // window_params: Window parameters
+        // projection_params: Projection parameters
+
+        // Extract parameters
+        const auto& f = window_params.camera_params.f_ref;
+        const auto& rho = window_params.camera_params.rho;
+        const auto& full_width = window_params.full_width;
+        const auto& full_height = window_params.full_height;
+        const auto& lambda_min = window_params.lambda_min;
+        const auto& lambda_max = window_params.lambda_max;
+        const auto& s_ref = projection_params.s_ref;
+
+        // Compute distance between target and camera
+        float d = (wPt - wPc).norm();
+
+        // Attempt to adjust the resolution factor to achieve the desired apparent size of the object
+        float lambda = (d * s_ref * rho) / (r * f);
+
+        // Clamp the resolution factor within the camera's resolution limits
+        lambda = std::max(std::min(lambda, lambda_max), lambda_min);
+
+        // Compute crop parameters
+        const float width = lambda * static_cast<float>(full_width);
+        const float height = lambda * static_cast<float>(full_height);
+        const float x = p(0) - width / 2.0f;
+        const float y = p(1) - height / 2.0f;
+
+        return {
+            static_cast<int>(std::round(x)),
+            static_cast<int>(std::round(y)),
+            static_cast<int>(std::round(width)),
+            static_cast<int>(std::round(height))
+        };
+    }
+
+    // ════════════════════════════════════════════════════════════════════════════
+    // IMPLEMENTATION: MultiCameraTracking
+    // ════════════════════════════════════════════════════════════════════════════
 
     std::pair<float, float> TrackingUtils::calculateBaseSolution(const Vector3r& dir)
     {

@@ -60,11 +60,6 @@ namespace flychams::core
             // Normalize angle to [-π, π]
             return std::atan2(std::sin(angle), std::cos(angle));
         }
-
-        static float computeFOV(float focal, float sensor_width)
-        {
-            return 2.0f * std::atan(sensor_width / (2.0f * focal));
-        }
     };
 
 }  // namespace flychams::core

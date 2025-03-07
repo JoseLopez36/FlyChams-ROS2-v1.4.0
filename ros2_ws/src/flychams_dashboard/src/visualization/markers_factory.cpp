@@ -82,6 +82,8 @@ namespace flychams::dashboard
         marker.color.g = 0.0f;
         marker.color.b = 1.0f;
         marker.color.a = BASE_MARKER_ALPHA;
+
+        return marker;
     }
 
     core::MarkerMsg MarkersFactory::createAgentGoalPoint(const int& marker_idx, const std::string& frame_id, const float& duration)
@@ -110,6 +112,8 @@ namespace flychams::dashboard
         marker.color.g = 1.0f;
         marker.color.b = 0.0f;
         marker.color.a = BASE_MARKER_ALPHA;
+
+        return marker;
     }
 
     core::MarkerMsg MarkersFactory::createTargetPoint(const int& marker_idx, const std::string& frame_id, const float& duration)
@@ -138,6 +142,8 @@ namespace flychams::dashboard
         marker.color.g = 0.0f;
         marker.color.b = 0.0f;
         marker.color.a = BASE_MARKER_ALPHA;
+
+        return marker;
     }
 
     core::MarkerMsg MarkersFactory::createClusterCenter(const int& marker_idx, const std::string& frame_id, const float& duration)
@@ -187,6 +193,8 @@ namespace flychams::dashboard
         marker.color.g = 1.0f;
         marker.color.b = 0.0f;
         marker.color.a = BASE_MARKER_ALPHA;
+
+        return marker;
     }
 
     core::MarkerMsg MarkersFactory::createClusterBoundary(const int& marker_idx, const std::string& frame_id, const float& duration)
@@ -215,6 +223,8 @@ namespace flychams::dashboard
         marker.color.g = 1.0f;
         marker.color.b = 1.0f;
         marker.color.a = 0.15f;
+
+        return marker;
     }
 
     // ════════════════════════════════════════════════════════════════════════════
