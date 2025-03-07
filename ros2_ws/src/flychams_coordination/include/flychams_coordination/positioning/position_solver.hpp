@@ -35,6 +35,12 @@ namespace flychams::coordination
 
     public: // Types
         using SharedPtr = std::shared_ptr<PositionSolver>;
+        // Modes
+        enum class PositioningMode
+        {
+            MultiCameraPositioning,     // Focal based positioning
+            MultiWindowPositioning      // Window based positioning
+        };
         // Settings types
         struct SolverParams
         {
@@ -44,15 +50,18 @@ namespace flychams::coordination
         };
         struct FunctionParams
         {
-            int n;                                              // Number of cameras
-            std::vector<core::CameraParameters> camera_params_; // Camera parameters
-            float hMin;                                         // Minimum height [m]
-            float hMax;                                         // Maximum height [m]
+            int n;                                              // Number of targets
+            core::TrackingParameters tracking_params_;          // Tracking parameters (apparent target size limits and reference values)
+            std::vector<core::CameraParameters> camera_params_; // Camera parameters (focal lengths limits and reference values)
+            std::vector<core::WindowParameters> window_params_; // Window parameters (resolution factor limits and reference values)
+            float h_min;                                        // Agent minimum height [m]
+            float h_max;                                        // Agent maximum height [m]
 
             FunctionParams(int n, float h_min, float h_max)
-                : n(n), hMin(h_min), hMax(h_max)
+                : n(n), h_min(h_min), h_max(h_max)
             {
                 camera_params_.resize(n);
+                window_params_.resize(n);
             }
         };
         // Data types
@@ -74,7 +83,7 @@ namespace flychams::coordination
 
     private: // Settings
         SolverParams solver_params_;     // Solver configuration
-        FunctionParams params_;          // Cost function parameters
+        FunctionParams function_params_; // Cost function parameters
 
     private: // Data
         nlopt_opt opt_;                  // NLopt optimizer instance
@@ -86,18 +95,20 @@ namespace flychams::coordination
         // Solver lifecycle methods
         void initSolver();
         void destroySolver();
-        // Optimization methods
-        core::Vector3r solve(const core::Vector3r& x0, const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r);
+        // High-level optimization method
+        core::Vector3r solve(const core::Vector3r& x0, const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const PositioningMode& mode);
 
     private: // Implementation
         // Optimization stages
-        core::Vector3r preOptimization(const core::Vector3r& x0, const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r);
-        core::Vector3r iterativeOptimization(const core::Vector3r& x0, const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const float& eps);
+        core::Vector3r preOptimization(const core::Vector3r& x0, const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const PositioningMode& mode);
+        core::Vector3r iterativeOptimization(const core::Vector3r& x0, const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const float& eps, const PositioningMode& mode);
         // Cost function implementations
-        static double calculateJNestedIntervals(unsigned n, const double* x, double* grad, void* data);
-        static double calculateJNestedIntervalsWithConvexRelaxation(unsigned n, const double* x, double* grad, void* data);
+        static double calculateMultiCameraJ1(unsigned n, const double* x, double* grad, void* data);
+        static double calculateMultiCameraJ2(unsigned n, const double* x, double* grad, void* data);
+        static double calculateMultiWindowJ1(unsigned n, const double* x, double* grad, void* data);
+        static double calculateMultiWindowJ2(unsigned n, const double* x, double* grad, void* data);
         // Optimization utility methods
-        float optimize(core::Vector3r& xOpt);
+        float optimize(core::Vector3r& x_opt);
     };
 
 } // namespace flychams::coord

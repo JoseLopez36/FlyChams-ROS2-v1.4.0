@@ -15,8 +15,8 @@ namespace flychams::coordination
         // Get update rate
         float update_rate = RosUtils::getParameterOr<float>(node_, "agent_tracking.tracking_update_rate", 20.0f);
         // Get ROI parameters
-        kappa_s_ = RosUtils::getParameterOr<float>(node_, "roi_params.kappa_s", 0.8f);
-        s_min_pix_ = RosUtils::getParameterOr<float>(node_, "roi_params.s_min_pix", 200.0f);
+        kappa_s_ = RosUtils::getParameterOr<float>(node_, "tracking.kappa_s", 0.8f);
+        s_min_pix_ = RosUtils::getParameterOr<float>(node_, "tracking.s_min_pix", 200.0f);
         tracking_window_ids_ = RosUtils::getParameter<std::vector<core::ID>>(node_, "window_ids.tracking_ids");
         num_tracking_windows_ = RosUtils::getParameter<int>(node_, "tracking.num_tracking_windows");
         if (tracking_window_ids_.size() != num_tracking_windows_)

@@ -69,8 +69,7 @@ namespace airsim_wrapper
         try
         {
             // Initialize sim clock
-            const rclcpp::Time curr_time = client_get_timestamp();
-            set_sim_clock_time(curr_time);
+            ros_clock_.clock = client_get_timestamp();
 
             // Pause and reset simulation
             client_pause(true);
@@ -79,7 +78,7 @@ namespace airsim_wrapper
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();
             RCLCPP_ERROR(nh_->get_logger(), "Exception raised by the API:\n%s", msg.c_str());
-            set_sim_clock_time(rclcpp::Time(0));
+            ros_clock_.clock = rclcpp::Time(0);
         }
 
         // Initialize ROS data and communications

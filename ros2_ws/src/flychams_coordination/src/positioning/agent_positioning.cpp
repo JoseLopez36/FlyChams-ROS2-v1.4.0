@@ -15,8 +15,8 @@ namespace flychams::coordination
         // Get update rates
         float update_rate = RosUtils::getParameterOr<float>(node_, "agent_positioning.positioning_update_rate", 5.0f);
         // Get ROI parameters
-        kappa_s_ = RosUtils::getParameterOr<float>(node_, "roi_params.kappa_s", 0.8f);
-        s_min_pix_ = RosUtils::getParameterOr<float>(node_, "roi_params.s_min_pix", 200.0f);
+        kappa_s_ = RosUtils::getParameterOr<float>(node_, "tracking.kappa_s", 0.8f);
+        s_min_pix_ = RosUtils::getParameterOr<float>(node_, "tracking.s_min_pix", 200.0f);
         // Get solver parameters
         float convergence_tolerance = RosUtils::getParameterOr<float>(node_, "agent_positioning.solver_params.convergence_tolerance", 1.0e-6f);
         int max_iterations = RosUtils::getParameterOr<int>(node_, "agent_positioning.solver_params.max_iterations", 100);

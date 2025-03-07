@@ -58,14 +58,14 @@ namespace flychams::core
     enum class TrackingMode
     {
         None,                   // No tracking
-        MultiGimbalTracking,    // Multiple gimbals tracking targets
-        MultiCropTracking,      // Multiple targets in cropped views
+        MultiCameraTracking,    // Multiple orientable and zoom-adjustable cameras tracking targets
+        MultiWindowTracking,    // Multiple tracking windows in a single ultra-high-resolution camera
         PriorityHybridTracking  // Hybrid tracking based on priorities
     };
     inline TrackingMode trackingModeFromString(const std::string& tracking_mode)
     {
-        if (tracking_mode == "MultiGimbalTracking") return TrackingMode::MultiGimbalTracking;
-        if (tracking_mode == "MultiCropTracking") return TrackingMode::MultiCropTracking;
+        if (tracking_mode == "MultiCameraTracking") return TrackingMode::MultiCameraTracking;
+        if (tracking_mode == "MultiWindowTracking") return TrackingMode::MultiWindowTracking;
         if (tracking_mode == "PriorityHybridTracking") return TrackingMode::PriorityHybridTracking;
         return TrackingMode::None;
     }
@@ -365,6 +365,21 @@ namespace flychams::core
     // ════════════════════════════════════════════════════════════════
 
     /**
+     * Tracking parameters
+     */
+    struct TrackingParameters
+    {
+        // Apparent target sizes (pix)
+        float s_min_pix;
+        float s_max_pix;
+        float s_ref_pix;
+        // Apparent target sizes (m)
+        float s_min;
+        float s_max;
+        float s_ref;
+    };
+
+    /**
      * Camera parameters
      */
     struct CameraParameters
@@ -373,17 +388,26 @@ namespace flychams::core
         float f_min;
         float f_max;
         float f_ref;
-        // Apparent sizes (m)
-        float s_min;
-        float s_max;
-        float s_ref;
-        // Apparent sizes (pix)
-        float s_min_pix;
-        float s_max_pix;
-        float s_ref_pix;
+        // Image resolution (pix)
+        int width;
+        int height;
         // Sensor dimensions (m)
         float sensor_width;
         float sensor_height;
+    };
+
+    /**
+     * Window parameters
+     */
+    struct WindowParameters
+    {
+        // Source camera parameters
+        float f; // Fixed focal length (m)
+        float rho; // Regularized pixel size (m/pix)
+        // Resolution factor (0-1)
+        float lambda_min;
+        float lambda_max;
+        float lambda_ref;
     };
 
     /**

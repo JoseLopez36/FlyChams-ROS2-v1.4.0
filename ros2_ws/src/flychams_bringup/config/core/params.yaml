@@ -2,7 +2,9 @@
   ros__parameters:
     # Tracking parameters
     tracking:
-      num_tracking_windows: 4 # Must match number of tracking IDs
+      num_tracking_windows: 4 # For MultiWindowTracking mode
+      kappa_s: 0.8            # Half-width fraction
+      s_min_pix: 200.0        # Minimum apparent size of the target (pix)
     # Window IDs
     window_ids:
       scene_id: "SCENE"
@@ -16,7 +18,3 @@
         "TRACKING02",
         "TRACKING03"
         ]
-    # Region of interest parameters
-    roi:
-      kappa_s: 0.8           # Half-width fraction
-      s_min_pix: 200.0       # pixels
