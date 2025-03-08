@@ -2,23 +2,16 @@
 set -e  # Exit on error
 
 # Arguments   
-LAUNCH_RVIZ=${1:-"false"}
-RECORD=${2:-"false"}
-RVIZ_CONFIG=${3:-"default.rviz"}
-WSL_IP=${4:-"host.docker.internal"}
-
-# Configure enviroment variable DISPLAY
-export DISPLAY="$WSL_IP:0.0"
-echo "DISPLAY=$DISPLAY"
+RECORD=${1:-"false"}
 
 # Get ROS2 workspace directory
-ROS_WS="$FLYCHAMS_ROS2_PATH/ros2_ws"
+ROS2_WS="$FLYCHAMS_ROS2_PATH/ros2_ws"
 
 # Source ROS2 workspace
-if [ -f "$ROS_WS/install/setup.bash" ]; then
-  source "$ROS_WS/install/setup.bash"
+if [ -f "$ROS2_WS/install/setup.bash" ]; then
+  source "$ROS2_WS/install/setup.bash"
 else
-  echo "Error: ROS workspace not found at $ROS_WS" >&2
+  echo "Error: ROS workspace not found at $ROS2_WS" >&2
   exit 1
 fi
 
@@ -31,17 +24,29 @@ FLYCHAMS_PID=$!
 if [ "$RECORD" = "true" ]; then
   ros2 launch flychams_bringup bag_record.launch.py &
   BAG_RECORD_PID=$!
-fi
-
-# Launch RViz conditionally
-if [ "$LAUNCH_RVIZ" = "true" ]; then
-  sleep 3  # Brief delay
-  echo "Launching RViz2 with config: $RVIZ_CONFIG"
-  ros2 launch flychams_bringup rviz.launch.py config:="$RVIZ_CONFIG" 2>&1 | tee rviz.log
 else
-  echo "RViz launch skipped"
-  wait  # Keep script alive until background processes finish
+  BAG_RECORD_PID=0
 fi
 
 # Cleanup on exit
-trap "kill $AIRSIM_PID $FLYCHAMS_PID 2>/dev/null" EXIT
+trap "echo 'Shutting down processes...'; kill $FLYCHAMS_PID $BAG_RECORD_PID 2>/dev/null" EXIT
+
+# Print helpful information
+echo ""
+echo "FlyChams with AirSim is running in the background (PID: $FLYCHAMS_PID)"
+if [ "$RECORD" = "true" ]; then
+  echo "Bag recording is running in the background (PID: $BAG_RECORD_PID)"
+fi
+echo "You can now enter ROS2 commands in this terminal."
+echo "Press Ctrl+C to exit and terminate all processes."
+echo ""
+
+# Keep the script running but allow user input
+while true; do
+  # Show a prompt
+  echo -n "flychams_cmd$ "
+  read -r cmd
+  
+  # Execute the command
+  eval "$cmd"
+done

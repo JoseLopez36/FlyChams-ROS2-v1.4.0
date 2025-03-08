@@ -15,21 +15,21 @@ def generate_launch_description():
         # AirSim Wrapper nodes
         'airsim': True,
         # Bringup nodes
-        'agent_registration': True,
-        'target_registration': True,
-        'cluster_registration': True,
+        'agent_registration': False,
+        'target_registration': False,
+        'cluster_registration': False,
         # Control nodes
-        'agent_control': True,
-        'head_control': True,
+        'agent_control': False,
+        'head_control': False,
         # Perception nodes
-        'clustering': True,
+        'clustering': False,
         # Coordination nodes
-        'agent_positioning': True,
-        'agent_assignment': True,
-        'agent_tracking': True,
+        'agent_positioning': False,
+        'agent_assignment': False,
+        'agent_tracking': False,
         # Dashboard nodes
-        'gui': True,
-        'visualization': True
+        'gui': False,
+        'visualization': False
     }
 
     # Define output and logging severity
@@ -140,7 +140,7 @@ def generate_launch_description():
                     'update_sim_clock_every_n_sec': 0.001,
                     'update_airsim_status_every_n_sec': 0.100,
                     'publish_clock': True,
-                    'host_ip': 'host.docker.internal',
+                    'host_ip': 'localhost',
                     'host_port': 41451,
                     'enable_api_control': True,
                     'enable_world_plot': True

@@ -110,8 +110,8 @@ namespace flychams::core
 						mission->altitude_constraint(1) = altitude_constraint_vec[1];
 					}
 
-					auto tracking_scene_resolution_str = getCellValueOrDefault<std::string>(row.findCell(10), "(1280, 720)");
-					auto tracking_scene_resolution_vec = parseStringToVector<int>(tracking_scene_resolution_str, 2, ',');
+					auto tracking_scene_resolution_str = getCellValueOrDefault<std::string>(row.findCell(10), "(1280x720)");
+					auto tracking_scene_resolution_vec = parseStringToVector<int>(tracking_scene_resolution_str, 2, 'x');
 					if (tracking_scene_resolution_vec.size() >= 2)
 					{
 						mission->tracking_scene_resolution(0) = tracking_scene_resolution_vec[0];
