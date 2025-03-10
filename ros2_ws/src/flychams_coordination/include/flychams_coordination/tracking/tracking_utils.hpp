@@ -40,7 +40,7 @@ namespace flychams::coordination
         static float computeFocal(const core::Vector3r& wPt, const float& r, const core::Vector3r& wPc, const core::CameraParameters& camera_params, const core::ProjectionParameters& projection_params);
         static core::Vector3r computeOrientation(const core::Vector3r& wPt, const core::Vector3r& wPc, const core::Matrix3r& wRc, const core::Vector3r& prev_rpy, const bool& is_first_update);
         // MultiWindowTracking
-        static core::Vector2i computeWindowSize(const core::Vector3r& wPt, const float& r, const core::Vector3r& wPc, const core::WindowParameters& window_params, const core::ProjectionParameters& projection_params);
+        static core::Vector2i computeWindowSize(const core::Vector3r& wPt, const float& r, const core::Vector3r& wPc, const core::WindowParameters& window_params, const core::ProjectionParameters& projection_params, float& lambda);
         static core::Vector2i computeWindowCorner(const core::Vector2r& p, const core::Vector2i& size);
 
     private: // Methods

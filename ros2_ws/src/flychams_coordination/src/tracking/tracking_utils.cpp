@@ -82,7 +82,7 @@ namespace flychams::coordination
     // PUBLIC: MultiWindowTracking methods
     // ════════════════════════════════════════════════════════════════════════════
 
-    Vector2i TrackingUtils::computeWindowSize(const core::Vector3r& wPt, const float& r, const core::Vector3r& wPc, const core::WindowParameters& window_params, const core::ProjectionParameters& projection_params)
+    Vector2i TrackingUtils::computeWindowSize(const core::Vector3r& wPt, const float& r, const core::Vector3r& wPc, const core::WindowParameters& window_params, const core::ProjectionParameters& projection_params, float& lambda)
     {
         // wPt: Target position in world frame (m)
         // r: Equivalent radius of the target's area of interest (m)
@@ -102,7 +102,7 @@ namespace flychams::coordination
         float d = (wPt - wPc).norm();
 
         // Attempt to adjust the resolution factor to achieve the desired apparent size of the object
-        float lambda = (d * s_ref) / (r * f);
+        lambda = (d * s_ref) / (r * f);
 
         // Clamp the resolution factor within the camera's resolution limits
         lambda = std::max(std::min(lambda, lambda_max), lambda_min);

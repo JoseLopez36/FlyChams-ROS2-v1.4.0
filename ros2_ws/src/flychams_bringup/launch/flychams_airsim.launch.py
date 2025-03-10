@@ -19,7 +19,7 @@ def generate_launch_description():
         'target_registration': True,
         'cluster_registration': True,
         # Control nodes
-        'agent_control': False,
+        'agent_control': True,
         'head_control': True,
         # Perception nodes
         'clustering': True,
@@ -35,7 +35,7 @@ def generate_launch_description():
     # Define output and logging severity
     output_to_screen = {
         # AirSim Wrapper nodes
-        'airsim': ['screen', 'info'],
+        'airsim': ['screen', 'error'],
         # Bringup nodes
         'agent_registration': ['screen', 'error'],
         'target_registration': ['screen', 'error'],

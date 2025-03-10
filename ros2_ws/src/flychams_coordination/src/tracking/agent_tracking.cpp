@@ -58,12 +58,14 @@ namespace flychams::coordination
             goal_.unit_types = std::vector<uint8_t>(n);
             goal_.window_ids = std::vector<std::string>(n);
             goal_.crops = std::vector<CropMsg>(n);
+            goal_.resolution_factors = std::vector<float>(n);
 
             for (int i = 0; i < n; i++)
             {
                 goal_.unit_types[i] = static_cast<uint8_t>(TrackingUnitType::Digital);
                 goal_.window_ids[i] = tracking_window_ids_[i];
                 goal_.crops[i] = CropMsg();
+                goal_.resolution_factors[i] = 0.0f;
             }
             break;
 
@@ -237,7 +239,8 @@ namespace flychams::coordination
             const auto& p = tab_p.col(i);
 
             // Create tracking crop parameters
-            Vector2i size = TrackingUtils::computeWindowSize(wPt, r, wPc, window_params, projection_params);
+            float lambda;
+            Vector2i size = TrackingUtils::computeWindowSize(wPt, r, wPc, window_params, projection_params, lambda);
             Vector2i corner = TrackingUtils::computeWindowCorner(p, size);
 
             // Update tracking goal
@@ -245,9 +248,10 @@ namespace flychams::coordination
             goal.crops[i].y = corner(1);
             goal.crops[i].w = size(0);
             goal.crops[i].h = size(1);
+            goal.resolution_factors[i] = lambda;
 
             // Print tracking goal
-            RCLCPP_INFO(node_->get_logger(), "Tracking goal for window %d: x=%d, y=%d, w=%d, h=%d", i, goal.crops[i].x, goal.crops[i].y, goal.crops[i].w, goal.crops[i].h);
+            RCLCPP_INFO(node_->get_logger(), "Tracking goal for window %d: x=%d, y=%d, w=%d, h=%d, lambda=%f", i, goal.crops[i].x, goal.crops[i].y, goal.crops[i].w, goal.crops[i].h, goal.resolution_factors[i]);
         }
     }
 

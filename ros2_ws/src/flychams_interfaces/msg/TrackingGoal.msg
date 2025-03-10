@@ -14,3 +14,4 @@ float32[] fovs                          # Unit goal fov (rad)
 # Digital zoom goals
 string camera_id                       # Source of the tracking images (one for every digital unit, typically the central camera)
 flychams_interfaces/Crop[] crops       # Crop parameters (one per each digital unit)
+float32[] resolution_factors           # Resolution factor (for debugging purposes)

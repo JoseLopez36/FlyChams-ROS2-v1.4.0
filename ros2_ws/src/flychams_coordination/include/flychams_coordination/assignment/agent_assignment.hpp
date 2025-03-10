@@ -50,6 +50,7 @@ namespace flychams::coordination
         AssignmentSolver::Clusters clusters_;
         // Assignments
         AssignmentSolver::Assignments assignments_;
+        std::unordered_map<core::ID, std::set<core::ID>> agent_clusters_;
         bool has_assignment_;
 
         // Thread-safety

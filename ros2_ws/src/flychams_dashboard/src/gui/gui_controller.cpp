@@ -81,8 +81,8 @@ namespace flychams::dashboard
         rectangle_color_.r = 0.0f;
         rectangle_color_.g = 1.0f;
         rectangle_color_.b = 1.0f;
-        rectangle_color_.a = 0.05f;
-        rectangle_thickness_ = 30.0f;
+        rectangle_color_.a = 0.5f;
+        rectangle_thickness_ = 2.0f;
         for (size_t i = 0; i < tracking_window_ids_.size(); i++)
         {
             PointMsg infinite_point;
@@ -96,8 +96,8 @@ namespace flychams::dashboard
         string_color_.r = 0.0f;
         string_color_.g = 1.0f;
         string_color_.b = 1.0f;
-        string_color_.a = 0.05f;
-        string_scale_ = 12.5f;
+        string_color_.a = 0.5f;
+        string_scale_ = 128.0f;
         for (size_t i = 0; i < tracking_window_ids_.size(); i++)
         {
             PointMsg infinite_point;

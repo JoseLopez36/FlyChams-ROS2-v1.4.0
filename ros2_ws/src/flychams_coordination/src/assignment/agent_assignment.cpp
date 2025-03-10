@@ -30,6 +30,7 @@ namespace flychams::coordination
         cluster_ids_.clear();
         clusters_.clear();
         assignments_.clear();
+        agent_clusters_.clear();
         has_assignment_ = false;
 
         // Initialize subscribers and publishers
@@ -127,16 +128,26 @@ namespace flychams::coordination
         }
 
         // Solve for the optimal position
-        AssignmentSolver::Assignments assignments = solver_.solveGreedy(agents_, clusters_);
+        assignments_ = solver_.solveGreedy(agents_, clusters_);
 
-        // Update assignment
-        assignments_ = assignments;
+        // Update agent clusters
+        agent_clusters_.clear();
+        for (const auto& [cluster_id, agent_id] : assignments_)
+        {
+            agent_clusters_[agent_id].insert(cluster_id);
+        }
+
+        // Set has assignment flag
         has_assignment_ = true;
 
         RCLCPP_INFO(node_->get_logger(), "Agent assignment: Assignment performed, assignments:");
-        for (const auto& [cluster_id, agent_id] : assignments)
+        for (const auto& [agent_id, cluster_ids] : agent_clusters_)
         {
-            RCLCPP_INFO(node_->get_logger(), "	-Cluster ID: %s, Agent ID: %s", cluster_id.c_str(), agent_id.c_str());
+            RCLCPP_INFO(node_->get_logger(), "	-Agent ID: %s", agent_id.c_str());
+            for (const auto& cluster_id : cluster_ids)
+            {
+                RCLCPP_INFO(node_->get_logger(), "		-Cluster ID: %s", cluster_id.c_str());
+            }
         }
     }
 
@@ -150,26 +161,30 @@ namespace flychams::coordination
 
         // Create and fill agent infos
         std::unordered_map<ID, AgentInfoMsg> infos;
-        for (const auto& [cluster_id, agent_id] : assignments_)
+        for (const auto& [agent_id, cluster_ids] : agent_clusters_)
         {
-            // Get cluster and agent info
-            const auto& cluster = clusters_.at(cluster_id);
+            // Get number of clusters
+            size_t n_clusters = cluster_ids.size();
+
+            // Get agent info
             auto& info = infos[agent_id];
 
-            // Extract cluster info
-            PointMsg center_msg;
-            MsgConversions::toMsg(cluster.center, center_msg);
-            float radius_msg = cluster.radius;
-
             // Add cluster info to agent info
-            info.cluster_ids.push_back(cluster_id);
-            info.centers.push_back(center_msg);
-            info.radii.push_back(radius_msg);
-        }
+            for (const auto& cluster_id : cluster_ids)
+            {
+                // Extract cluster info
+                const auto& cluster = clusters_.at(cluster_id);
+                PointMsg center_msg;
+                MsgConversions::toMsg(cluster.center, center_msg);
+                float radius_msg = cluster.radius;
 
-        // Publish agent infos
-        for (auto& [agent_id, info] : infos)
-        {
+                // Add to message
+                info.cluster_ids.push_back(cluster_id);
+                info.centers.push_back(center_msg);
+                info.radii.push_back(radius_msg);
+            }
+
+            // Publish agent info
             info.header = RosUtils::createHeader(node_, tf_tools_->getWorldFrame());
             agent_info_pubs_[agent_id]->publish(info);
         }
