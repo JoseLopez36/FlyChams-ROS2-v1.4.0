@@ -22,7 +22,7 @@ namespace flychams::core
     public:
         static float computeFov(float focal, float sensor_width)
         {
-            return 2.0f * std::atan(sensor_width / (2.0f * focal));
+            return 2.0f * std::atan((sensor_width / 2.0f) / focal);
         }
 
         static Matrix2Xr projectPoints(const Matrix3Xr& bP, const Matrix4r& bTc, const Matrix3r& k_ref)

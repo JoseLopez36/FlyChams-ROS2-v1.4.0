@@ -18,28 +18,18 @@ namespace flychams::core
 
 			// 1. Parse Mission Sheet
 			MissionConfigPtr mission = parseMission(book.worksheet("Missions"));
-			if (!mission)
-				throw std::runtime_error("No mission found");
 
 			// 2. Parse Simulation Sheet
 			SimulationConfigPtr simulation = parseSimulation(book.worksheet("Simulations"), mission->simulation_id);
-			if (!simulation)
-				throw std::runtime_error("No simulation found");
 
 			// 3. Parse Map Sheet
 			MapConfigPtr map = parseMap(book.worksheet("Maps"), mission->map_id);
-			if (!map)
-				throw std::runtime_error("No map found");
 
 			// 4. Parse Target Groups
 			GroupConfigMap groups = parseTargets(book.worksheet("Targets"), mission->group_bundle_id);
-			if (groups.empty())
-				throw std::runtime_error("No target groups found");
 
 			// 5. Parse Agents
 			AgentConfigMap agents = parseAgents(book, mission->agent_team_id, mission->altitude_constraint);
-			if (agents.empty())
-				throw std::runtime_error("No agents found");
 
 			// Assemble config message
 			ConfigPtr config_ptr = std::make_shared<Config>();
@@ -83,26 +73,26 @@ namespace flychams::core
 				// Read first column to verify if the mission is selected
 				if (row.findCell(1).value().type() == OpenXLSX::XLValueType::Empty)
 					continue;
-				std::string isMissionSelected = getCellValueOrDefault<std::string>(row.findCell(1), "");
+				std::string isMissionSelected = getCellValueOrFail<std::string>(row.findCell(1));
 
 				if (isMissionSelected == "X" || isMissionSelected == "x")
 				{
 					// Populate fields
-					mission->mission_id = getCellValueOrDefault<std::string>(row.findCell(2), "MISSION01");
+					mission->mission_id = getCellValueOrFail<std::string>(row.findCell(2));
 
-					mission->mission_name = getCellValueOrDefault<std::string>(row.findCell(3), "");
+					mission->mission_name = getCellValueOrFail<std::string>(row.findCell(3));
 
-					mission->simulation_id = getCellValueOrDefault<std::string>(row.findCell(4), "SIM01");
+					mission->simulation_id = getCellValueOrFail<std::string>(row.findCell(4));
 
-					mission->map_id = getCellValueOrDefault<std::string>(row.findCell(5), "MAP01");
+					mission->map_id = getCellValueOrFail<std::string>(row.findCell(5));
 
-					mission->group_bundle_id = getCellValueOrDefault<std::string>(row.findCell(6), "BUNDLE01");
+					mission->group_bundle_id = getCellValueOrFail<std::string>(row.findCell(6));
 
-					mission->parameter_set_id = getCellValueOrDefault<std::string>(row.findCell(7), "SET01");
+					mission->parameter_set_id = getCellValueOrFail<std::string>(row.findCell(7));
 
-					mission->agent_team_id = getCellValueOrDefault<std::string>(row.findCell(8), "TEAM01");
+					mission->agent_team_id = getCellValueOrFail<std::string>(row.findCell(8));
 
-					auto altitude_constraint_str = getCellValueOrDefault<std::string>(row.findCell(9), "(0.0, 1000.0)");
+					auto altitude_constraint_str = getCellValueOrFail<std::string>(row.findCell(9));
 					auto altitude_constraint_vec = parseStringToVector<float>(altitude_constraint_str, 2, ',');
 					if (altitude_constraint_vec.size() >= 2)
 					{
@@ -110,7 +100,7 @@ namespace flychams::core
 						mission->altitude_constraint(1) = altitude_constraint_vec[1];
 					}
 
-					auto tracking_scene_resolution_str = getCellValueOrDefault<std::string>(row.findCell(10), "(1280x720)");
+					auto tracking_scene_resolution_str = getCellValueOrFail<std::string>(row.findCell(10));
 					auto tracking_scene_resolution_vec = parseStringToVector<int>(tracking_scene_resolution_str, 2, 'x');
 					if (tracking_scene_resolution_vec.size() >= 2)
 					{
@@ -118,7 +108,7 @@ namespace flychams::core
 						mission->tracking_scene_resolution(1) = tracking_scene_resolution_vec[1];
 					}
 
-					auto tracking_view_resolution_str = getCellValueOrDefault<std::string>(row.findCell(11), "(640x480)");
+					auto tracking_view_resolution_str = getCellValueOrFail<std::string>(row.findCell(11));
 					auto tracking_view_resolution_vec = parseStringToVector<int>(tracking_view_resolution_str, 2, 'x');
 					if (tracking_view_resolution_vec.size() >= 2)
 					{
@@ -158,7 +148,7 @@ namespace flychams::core
 					return nullptr; // No simulation found
 
 				// Read primary key
-				std::string PK = getCellValueOrDefault<std::string>(row.findCell(1), "");
+				std::string PK = getCellValueOrFail<std::string>(row.findCell(1));
 
 				// Verify if the map is selected
 				if (PK == simulation_id)
@@ -166,18 +156,18 @@ namespace flychams::core
 					// Populate fields
 					simulation->simulation_id = PK;
 
-					simulation->simulation_name = getCellValueOrDefault<std::string>(row.findCell(2), "");
+					simulation->simulation_name = getCellValueOrFail<std::string>(row.findCell(2));
 
-					const std::string& autopilot_str = getCellValueOrDefault<std::string>(row.findCell(3), "SimpleFlight");
+					const std::string& autopilot_str = getCellValueOrFail<std::string>(row.findCell(3));
 					simulation->autopilot = autopilotFromString(autopilot_str);
 
-					simulation->clock_speed = getCellValueOrDefault<float>(row.findCell(4), 1.0f);
+					simulation->clock_speed = getCellValueOrFail<float>(row.findCell(4));
 
-					simulation->record_metrics = getCellValueOrDefault<bool>(row.findCell(5), false);
+					simulation->record_metrics = getCellValueOrFail<bool>(row.findCell(5));
 
-					simulation->draw_rviz_markers = getCellValueOrDefault<bool>(row.findCell(6), false);
+					simulation->draw_rviz_markers = getCellValueOrFail<bool>(row.findCell(6));
 
-					simulation->draw_world_markers = getCellValueOrDefault<bool>(row.findCell(7), false);
+					simulation->draw_world_markers = getCellValueOrFail<bool>(row.findCell(7));
 
 					// Only first found simulation is loaded
 					return simulation;
@@ -211,7 +201,7 @@ namespace flychams::core
 					return nullptr; // No map found
 
 				// Read primary key
-				std::string PK = getCellValueOrDefault<std::string>(row.findCell(1), "");
+				std::string PK = getCellValueOrFail<std::string>(row.findCell(1));
 
 				// Verify if the map is selected
 				if (PK == map_id)
@@ -219,12 +209,12 @@ namespace flychams::core
 					// Populate fields
 					map->map_id = PK;
 
-					map->map_name = getCellValueOrDefault<std::string>(row.findCell(2), "");
+					map->map_name = getCellValueOrFail<std::string>(row.findCell(2));
 
-					const std::string& region_type_str = getCellValueOrDefault<std::string>(row.findCell(3), "Coastal");
+					const std::string& region_type_str = getCellValueOrFail<std::string>(row.findCell(3));
 					map->region_type = regionTypeFromString(region_type_str);
 
-					auto origin_geopoint_str = getCellValueOrDefault<std::string>(row.findCell(4), "(lat=47.64, lon=-122.14, alt=122.00)");
+					auto origin_geopoint_str = getCellValueOrFail<std::string>(row.findCell(4));
 					auto origin_geopoint_vec = parseStringToVector<float>(origin_geopoint_str, 3, ',');
 					if (origin_geopoint_vec.size() >= 3)
 					{
@@ -233,7 +223,7 @@ namespace flychams::core
 						map->origin_geopoint.altitude = origin_geopoint_vec[2];
 					}
 
-					auto start_date_str = getCellValueOrDefault<std::string>(row.findCell(5), "(13/12/2024)");
+					auto start_date_str = getCellValueOrFail<std::string>(row.findCell(5));
 					auto start_date_vec = parseStringToVector<int>(start_date_str, 3, '/');
 					if (start_date_vec.size() >= 3)
 					{
@@ -242,7 +232,7 @@ namespace flychams::core
 						map->start_time.day = start_date_vec[0];
 					}
 
-					auto start_hour_str = getCellValueOrDefault<std::string>(row.findCell(6), "(20:00:00)");
+					auto start_hour_str = getCellValueOrFail<std::string>(row.findCell(6));
 					auto start_hour_vec = parseStringToVector<int>(start_hour_str, 3, ':');
 					if (start_hour_vec.size() >= 3)
 					{
@@ -251,7 +241,7 @@ namespace flychams::core
 						map->start_time.seconds = start_hour_vec[2];
 					}
 
-					auto wind_velocity_str = getCellValueOrDefault<std::string>(row.findCell(7), "(Vx=0.0, Vy=0.0, Vz=0.0)");
+					auto wind_velocity_str = getCellValueOrFail<std::string>(row.findCell(7));
 					auto wind_velocity_vec = parseStringToVector<float>(wind_velocity_str, 3, ',');
 					if (wind_velocity_vec.size() >= 3)
 					{
@@ -292,7 +282,7 @@ namespace flychams::core
 					return groups; // Return filled groups
 
 				// Read foreign key and verify if the target belongs to the group selected
-				std::string FK = getCellValueOrDefault<std::string>(row.findCell(2), "");
+				std::string FK = getCellValueOrFail<std::string>(row.findCell(2));
 
 				if (FK == bundle_id)
 				{
@@ -300,21 +290,21 @@ namespace flychams::core
 					GroupConfigPtr group = std::make_shared<GroupConfig>();
 
 					// Populate fields
-					group->group_id = getCellValueOrDefault<std::string>(row.findCell(1), "");
+					group->group_id = getCellValueOrFail<std::string>(row.findCell(1));
 
 					group->group_bundle_id = FK;
 
-					group->group_name = getCellValueOrDefault<std::string>(row.findCell(3), "");
+					group->group_name = getCellValueOrFail<std::string>(row.findCell(3));
 
-					const std::string& target_type_str = getCellValueOrDefault<std::string>(row.findCell(4), "Human");
+					const std::string& target_type_str = getCellValueOrFail<std::string>(row.findCell(4));
 					group->target_type = targetTypeFromString(target_type_str);
 
-					group->target_count = getCellValueOrDefault<int>(row.findCell(5), 0);
+					group->target_count = getCellValueOrFail<int>(row.findCell(5));
 
-					const std::string& group_priority_str = getCellValueOrDefault<std::string>(row.findCell(6), "Medium");
+					const std::string& group_priority_str = getCellValueOrFail<std::string>(row.findCell(6));
 					group->group_priority = priorityFromString(group_priority_str);
 
-					group->trajectory_folder = getCellValueOrDefault<std::string>(row.findCell(7), "LowSpeedTrajectories");
+					group->trajectory_folder = getCellValueOrFail<std::string>(row.findCell(7));
 
 					// Store setting
 					groups.insert({ group->group_id, group });
@@ -351,7 +341,7 @@ namespace flychams::core
 					return agents; // Return filled agents
 
 				// Read foreign key and verify if the target belongs to the group selected
-				std::string FK = getCellValueOrDefault<std::string>(row.findCell(2), "");
+				std::string FK = getCellValueOrFail<std::string>(row.findCell(2));
 
 				if (FK == team_id)
 				{
@@ -359,20 +349,20 @@ namespace flychams::core
 					AgentConfigPtr agent = std::make_shared<AgentConfig>();
 
 					// Populate fields
-					agent->agent_id = getCellValueOrDefault<std::string>(row.findCell(1), "");
+					agent->agent_id = getCellValueOrFail<std::string>(row.findCell(1));
 
 					agent->agent_team_id = FK;
 
-					agent->agent_name = getCellValueOrDefault<std::string>(row.findCell(3), "");
+					agent->agent_name = getCellValueOrFail<std::string>(row.findCell(3));
 
-					agent->head_payload_id = getCellValueOrDefault<std::string>(row.findCell(4), "PAYLOAD01");
+					agent->head_payload_id = getCellValueOrFail<std::string>(row.findCell(4));
 
-					const std::string& tracking_mode_str = getCellValueOrDefault<std::string>(row.findCell(5), "None");
+					const std::string& tracking_mode_str = getCellValueOrFail<std::string>(row.findCell(5));
 					agent->tracking_mode = trackingModeFromString(tracking_mode_str);
 
-					agent->drone_model_id = getCellValueOrDefault<std::string>(row.findCell(6), "DRONE01");
+					agent->drone_model_id = getCellValueOrFail<std::string>(row.findCell(6));
 
-					auto initial_position_str = getCellValueOrDefault<std::string>(row.findCell(7), "(X=0.0, Y=0.0, Z=50.0)");
+					auto initial_position_str = getCellValueOrFail<std::string>(row.findCell(7));
 					auto initial_position_vec = parseStringToVector<float>(initial_position_str, 3, ',');
 					if (initial_position_vec.size() >= 3)
 					{
@@ -381,7 +371,7 @@ namespace flychams::core
 						agent->initial_position(2) = initial_position_vec[2];
 					}
 
-					auto initial_orientation_str = getCellValueOrDefault<std::string>(row.findCell(8), "(Pitch=0.0, Yaw=0.0, Roll=0.0)");
+					auto initial_orientation_str = getCellValueOrFail<std::string>(row.findCell(8));
 					auto initial_orientation_vec = parseStringToVector<float>(initial_orientation_str, 3, ',');
 					if (initial_orientation_vec.size() >= 3)
 					{
@@ -390,11 +380,11 @@ namespace flychams::core
 						agent->initial_orientation(2) = MathUtils::degToRad(initial_orientation_vec[1]);
 					}
 
-					agent->safety_radius = getCellValueOrDefault<float>(row.findCell(9), 4.0f);
+					agent->safety_radius = getCellValueOrFail<float>(row.findCell(9));
 
-					agent->max_altitude = getCellValueOrDefault<float>(row.findCell(10), 1000.0f);
+					agent->max_altitude = getCellValueOrFail<float>(row.findCell(10));
 
-					agent->battery_capacity = getCellValueOrDefault<float>(row.findCell(11), 10000.0f);
+					agent->battery_capacity = getCellValueOrFail<float>(row.findCell(11));
 
 					// Resolve external ID references
 					agent->heads = parseAgentPayload(book, agent->head_payload_id);
@@ -465,7 +455,7 @@ namespace flychams::core
 					return heads; // Return filled heads
 
 				// Read foreign key and verify if the target belongs to the group selected
-				std::string FK = getCellValueOrDefault<std::string>(row.findCell(2), "");
+				std::string FK = getCellValueOrFail<std::string>(row.findCell(2));
 
 				if (FK == payload_id)
 				{
@@ -473,20 +463,20 @@ namespace flychams::core
 					HeadConfigPtr head = std::make_shared<HeadConfig>();
 
 					// Populate fields
-					head->head_id = getCellValueOrDefault<std::string>(row.findCell(1), "");
+					head->head_id = getCellValueOrFail<std::string>(row.findCell(1));
 
 					head->head_payload_id = FK;
 
-					head->head_name = getCellValueOrDefault<std::string>(row.findCell(3), "");
+					head->head_name = getCellValueOrFail<std::string>(row.findCell(3));
 
-					head->gimbal_model_id = getCellValueOrDefault<std::string>(row.findCell(4), "GIMBAL01");
+					head->gimbal_model_id = getCellValueOrFail<std::string>(row.findCell(4));
 
-					head->camera_model_id = getCellValueOrDefault<std::string>(row.findCell(5), "CAM01");
+					head->camera_model_id = getCellValueOrFail<std::string>(row.findCell(5));
 
-					const std::string& head_role_str = getCellValueOrDefault<std::string>(row.findCell(6), "Tracking");
+					const std::string& head_role_str = getCellValueOrFail<std::string>(row.findCell(6));
 					head->head_role = headRoleFromString(head_role_str);
 
-					auto mount_position_str = getCellValueOrDefault<std::string>(row.findCell(7), "(X=0.0, Y=0.0, Z=0.0)");
+					auto mount_position_str = getCellValueOrFail<std::string>(row.findCell(7));
 					auto mount_position_vec = parseStringToVector<float>(mount_position_str, 3, ',');
 					if (mount_position_vec.size() >= 3)
 					{
@@ -495,7 +485,7 @@ namespace flychams::core
 						head->mount_position(2) = mount_position_vec[2];
 					}
 
-					auto mount_orientation_str = getCellValueOrDefault<std::string>(row.findCell(8), "(Pitch=0.0, Yaw=0.0, Roll=0.0)");
+					auto mount_orientation_str = getCellValueOrFail<std::string>(row.findCell(8));
 					auto mount_orientation_vec = parseStringToVector<float>(mount_orientation_str, 3, ',');
 					if (mount_orientation_vec.size() >= 3)
 					{
@@ -504,7 +494,7 @@ namespace flychams::core
 						head->mount_orientation(2) = MathUtils::degToRad(mount_orientation_vec[1]);
 					}
 
-					auto initial_orientation_str = getCellValueOrDefault<std::string>(row.findCell(9), "(Pitch=0.0, Yaw=0.0, Roll=0.0)");
+					auto initial_orientation_str = getCellValueOrFail<std::string>(row.findCell(9));
 					auto initial_orientation_vec = parseStringToVector<float>(initial_orientation_str, 3, ',');
 					if (initial_orientation_vec.size() >= 3)
 					{
@@ -513,11 +503,11 @@ namespace flychams::core
 						head->initial_orientation(2) = MathUtils::degToRad(initial_orientation_vec[1]);
 					}
 
-					head->initial_focal = getCellValueOrDefault<float>(row.findCell(10), 10.0f) / 1000.0f;
+					head->initial_focal = getCellValueOrFail<float>(row.findCell(10)) / 1000.0f;
 
-					head->min_focal = getCellValueOrDefault<float>(row.findCell(11), 5.0f) / 1000.0f;
+					head->min_focal = getCellValueOrFail<float>(row.findCell(11)) / 1000.0f;
 
-					head->max_focal = getCellValueOrDefault<float>(row.findCell(12), 15.0f) / 1000.0f;
+					head->max_focal = getCellValueOrFail<float>(row.findCell(12)) / 1000.0f;
 
 					// Resolve external ID references
 					head->gimbal = parseGimbalModel(book, head->gimbal_model_id);
@@ -559,31 +549,31 @@ namespace flychams::core
 					return nullptr; // No drone model found
 
 				// Read foreign key and verify if the target belongs to the group selected
-				std::string PK = getCellValueOrDefault<std::string>(row.findCell(1), "");
+				std::string PK = getCellValueOrFail<std::string>(row.findCell(1));
 
 				if (PK == drone_id)
 				{
 					// Populate fields
 					drone->drone_model_id = PK;
 
-					drone->drone_name = getCellValueOrDefault<std::string>(row.findCell(2), "");
+					drone->drone_name = getCellValueOrFail<std::string>(row.findCell(2));
 
-					const std::string& drone_type_str = getCellValueOrDefault<std::string>(row.findCell(3), "Quadcopter");
+					const std::string& drone_type_str = getCellValueOrFail<std::string>(row.findCell(3));
 					drone->drone_type = droneTypeFromString(drone_type_str);
 
-					drone->cruise_speed = getCellValueOrDefault<float>(row.findCell(4), 8.0f);
+					drone->cruise_speed = getCellValueOrFail<float>(row.findCell(4));
 
-					drone->max_speed = getCellValueOrDefault<float>(row.findCell(5), 12.0f);
+					drone->max_speed = getCellValueOrFail<float>(row.findCell(5));
 
-					drone->base_weight = getCellValueOrDefault<float>(row.findCell(6), 6.0f);
+					drone->base_weight = getCellValueOrFail<float>(row.findCell(6));
 
-					drone->max_payload_weight = getCellValueOrDefault<float>(row.findCell(7), 2.5f);
+					drone->max_payload_weight = getCellValueOrFail<float>(row.findCell(7));
 
-					drone->hover_power = getCellValueOrDefault<float>(row.findCell(8), 400.0f);
+					drone->hover_power = getCellValueOrFail<float>(row.findCell(8));
 
-					drone->cruise_power = getCellValueOrDefault<float>(row.findCell(9), 350.0f);
+					drone->cruise_power = getCellValueOrFail<float>(row.findCell(9));
 
-					drone->load_factor = getCellValueOrDefault<float>(row.findCell(10), 25.0f);
+					drone->load_factor = getCellValueOrFail<float>(row.findCell(10));
 
 					// Only first found drone model is loaded
 					return drone;
@@ -620,18 +610,18 @@ namespace flychams::core
 					return nullptr; // No gimbal model found
 
 				// Read foreign key and verify if the target belongs to the group selected
-				std::string PK = getCellValueOrDefault<std::string>(row.findCell(1), "");
+				std::string PK = getCellValueOrFail<std::string>(row.findCell(1));
 
 				if (PK == gimbal_id)
 				{
 					// Populate fields
 					gimbal->gimbal_model_id = PK;
 
-					gimbal->gimbal_name = getCellValueOrDefault<std::string>(row.findCell(2), "");
+					gimbal->gimbal_name = getCellValueOrFail<std::string>(row.findCell(2));
 
-					gimbal->link_configuration_id = getCellValueOrDefault<std::string>(row.findCell(3), "LINKCONFIG01");
+					gimbal->link_configuration_id = getCellValueOrFail<std::string>(row.findCell(3));
 
-					auto optical_center_offset_str = getCellValueOrDefault<std::string>(row.findCell(4), "(X=0.0, Y=0.0, Z=0.0)");
+					auto optical_center_offset_str = getCellValueOrFail<std::string>(row.findCell(4));
 					auto optical_center_offset_vec = parseStringToVector<float>(optical_center_offset_str, 3, ',');
 					if (optical_center_offset_vec.size() >= 3)
 					{
@@ -640,11 +630,11 @@ namespace flychams::core
 						gimbal->optical_center_offset(2) = optical_center_offset_vec[2] * 1000.0f;
 					}
 
-					gimbal->weight = getCellValueOrDefault<float>(row.findCell(5), 0.5f);
+					gimbal->weight = getCellValueOrFail<float>(row.findCell(5));
 
-					gimbal->idle_power = getCellValueOrDefault<float>(row.findCell(6), 7.5f);
+					gimbal->idle_power = getCellValueOrFail<float>(row.findCell(6));
 
-					gimbal->active_power = getCellValueOrDefault<float>(row.findCell(7), 20.0f);
+					gimbal->active_power = getCellValueOrFail<float>(row.findCell(7));
 
 					// Resolve external ID references
 					gimbal->links = parseGimbalLinks(book.worksheet("GimbalLinks"), gimbal->link_configuration_id);
@@ -683,7 +673,7 @@ namespace flychams::core
 					return links; // Return filled links
 
 				// Read foreign key and verify if the target belongs to the group selected
-				std::string FK = getCellValueOrDefault<std::string>(row.findCell(2), "");
+				std::string FK = getCellValueOrFail<std::string>(row.findCell(2));
 
 				if (FK == links_id)
 				{
@@ -691,16 +681,16 @@ namespace flychams::core
 					GimbalLinkConfigPtr link = std::make_shared<GimbalLinkConfig>();
 
 					// Populate fields
-					link->gimbal_link_id = getCellValueOrDefault<std::string>(row.findCell(1), "");
+					link->gimbal_link_id = getCellValueOrFail<std::string>(row.findCell(1));
 
 					link->link_configuration_id = FK;
 
-					link->link_index = getCellValueOrDefault<int>(row.findCell(3), 1);
+					link->link_index = getCellValueOrFail<int>(row.findCell(3));
 
-					const std::string& axis_type_str = getCellValueOrDefault<std::string>(row.findCell(4), "Yaw");
+					const std::string& axis_type_str = getCellValueOrFail<std::string>(row.findCell(4));
 					link->axis_type = axisTypeFromString(axis_type_str);
 
-					auto link_offset_str = getCellValueOrDefault<std::string>(row.findCell(5), "(X=0.0, Y=0.0, Z=0.0)");
+					auto link_offset_str = getCellValueOrFail<std::string>(row.findCell(5));
 					auto link_offset_vec = parseStringToVector<float>(link_offset_str, 3, ',');
 					if (link_offset_vec.size() >= 2)
 					{
@@ -709,9 +699,9 @@ namespace flychams::core
 						link->link_offset(2) = link_offset_vec[2];
 					}
 
-					link->link_length = getCellValueOrDefault<float>(row.findCell(6), 50.0f) / 1000.0f;
+					link->link_length = getCellValueOrFail<float>(row.findCell(6)) / 1000.0f;
 
-					auto joint_range_str = getCellValueOrDefault<std::string>(row.findCell(7), "(-320.0, 320.0)");
+					auto joint_range_str = getCellValueOrFail<std::string>(row.findCell(7));
 					auto joint_range_vec = parseStringToVector<float>(joint_range_str, 2, ',');
 					if (joint_range_vec.size() >= 2)
 					{
@@ -719,11 +709,11 @@ namespace flychams::core
 						link->joint_range(1) = MathUtils::degToRad(joint_range_vec[1]);
 					}
 
-					link->max_angular_speed = MathUtils::degToRad(getCellValueOrDefault<float>(row.findCell(8), 180.0f));
+					link->max_angular_speed = MathUtils::degToRad(getCellValueOrFail<float>(row.findCell(8)));
 
-					link->motor_rise_time = getCellValueOrDefault<float>(row.findCell(9), 0.05f);
+					link->motor_rise_time = getCellValueOrFail<float>(row.findCell(9));
 
-					link->motor_damping_factor = getCellValueOrDefault<float>(row.findCell(10), 0.99f);
+					link->motor_damping_factor = getCellValueOrFail<float>(row.findCell(10));
 
 					// Store setting
 					links.insert({ link->gimbal_link_id, link });
@@ -757,19 +747,19 @@ namespace flychams::core
 					return nullptr; // No camera model found
 
 				// Read foreign key and verify if the target belongs to the group selected
-				std::string PK = getCellValueOrDefault<std::string>(row.findCell(1), "");
+				std::string PK = getCellValueOrFail<std::string>(row.findCell(1));
 
 				if (PK == camera_id)
 				{
 					// Populate fields
 					camera->camera_model_id = PK;
 
-					camera->camera_name = getCellValueOrDefault<std::string>(row.findCell(2), "");
+					camera->camera_name = getCellValueOrFail<std::string>(row.findCell(2));
 
-					const std::string& camera_type_str = getCellValueOrDefault<std::string>(row.findCell(3), "Default");
+					const std::string& camera_type_str = getCellValueOrFail<std::string>(row.findCell(3));
 					camera->camera_type = cameraTypeFromString(camera_type_str);
 
-					auto resolution_str = getCellValueOrDefault<std::string>(row.findCell(4), "(1920x1080)");
+					auto resolution_str = getCellValueOrFail<std::string>(row.findCell(4));
 					auto resolution_vec = parseStringToVector<int>(resolution_str, 2, 'x');
 					if (resolution_vec.size() >= 2)
 					{
@@ -777,17 +767,17 @@ namespace flychams::core
 						camera->resolution(1) = resolution_vec[1];
 					}
 
-					camera->default_focal = getCellValueOrDefault<float>(row.findCell(5), 10.0f) / 1000.0f;
+					camera->default_focal = getCellValueOrFail<float>(row.findCell(5)) / 1000.0f;
 
-					camera->sensor_width = getCellValueOrDefault<float>(row.findCell(6), 13.2f) / 1000.0f;
+					camera->sensor_width = getCellValueOrFail<float>(row.findCell(6)) / 1000.0f;
 
-					camera->sensor_height = getCellValueOrDefault<float>(row.findCell(7), 8.8f) / 1000.0f;
+					camera->sensor_height = getCellValueOrFail<float>(row.findCell(7)) / 1000.0f;
 
-					camera->weight = getCellValueOrDefault<float>(row.findCell(8), 0.35f);
+					camera->weight = getCellValueOrFail<float>(row.findCell(8));
 
-					camera->idle_power = getCellValueOrDefault<float>(row.findCell(9), 2.0f);
+					camera->idle_power = getCellValueOrFail<float>(row.findCell(9));
 
-					camera->active_power = getCellValueOrDefault<float>(row.findCell(10), 4.0f);
+					camera->active_power = getCellValueOrFail<float>(row.findCell(10));
 
 					// Only first found camera model is loaded
 					return camera;

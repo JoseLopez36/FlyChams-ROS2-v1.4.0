@@ -72,6 +72,60 @@ namespace flychams::core
 			return cell.empty();
 		}
 
+		// Get the value of a cell or fail
+		template <typename T>
+		static T getCellValueOrFail(const OpenXLSX::XLCell& cell)
+		{
+			try
+			{
+				const OpenXLSX::XLValueType cell_type = cell.value().type();
+				const std::string cell_ref = cell.cellReference().address();
+
+				// Handle empty cells
+				if (cell_type == OpenXLSX::XLValueType::Empty)
+				{
+					throw std::runtime_error("Empty cell at " + cell_ref + ".");
+				}
+
+				// Direct type match
+				if constexpr (std::is_same_v<T, std::string>)
+				{
+					if (cell_type == OpenXLSX::XLValueType::String)
+					{
+						std::string val = cell.value().get<std::string>();
+						return val;
+					}
+				}
+				else if constexpr (std::is_same_v<T, bool>)
+				{
+					if (cell_type == OpenXLSX::XLValueType::Boolean)
+					{
+						bool val = cell.value().get<bool>();
+						return val;
+					}
+				}
+				else if constexpr (std::is_arithmetic_v<T>)
+				{
+					if (cell_type == OpenXLSX::XLValueType::Integer)
+					{
+						int val = cell.value().get<int>();
+						return val;
+					}
+					else if (cell_type == OpenXLSX::XLValueType::Float)
+					{
+						float val = cell.value().get<float>();
+						return val;
+					}
+				}
+			}
+			catch (const std::exception& e)
+			{
+				throw std::runtime_error("Error loading cell: " + std::string(e.what()));
+			}
+
+			return T();
+		}
+
 		// Get the value of a cell or a default value if the cell is empty
 		template <typename T>
 		static T getCellValueOrDefault(const OpenXLSX::XLCell& cell, const T& default_value = T())

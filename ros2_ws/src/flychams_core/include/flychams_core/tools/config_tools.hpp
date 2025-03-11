@@ -40,7 +40,15 @@ namespace flychams::core
         {
             // Parse the configuration file
             const std::string& config_path = RosUtils::getParameter<std::string>(node_, "config_source_file");
-            config_ptr_ = ConfigParser::parseExcelFile(config_path);
+            try
+            {
+                config_ptr_ = ConfigParser::parseExcelFile(config_path);
+            }
+            catch (const std::exception& e)
+            {
+                RCLCPP_ERROR(node_->get_logger(), "Error parsing config file: %s", e.what());
+                rclcpp::shutdown();
+            }
         }
 
         ~ConfigTools()
@@ -139,45 +147,6 @@ namespace flychams::core
         }
 
     public: // Config utilities
-        ProjectionParameters getProjectionParameters(int width, int height, float rho) const
-        {
-            ProjectionParameters params;
-
-            // Extract ROI parameters
-            const auto& s_min_pix = RosUtils::getParameterOr<float>(node_, "tracking.s_min_pix", 200.0f); // [pix]
-            const auto& kappa_s = RosUtils::getParameterOr<float>(node_, "tracking.kappa_s", 0.8f);
-
-            // Maximum admissible apparent size of the object in the image (in pixels)
-            // Assuming 90% of the half-height (or width if smaller)
-            float s_max_pix = 0.5f * static_cast<float>(std::min(width, height)) * 0.9f;
-            params.s_max_pix = s_max_pix; // [pix]
-
-            // Minimum admissible apparent size (in pixels)
-            // Provided externally
-            params.s_min_pix = s_min_pix; // [pix]
-
-            // Reference apparent size (in pixels)
-            // Calculated using kappaS (half-width fraction) parameter
-            float s_ref_pix = s_max_pix * kappa_s + s_min_pix * (1.0f - kappa_s); // [pix]
-            params.s_ref_pix = s_ref_pix; // [pix]
-
-            // Conversion to metric distances on the sensor surface
-            params.s_max = s_max_pix * rho; // [m]
-            params.s_min = s_min_pix * rho; // [m]
-            params.s_ref = s_ref_pix * rho; // [m]
-
-            // Print parameters for debugging
-            // RCLCPP_INFO(node_->get_logger(), "Projection parameters:");
-            // RCLCPP_INFO(node_->get_logger(), "  s_min_pix: %.2f [pix]", params.s_min_pix);
-            // RCLCPP_INFO(node_->get_logger(), "  s_max_pix: %.2f [pix]", params.s_max_pix);
-            // RCLCPP_INFO(node_->get_logger(), "  s_ref_pix: %.2f [pix]", params.s_ref_pix);
-            // RCLCPP_INFO(node_->get_logger(), "  s_min: %.6f [m]", params.s_min);
-            // RCLCPP_INFO(node_->get_logger(), "  s_max: %.6f [m]", params.s_max);
-            // RCLCPP_INFO(node_->get_logger(), "  s_ref: %.6f [m]", params.s_ref);
-
-            return params;
-        }
-
         CameraParameters getCameraParameters(const std::string& agent_id, const std::string& head_id) const
         {
             CameraParameters params;
@@ -215,13 +184,13 @@ namespace flychams::core
             params.k_ref(1, 2) = params.height / 2.0f;
 
             // Print camera parameters for debugging
-            // RCLCPP_ERROR(node_->get_logger(), "Camera parameters for agent %s, head %s:", agent_id.c_str(), head_id.c_str());
-            // RCLCPP_ERROR(node_->get_logger(), "  ID: %s", params.id.c_str());
-            // RCLCPP_ERROR(node_->get_logger(), "  Focal lengths: min=%.3f, max=%.3f, ref=%.3f [m]", params.f_min, params.f_max, params.f_ref);
-            // RCLCPP_ERROR(node_->get_logger(), "  Resolution: %d x %d [pix]", params.width, params.height);
-            // RCLCPP_ERROR(node_->get_logger(), "  Sensor dimensions: %.6f x %.6f [m]", params.sensor_width, params.sensor_height);
-            // RCLCPP_ERROR(node_->get_logger(), "  Regularized pixel size: %.6f [m/pix]", params.rho);
-            // RCLCPP_ERROR(node_->get_logger(), "  Intrinsic matrix K: fx=%f fy=%f cx=%f cy=%f", params.k_ref(0, 0), params.k_ref(1, 1), params.k_ref(0, 2), params.k_ref(1, 2));
+            RCLCPP_INFO(node_->get_logger(), "Camera parameters for agent %s, head %s:", agent_id.c_str(), head_id.c_str());
+            RCLCPP_INFO(node_->get_logger(), "  ID: %s", params.id.c_str());
+            RCLCPP_INFO(node_->get_logger(), "  Focal lengths: min=%.3f, max=%.3f, ref=%.3f [m]", params.f_min, params.f_max, params.f_ref);
+            RCLCPP_INFO(node_->get_logger(), "  Resolution: %d x %d [pix]", params.width, params.height);
+            RCLCPP_INFO(node_->get_logger(), "  Sensor dimensions: %.6f x %.6f [m]", params.sensor_width, params.sensor_height);
+            RCLCPP_INFO(node_->get_logger(), "  Regularized pixel size: %.6f [m/pix]", params.rho);
+            RCLCPP_INFO(node_->get_logger(), "  Intrinsic matrix K: fx=%f fy=%f cx=%f cy=%f", params.k_ref(0, 0), params.k_ref(1, 1), params.k_ref(0, 2), params.k_ref(1, 2));
 
             return params;
         }
@@ -249,14 +218,53 @@ namespace flychams::core
             // Calculate window parameters
             params.lambda_min = static_cast<float>(params.scene_width) / static_cast<float>(params.full_width);
             params.lambda_max = 1.0f;
-            params.lambda_ref = std::max(0.25f, params.lambda_min);
+            params.lambda_ref = (params.lambda_max + params.lambda_min) / 2.0f; // Middle of the range
 
             // Print window parameters for debugging
-            // RCLCPP_INFO(node_->get_logger(), "Window parameters for agent %s, source head %s:", agent_id.c_str(), source_head_id.c_str());
-            // RCLCPP_INFO(node_->get_logger(), "  Full resolution: %d x %d", params.full_width, params.full_height);
-            // RCLCPP_INFO(node_->get_logger(), "  Scene resolution: %d x %d", params.scene_width, params.scene_height);
-            // RCLCPP_INFO(node_->get_logger(), "  View resolution: %d x %d", params.view_width, params.view_height);
-            // RCLCPP_INFO(node_->get_logger(), "  Lambda values: min=%.3f, max=%.3f, ref=%.3f", params.lambda_min, params.lambda_max, params.lambda_ref);
+            RCLCPP_INFO(node_->get_logger(), "Window parameters for agent %s, source head %s:", agent_id.c_str(), source_head_id.c_str());
+            RCLCPP_INFO(node_->get_logger(), "  Full resolution: %d x %d", params.full_width, params.full_height);
+            RCLCPP_INFO(node_->get_logger(), "  Scene resolution: %d x %d", params.scene_width, params.scene_height);
+            RCLCPP_INFO(node_->get_logger(), "  View resolution: %d x %d", params.view_width, params.view_height);
+            RCLCPP_INFO(node_->get_logger(), "  Lambda values: min=%.3f, max=%.3f, ref=%.3f", params.lambda_min, params.lambda_max, params.lambda_ref);
+
+            return params;
+        }
+
+        ProjectionParameters getProjectionParameters(int width, int height, float rho) const
+        {
+            ProjectionParameters params;
+
+            // Extract ROI parameters
+            const auto& s_min_pix = RosUtils::getParameterOr<float>(node_, "tracking.s_min_pix", 50.0f); // [pix]
+            const auto& kappa_s = RosUtils::getParameterOr<float>(node_, "tracking.kappa_s", 0.8f);
+
+            // Maximum admissible apparent size of the object in the image (in pixels)
+            // Assuming 90% of the half-height (or width if smaller)
+            float s_max_pix = 0.5f * static_cast<float>(std::min(width, height)) * 0.9f;
+            params.s_max_pix = s_max_pix; // [pix]
+
+            // Minimum admissible apparent size (in pixels)
+            // Provided externally
+            params.s_min_pix = s_min_pix; // [pix]
+
+            // Reference apparent size (in pixels)
+            // Calculated using kappaS (half-width fraction) parameter
+            float s_ref_pix = s_max_pix * kappa_s + s_min_pix * (1.0f - kappa_s); // [pix]
+            params.s_ref_pix = s_ref_pix; // [pix]
+
+            // Conversion to metric distances on the sensor surface
+            params.s_max = s_max_pix * rho; // [m]
+            params.s_min = s_min_pix * rho; // [m]
+            params.s_ref = s_ref_pix * rho; // [m]
+
+            // Print parameters for debugging
+            RCLCPP_INFO(node_->get_logger(), "Projection parameters:");
+            RCLCPP_INFO(node_->get_logger(), "  s_min_pix: %.2f [pix]", params.s_min_pix);
+            RCLCPP_INFO(node_->get_logger(), "  s_max_pix: %.2f [pix]", params.s_max_pix);
+            RCLCPP_INFO(node_->get_logger(), "  s_ref_pix: %.2f [pix]", params.s_ref_pix);
+            RCLCPP_INFO(node_->get_logger(), "  s_min: %.6f [m]", params.s_min);
+            RCLCPP_INFO(node_->get_logger(), "  s_max: %.6f [m]", params.s_max);
+            RCLCPP_INFO(node_->get_logger(), "  s_ref: %.6f [m]", params.s_ref);
 
             return params;
         }

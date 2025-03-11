@@ -103,6 +103,14 @@ namespace airsim_wrapper
                 client_takeoff(3.0f, vehicle_name, false);
             }
 
+            // Set empty cameras for all windows
+            std::vector<int> window_indices = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
+            std::vector<std::string> vehicle_names(8, "");
+            std::vector<std::string> camera_names(8, "");
+            std::vector<msr::airlib::Vector2r> corners(8, msr::airlib::Vector2r(0.0f, 0.0f));
+            std::vector<msr::airlib::Vector2r> sizes(8, msr::airlib::Vector2r(0.0f, 0.0f));
+            client_set_window_images(window_indices, vehicle_names, camera_names, corners, sizes);
+
             // Remove all targets and clusters from previous runs
             client_remove_all_targets();
             client_remove_all_clusters();

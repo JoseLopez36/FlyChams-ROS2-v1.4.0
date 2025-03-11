@@ -361,21 +361,6 @@ namespace flychams::core
     // ════════════════════════════════════════════════════════════════
 
     /**
-     * Projection parameters
-     */
-    struct ProjectionParameters
-    {
-        // Apparent target sizes (pix)
-        float s_min_pix;
-        float s_max_pix;
-        float s_ref_pix;
-        // Apparent target sizes (m)
-        float s_min;
-        float s_max;
-        float s_ref;
-    };
-
-    /**
      * Camera parameters
      */
     struct CameraParameters
@@ -418,6 +403,21 @@ namespace flychams::core
         // View resolution (pix)
         int view_width;
         int view_height;
+    };
+
+    /**
+     * Projection parameters
+     */
+    struct ProjectionParameters
+    {
+        // Apparent target sizes (pix)
+        float s_min_pix;
+        float s_max_pix;
+        float s_ref_pix;
+        // Apparent target sizes (m)
+        float s_min;
+        float s_max;
+        float s_ref;
     };
 
     /**

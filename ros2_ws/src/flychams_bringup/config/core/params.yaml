@@ -4,7 +4,7 @@
     tracking:
       num_tracking_windows: 4 # For MultiWindowTracking mode
       kappa_s: 0.8            # Half-width fraction
-      s_min_pix: 50.0        # Minimum apparent size of the target (pix)
+      s_min_pix: 0.0          # Minimum apparent size of the target (pix)
     # Window IDs
     window_ids:
       scene_id: "SCENE"
