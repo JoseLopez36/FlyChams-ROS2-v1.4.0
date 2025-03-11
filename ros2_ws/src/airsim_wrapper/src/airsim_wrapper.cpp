@@ -136,6 +136,9 @@ namespace airsim_wrapper
 
     void AirsimWrapper::shutdown()
     {
+        // Remove all targets and clusters
+        client_remove_all_targets();
+        client_remove_all_clusters();
         // Reset simulation
         client_pause(true);
         client_reset();
@@ -750,9 +753,6 @@ namespace airsim_wrapper
         {
             // Send command to server
             client_add_targets(target_names, target_types, get_airlib_points(positions), highlight, get_airlib_colors(highlight_color_rgba));
-
-            // Delay for 1 second
-            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();
@@ -779,9 +779,6 @@ namespace airsim_wrapper
         {
             // Send command to server
             client_add_clusters(cluster_names, get_airlib_points(centers), radii, highlight, get_airlib_colors(highlight_color_rgba));
-
-            // Delay for 1 second
-            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();
@@ -1101,6 +1098,16 @@ namespace airsim_wrapper
     void AirsimWrapper::client_remove_clusters(const std::vector<std::string>& cluster_names)
     {
         airsim_client_tracking_->simRemoveClusters(cluster_names);
+    }
+
+    void AirsimWrapper::client_remove_all_targets()
+    {
+        airsim_client_tracking_->simRemoveAllTargets();
+    }
+
+    void AirsimWrapper::client_remove_all_clusters()
+    {
+        airsim_client_tracking_->simRemoveAllClusters();
     }
 
     void AirsimWrapper::client_update_targets(const std::vector<std::string>& target_names, const std::vector<msr::airlib::Vector3r>& positions)

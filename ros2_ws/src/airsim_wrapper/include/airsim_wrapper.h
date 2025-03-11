@@ -257,6 +257,8 @@ namespace airsim_wrapper
         void client_add_clusters(const std::vector<std::string>& cluster_names, const std::vector<msr::airlib::Vector3r>& centers, const std::vector<float>& radii, const bool& highlight, const std::vector<std::vector<float>>& highlight_color_rgba);
         void client_remove_targets(const std::vector<std::string>& target_names);
         void client_remove_clusters(const std::vector<std::string>& cluster_names);
+        void client_remove_all_targets();
+        void client_remove_all_clusters();
         void client_update_targets(const std::vector<std::string>& target_names, const std::vector<msr::airlib::Vector3r>& positions);
         void client_update_clusters(const std::vector<std::string>& cluster_names, const std::vector<msr::airlib::Vector3r>& centers, const std::vector<float>& radii);
 
