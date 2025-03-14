@@ -51,9 +51,6 @@
 #include "flychams_interfaces/msg/global_metrics.hpp"
 #include "flychams_interfaces/msg/crop.hpp"
 
-// Airsim messages
-#include "airsim_interfaces/msg/camera_info_array.hpp"
-
 namespace flychams::core
 {
     /**
@@ -154,12 +151,5 @@ namespace flychams::core
     using GlobalMetricsMsg = flychams_interfaces::msg::GlobalMetrics;
     // Basic
     using CropMsg = flychams_interfaces::msg::Crop;
-
-    // ════════════════════════════════════════════════════════════════
-    // AIRSIM MESSAGE TYPES: Airsim-specific message types
-    // ════════════════════════════════════════════════════════════════
-
-    // Camera info array
-    using CameraInfoArrayMsg = airsim_interfaces::msg::CameraInfoArray;
 
 } // namespace flychams::core

@@ -1,0 +1,66 @@
+/**:
+  ros__parameters:
+    plugin_denylist:
+      # Disabled common plugins:
+      - 3dr_radio               # Radio telemetry
+      - actuator_control        # Low-level actuator control
+      - hil_controls            # Hardware-in-the-loop simulation
+      - ftp                     # File transfer protocol
+      - imu_pub                 # IMU data publishing
+      - manual_control          # Manual RC control input/output
+      - param                   # Parameter management
+      - rc_io                   # RC input/output
+      - safety_area             # Safety area checks
+      - setpoint_raw            # Raw setpoints
+      - vfr_hud                 # Virtual Flight Reality HUD data
+      - waypoint                # Waypoint missions
+
+      # Disabled extra plugins:
+      - adsb                     # ADS-B Vehicle plugin
+      - cam_imu_sync             # Camera IMU synchronisation plugin
+      - camera                   # Camera plugin
+      - cellular_status          # Cellular status plugin
+      - companion_process_status # Obstacle companion process status plugin
+      - debug_value              # Plugin for Debug msgs from MAVLink API
+      - distance_sensor          # Distance sensor plugin
+      - esc_status               # ESC status plugin
+      - esc_telemetry            # ESC telemetry plugin
+      - fake_gps                 # Fake GPS plugin
+      - gimbal_control           # Gimbal Control Plugin
+      - gps_input                # GPS_INPUT GPS plugin
+      - gps_rtk                  # GPS RTK plugin
+      - gps_status               # Mavlink GPS status plugin
+      - guided_target            # Guided target plugin
+      - hil                      # Hil plugin
+      - landing_target           # Landing Target plugin
+      - log_transfer             # Log Transfer plugin
+      - mag_calibration_status   # MagCalStatus plugin
+      - mocap_pose_estimate      # MocapPoseEstimate plugin
+      - mount_control            # Mount Control plugin
+      - obstacle_distance        # Obstacle distance plugin
+      - odometry                 # Odometry plugin
+      - onboard_computer_status  # Onboard Computer Status plugin
+      - optical_flow             # Optical Flow custom plugin
+      - play_tune                # Play Tune service
+      - px4flow                  # PX4 Optical Flow plugin
+      - rangefinder              # Ardupilot Rangefinder plugin
+      - tdr_radio                # 3DR Radio plugin
+      - terrain                  # Terrain height plugin
+      - trajectory               # Trajectory plugin
+      - tunnel                   # Tunnel plugin
+      - vfr_hud                  # VFR HUD plugin
+      - vibration                # Vibration plugin
+      - vision_pose              # Vision pose estimate plugin
+      - vision_speed             # Vision speed estimate plugin
+      - wheel_odometry           # Wheel odometry plugin
+
+      # Enabled common plugins:
+      # - command                 # Command services
+      # - global_position         # Global position data
+      # - local_position            # Local position data
+      # - setpoint_position       # Position setpoints
+      # - setpoint_velocity       # Velocity setpoints
+      # - setpoint_accel          # Acceleration setpoints
+      # - setpoint_attitude       # Attitude setpoints
+      # - sys_status              # System status information
+      # - sys_time                # System time synchronization

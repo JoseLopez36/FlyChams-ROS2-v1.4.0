@@ -74,8 +74,6 @@ install(TARGETS airsim_ros
   LIBRARY
   DESTINATION lib)
 
-install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
-
 ament_export_dependencies(rclcpp)
 ament_export_dependencies(nav_msgs)
 ament_export_dependencies(std_msgs)

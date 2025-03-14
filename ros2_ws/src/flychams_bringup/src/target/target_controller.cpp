@@ -68,7 +68,7 @@ namespace flychams::bringup
 
         // Create target info message
         TargetInfoMsg msg;
-        msg.header = RosUtils::createHeader(node_, tf_tools_->getWorldFrame());
+        msg.header = RosUtils::createHeader(node_, tf_tools_->getGlobalFrame());
         msg.position.x = point.x;
         msg.position.y = point.y;
         msg.position.z = point.z;

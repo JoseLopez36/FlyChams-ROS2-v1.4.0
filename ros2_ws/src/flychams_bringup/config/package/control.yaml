@@ -1,41 +1,8 @@
 /flychams/**:
   ros__parameters:
-    agent_control:
+    uav_control:
       # Update rates (Hz)
       control_update_rate: 200.0
-      # Goal tolerance (m)
-      goal_tolerance: 0.2
-      # Proportional gain
-      kp_x: 1.2
-      kp_y: 1.2
-      kp_z: 1.5
-      # Integral gain
-      ki_x: 0.01
-      ki_y: 0.01
-      ki_z: 0.02 
-      # Derivative gain
-      kd_x: 0.4
-      kd_y: 0.4
-      kd_z: 0.5 
-      # Velocity limits (m/s)
-      max_v_x: 3.0
-      max_v_y: 3.0
-      max_v_z: 2.0
-      # Integral limits (anti-windup)
-      i_max_x: 0.5
-      i_max_y: 0.5
-      i_max_z: 0.3
-      
-      # Properties:
-        # Symmetric gains for X and Y axes 
-        # Higher gains for z-axis (needs more authority)
-        # Conservative I gains to prevent windup
-        # Moderate D gains to provide adequate damping
-      # Tuning:
-        # 1. Start with P gain only, increase until slight oscillations occur, then back off ~20%
-        # 2. If oscillations persist, add D gain
-        # 3. If steady-state error remains, add I gain
-        # Note: Always test in position hold first before attempting trajectories
 
     head_control:
       # Update rates (Hz)

@@ -5,7 +5,6 @@
     agent_topics:
       registration: "/flychams/agent_registration"
       odom: "/airsim/AGENTID/odom"
-      camera_info_array: "/airsim/AGENTID/camera_info_array"
       goal: "/flychams/AGENTID/goal"
       info: "/flychams/AGENTID/info"
       tracking_goal: "/flychams/AGENTID/tracking_goal"

@@ -26,21 +26,16 @@ namespace flychams::core
         // Agent frame patterns
         struct AgentFrames
         {
-            std::string local_pattern_;
-            std::string body_pattern_;
-        };
-        // Head frame patterns
-        struct HeadFrames
-        {
-            std::string body_pattern_;
-            std::string optical_pattern_;
+            std::string agent_local_pattern_;
+            std::string agent_body_pattern_;
+            std::string camera_body_pattern_;
+            std::string camera_optical_pattern_;
         };
 
     private: // Data
         // Frames
-        std::string world_frame_;
+        std::string global_frame_;
         AgentFrames agent_frames_;
-        HeadFrames head_frames_;
 
         // ROS components
         NodePtr node_;
@@ -56,15 +51,13 @@ namespace flychams::core
             tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
             // Get general frames
-            world_frame_ = RosUtils::getParameter<std::string>(node_, "global_frames.world");
+            global_frame_ = RosUtils::getParameter<std::string>(node_, "global_frame");
 
             // Get agent frames
-            agent_frames_.local_pattern_ = RosUtils::getParameter<std::string>(node_, "agent_frames.local");
-            agent_frames_.body_pattern_ = RosUtils::getParameter<std::string>(node_, "agent_frames.body");
-
-            // Get head frames
-            head_frames_.body_pattern_ = RosUtils::getParameter<std::string>(node_, "head_frames.body");
-            head_frames_.optical_pattern_ = RosUtils::getParameter<std::string>(node_, "head_frames.optical");
+            agent_frames_.agent_local_pattern_ = RosUtils::getParameter<std::string>(node_, "agent_frames.agent_local");
+            agent_frames_.agent_body_pattern_ = RosUtils::getParameter<std::string>(node_, "agent_frames.agent_body");
+            agent_frames_.camera_body_pattern_ = RosUtils::getParameter<std::string>(node_, "agent_frames.camera_body");
+            agent_frames_.camera_optical_pattern_ = RosUtils::getParameter<std::string>(node_, "agent_frames.camera_optical");
         }
 
         ~TfTools()
@@ -82,30 +75,30 @@ namespace flychams::core
         }
 
     public: // Frame getters
-        std::string getWorldFrame()
+        std::string getGlobalFrame()
         {
-            return world_frame_;
+            return global_frame_;
         }
 
         std::string getAgentLocalFrame(const std::string& agent_id)
         {
-            return RosUtils::replacePlaceholder(agent_frames_.local_pattern_, "AGENTID", agent_id);
+            return RosUtils::replacePlaceholder(agent_frames_.agent_local_pattern_, "AGENTID", agent_id);
         }
 
         std::string getAgentBodyFrame(const std::string& agent_id)
         {
-            return RosUtils::replacePlaceholder(agent_frames_.body_pattern_, "AGENTID", agent_id);
+            return RosUtils::replacePlaceholder(agent_frames_.agent_body_pattern_, "AGENTID", agent_id);
         }
 
-        std::string getHeadBodyFrame(const std::string& agent_id, const std::string& head_id)
+        std::string getCameraBodyFrame(const std::string& agent_id, const std::string& head_id)
         {
-            std::string pattern = RosUtils::replacePlaceholder(head_frames_.body_pattern_, "AGENTID", agent_id);
+            std::string pattern = RosUtils::replacePlaceholder(agent_frames_.camera_body_pattern_, "AGENTID", agent_id);
             return RosUtils::replacePlaceholder(pattern, "HEADID", head_id);
         }
 
-        std::string getHeadOpticalFrame(const std::string& agent_id, const std::string& head_id)
+        std::string getCameraOpticalFrame(const std::string& agent_id, const std::string& head_id)
         {
-            std::string pattern = RosUtils::replacePlaceholder(head_frames_.optical_pattern_, "AGENTID", agent_id);
+            std::string pattern = RosUtils::replacePlaceholder(agent_frames_.camera_optical_pattern_, "AGENTID", agent_id);
             return RosUtils::replacePlaceholder(pattern, "HEADID", head_id);
         }
 

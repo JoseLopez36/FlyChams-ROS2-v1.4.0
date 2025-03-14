@@ -12,19 +12,13 @@ namespace flychams::core
     // ════════════════════════════════════════════════════════════════════════════
 
     AirsimTools::AirsimTools(NodePtr node)
-        : node_(node), is_connected_(false), is_running_(false)
+        : node_(node)
     {
         // Initialize ROS components
-        // AirSim status
-        airsim_status_sub_ = node_->create_subscription<airsim_interfaces::msg::Status>("/airsim/status", 1, std::bind(&AirsimTools::status_cb, this, _1));
         // Global commands
         reset_client_ = node_->create_client<Reset>("/airsim/reset");
         run_client_ = node_->create_client<Run>("/airsim/run");
         pause_client_ = node_->create_client<Pause>("/airsim/pause");
-        // Vehicle commands
-        takeoff_group_client_ = node_->create_client<TakeoffGroup>("/airsim/group_of_robots/takeoff");
-        land_group_client_ = node_->create_client<LandGroup>("/airsim/group_of_robots/land");
-        hover_group_client_ = node_->create_client<HoverGroup>("/airsim/group_of_robots/hover");
         // Window commands
         window_image_cmd_group_pub_ = node_->create_publisher<WindowImageCmdGroup>("/airsim/group_of_windows/image_cmd", 10);
         window_rectangle_cmd_pub_ = node_->create_publisher<WindowRectangleCmd>("/airsim/group_of_windows/rectangle_cmd", 10);
@@ -43,19 +37,13 @@ namespace flychams::core
 
     void AirsimTools::shutdown()
     {
-        // Destroy status subscriber
-        airsim_status_sub_.reset();
         // Destroy clients
         reset_client_.reset();
         run_client_.reset();
         pause_client_.reset();
-        takeoff_group_client_.reset();
-        land_group_client_.reset();
-        hover_group_client_.reset();
         add_target_group_client_.reset();
         add_cluster_group_client_.reset();
-        // Destroy publishers
-        vel_cmd_pub_map_.clear();
+        // Destroy publisher
         gimbal_angle_cmd_pub_map_.clear();
         camera_fov_cmd_pub_map_.clear();
         window_image_cmd_group_pub_.reset();
@@ -74,7 +62,6 @@ namespace flychams::core
     void AirsimTools::addVehicle(const ID& vehicle_id)
     {
         // Create publishers
-        vel_cmd_pub_map_[vehicle_id] = node_->create_publisher<VelCmd>("/airsim/" + vehicle_id + "/vel_cmd", 10);
         gimbal_angle_cmd_pub_map_[vehicle_id] = node_->create_publisher<GimbalAngleCmd>("/airsim/" + vehicle_id + "/gimbal_angle_cmd", 10);
         camera_fov_cmd_pub_map_[vehicle_id] = node_->create_publisher<CameraFovCmd>("/airsim/" + vehicle_id + "/camera_fov_cmd", 10);
     }
@@ -82,65 +69,12 @@ namespace flychams::core
     void AirsimTools::removeVehicle(const ID& vehicle_id)
     {
         // Destroy publishers
-        vel_cmd_pub_map_.erase(vehicle_id);
         gimbal_angle_cmd_pub_map_.erase(vehicle_id);
         camera_fov_cmd_pub_map_.erase(vehicle_id);
     }
 
     // ════════════════════════════════════════════════════════════════════════════
-    // STATUS: Status methods
-    // ════════════════════════════════════════════════════════════════════════════
-
-    void AirsimTools::status_cb(const airsim_interfaces::msg::Status::SharedPtr msg)
-    {
-        is_connected_.store(msg->is_connected);
-        is_running_.store(msg->is_running);
-    }
-
-    void AirsimTools::waitConnection() const
-    {
-        // Wait for AirSim to be connected
-        RCLCPP_INFO(node_->get_logger(), "Waiting for AirSim connection...");
-        while (!isConnected())
-        {
-            if (!rclcpp::ok())
-            {
-                RCLCPP_ERROR(node_->get_logger(), "Waiting for AirSim connection interrupted. Shutting down node");
-                rclcpp::shutdown();
-                return;
-            }
-            std::this_thread::sleep_for(200ms);
-        }
-        RCLCPP_INFO(node_->get_logger(), "AirSim connected!");
-    }
-
-    bool AirsimTools::isConnected() const
-    {
-        return is_connected_.load();
-    }
-
-    void AirsimTools::waitRunning() const
-    {
-        // Wait for AirSim to be running
-        while (!isRunning())
-        {
-            if (!rclcpp::ok())
-            {
-                RCLCPP_ERROR(node_->get_logger(), "Waiting for AirSim running interrupted. Shutting down node");
-                rclcpp::shutdown();
-                return;
-            }
-            std::this_thread::sleep_for(200ms);
-        }
-    }
-
-    bool AirsimTools::isRunning() const
-    {
-        return is_running_.load();
-    }
-
-    // ════════════════════════════════════════════════════════════════════════════
-    // GLOBAL CONTROL: Service-based control methods
+    // GLOBAL CONTROL
     // ════════════════════════════════════════════════════════════════════════════
 
     bool AirsimTools::resetSimulation()
@@ -171,56 +105,8 @@ namespace flychams::core
     }
 
     // ════════════════════════════════════════════════════════════════════════════
-    // VEHICLE CONTROL: Service-based control methods
+    // VEHICLE CONTROL
     // ════════════════════════════════════════════════════════════════════════════
-
-    bool AirsimTools::takeoffVehicleGroup(const IDs& vehicle_ids)
-    {
-        // Create request
-        auto request = std::make_shared<TakeoffGroup::Request>();
-        request->vehicle_names = vehicle_ids;
-
-        // Send request and wait for response
-        return RosUtils::sendRequestSync<TakeoffGroup>(node_, takeoff_group_client_, request, 1000);
-    }
-
-    bool AirsimTools::landVehicleGroup(const IDs& vehicle_ids)
-    {
-        // Create request
-        auto request = std::make_shared<LandGroup::Request>();
-        request->vehicle_names = vehicle_ids;
-
-        // Send request and wait for response
-        return RosUtils::sendRequestSync<LandGroup>(node_, land_group_client_, request, 1000);
-    }
-
-    bool AirsimTools::hoverVehicleGroup(const IDs& vehicle_ids)
-    {
-        // Create request
-        auto request = std::make_shared<HoverGroup::Request>();
-        request->vehicle_names = vehicle_ids;
-
-        // Send request and wait for response
-        return RosUtils::sendRequestSync<HoverGroup>(node_, hover_group_client_, request, 1000);
-    }
-
-    // ════════════════════════════════════════════════════════════════════════════
-    // VEHICLE CONTROL: Publisher-based control methods
-    // ════════════════════════════════════════════════════════════════════════════
-
-    void AirsimTools::setVehicleVelocity(const ID& vehicle_id, const float& vel_cmd_x, const float& vel_cmd_y, const float& vel_cmd_z, const float& vel_cmd_dt, const std::string& frame_id)
-    {
-        // Create message
-        VelCmd msg;
-        msg.header = RosUtils::createHeader(node_, frame_id);
-        msg.vel_cmd_x = vel_cmd_x;
-        msg.vel_cmd_y = vel_cmd_y;
-        msg.vel_cmd_z = vel_cmd_z;
-        msg.vel_cmd_dt = vel_cmd_dt;
-
-        // Publish message
-        vel_cmd_pub_map_[vehicle_id]->publish(msg);
-    }
 
     void AirsimTools::setGimbalAngles(const ID& vehicle_id, const IDs& camera_ids, const std::vector<QuaternionMsg>& target_quats, const std::string& frame_id)
     {
@@ -247,7 +133,7 @@ namespace flychams::core
     }
 
     // ════════════════════════════════════════════════════════════════════════════
-    // WINDOW CONTROL: Service-based control methods
+    // WINDOW CONTROL
     // ════════════════════════════════════════════════════════════════════════════
 
     void AirsimTools::setWindowImageGroup(const IDs& window_ids, const IDs& vehicle_ids, const IDs& camera_ids, const std::vector<int>& crop_x, const std::vector<int>& crop_y, const std::vector<int>& crop_w, const std::vector<int>& crop_h)
@@ -302,7 +188,7 @@ namespace flychams::core
     }
 
     // ════════════════════════════════════════════════════════════════════════════
-    // TRACKING CONTROL: Service-based control methods
+    // TRACKING CONTROL
     // ════════════════════════════════════════════════════════════════════════════
 
     bool AirsimTools::addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors)
@@ -351,7 +237,7 @@ namespace flychams::core
     }
 
     // ════════════════════════════════════════════════════════════════════════════
-    // OBJECT CONTROL: Publisher-based control methods
+    // OBJECT CONTROL
     // ════════════════════════════════════════════════════════════════════════════
 
     void AirsimTools::updateTargetGroup(const IDs& target_ids, const std::vector<PointMsg>& positions)

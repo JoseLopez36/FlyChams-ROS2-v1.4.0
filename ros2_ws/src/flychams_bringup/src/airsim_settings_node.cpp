@@ -71,6 +71,8 @@ int main(int argc, char** argv)
     // Create and initialize node
     auto node = std::make_shared<AirsimSettingsNode>("airsim_settings_node", options);
     node->init();
+    // Spin node
+    rclcpp::spin(node);
     // Shutdown
     rclcpp::shutdown();
     return 0;

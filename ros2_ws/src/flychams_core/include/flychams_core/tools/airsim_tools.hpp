@@ -8,17 +8,11 @@
 #include "flychams_core/tools/external_tools.hpp"
 
 // AirSim interfaces includes
-// Status message
-#include <airsim_interfaces/msg/status.hpp>
 // Global commands
 #include <airsim_interfaces/srv/reset.hpp>
 #include <airsim_interfaces/srv/run.hpp>
 #include <airsim_interfaces/srv/pause.hpp>
 // Vehicle commands
-#include <airsim_interfaces/srv/takeoff_group.hpp>
-#include <airsim_interfaces/srv/land_group.hpp>
-#include <airsim_interfaces/srv/hover_group.hpp>
-#include <airsim_interfaces/msg/vel_cmd.hpp>
 #include <airsim_interfaces/msg/gimbal_angle_cmd.hpp>
 #include <airsim_interfaces/msg/camera_fov_cmd.hpp>
 // Window commands
@@ -60,14 +54,9 @@ namespace flychams::core
         void shutdown() override;
 
     public: // Types
-        using StatusMsg = airsim_interfaces::msg::Status;
         using ResetSrv = airsim_interfaces::srv::Reset;
         using RunSrv = airsim_interfaces::srv::Run;
         using PauseSrv = airsim_interfaces::srv::Pause;
-        using TakeoffGroupSrv = airsim_interfaces::srv::TakeoffGroup;
-        using LandGroupSrv = airsim_interfaces::srv::LandGroup;
-        using HoverGroupSrv = airsim_interfaces::srv::HoverGroup;
-        using VelCmdMsg = airsim_interfaces::msg::VelCmd;
         using GimbalAngleCmdMsg = airsim_interfaces::msg::GimbalAngleCmd;
         using CameraFovCmdMsg = airsim_interfaces::msg::CameraFovCmd;
         using WindowImageCmdGroupMsg = airsim_interfaces::msg::WindowImageCmdGroup;
@@ -82,22 +71,12 @@ namespace flychams::core
         void addVehicle(const ID& vehicle_id);
         void removeVehicle(const ID& vehicle_id);
 
-    public: // Status methods
-        void waitConnection() const override;
-        bool isConnected() const override;
-        void waitRunning() const override;
-        bool isRunning() const override;
-
     public: // Global control methods
         bool resetSimulation() override;
         bool runSimulation() override;
         bool pauseSimulation() override;
 
     public: // Vehicle control methods
-        bool takeoffVehicleGroup(const IDs& vehicle_ids) override;
-        bool landVehicleGroup(const IDs& vehicle_ids) override;
-        bool hoverVehicleGroup(const IDs& vehicle_ids) override;
-        void setVehicleVelocity(const ID& vehicle_id, const float& vel_cmd_x, const float& vel_cmd_y, const float& vel_cmd_z, const float& vel_cmd_dt, const std::string& frame_id) override;
         void setGimbalAngles(const ID& vehicle_id, const IDs& camera_ids, const std::vector<QuaternionMsg>& target_quats, const std::string& frame_id) override;
         void setCameraFovs(const ID& vehicle_id, const IDs& camera_ids, const std::vector<float>& target_fovs, const std::string& frame_id) override;
 
@@ -168,20 +147,9 @@ namespace flychams::core
             return indices;
         }
 
-    private: // Data
-        // Simulation status
-        std::atomic<bool> is_connected_;
-        std::atomic<bool> is_running_;
-
-    private: // Callbacks
-        void status_cb(const airsim_interfaces::msg::Status::SharedPtr msg);
-
     private: // ROS components
         // Node pointer
         NodePtr node_;
-
-        // Status subscriber
-        SubscriberPtr<StatusMsg> airsim_status_sub_;
 
         // Global commands
         ClientPtr<ResetSrv> reset_client_;
@@ -189,10 +157,6 @@ namespace flychams::core
         ClientPtr<PauseSrv> pause_client_;
 
         // Vehicle commands
-        ClientPtr<TakeoffGroupSrv> takeoff_group_client_;
-        ClientPtr<LandGroupSrv> land_group_client_;
-        ClientPtr<HoverGroupSrv> hover_group_client_;
-        std::unordered_map<ID, PublisherPtr<VelCmdMsg>> vel_cmd_pub_map_;
         std::unordered_map<ID, PublisherPtr<GimbalAngleCmdMsg>> gimbal_angle_cmd_pub_map_;
         std::unordered_map<ID, PublisherPtr<CameraFovCmdMsg>> camera_fov_cmd_pub_map_;
 

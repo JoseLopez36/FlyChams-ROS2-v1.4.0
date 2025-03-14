@@ -154,7 +154,6 @@ namespace airsim_wrapper
         // ROS params
         nh_->get_parameter_or("global_frame_id", global_frame_id_, global_frame_id_);
         nh_->get_parameter_or("local_frame_id", local_frame_id_, local_frame_id_);
-        nh_->get_parameter_or("odom_frame_id", odom_frame_id_, odom_frame_id_);
         nh_->get_parameter_or("camera_body_frame_id", camera_body_frame_id_, camera_body_frame_id_);
         nh_->get_parameter_or("camera_optical_frame_id", camera_optical_frame_id_, camera_optical_frame_id_);
 
@@ -198,7 +197,6 @@ namespace airsim_wrapper
             vehicle_ros->vehicle_name = vehicle_name;
             vehicle_ros->vehicle_setting = *vehicle_setting;
             vehicle_ros->local_frame_id = vehicle_name + "/" + local_frame_id_;
-            vehicle_ros->odom_frame_id = vehicle_name + "/" + odom_frame_id_;
             initialize_vehicle_tf(vehicle_ros.get(), *vehicle_setting);
 
             // Initialize vehicle subscribers
@@ -638,22 +636,6 @@ namespace airsim_wrapper
     }
 
     // ════════════════════════════════════════════════════════════════════════════
-    // UPDATE FUNCTIONS
-    // ════════════════════════════════════════════════════════════════════════════
-
-    void AirsimWrapper::update_camera_info(CameraROS* camera_ros, const float& fov)
-    {
-        // Calculate focal length based on FoV (rad)
-        float f_x = (camera_ros->camera_info.width / 2.0f) / tan(fov / 2.0f);
-        float f_y = f_x; // Assuming square pixels
-
-        // Update camera intrinsic matrix K
-        auto& k = camera_ros->camera_info.k;
-        k[0] = f_x; // fx
-        k[4] = f_y; // fy
-    }
-
-    // ════════════════════════════════════════════════════════════════════════════
     // PUBLISH FUNCTIONS
     // ════════════════════════════════════════════════════════════════════════════
 
@@ -683,43 +665,9 @@ namespace airsim_wrapper
         return airsim_client_state_->simIsPaused();
     }
 
-    msr::airlib::MultirotorState AirsimWrapper::client_get_multirotor_state(const std::string& vehicle_name)
-    {
-        return airsim_client_state_->getMultirotorState(vehicle_name);
-    }
-
     msr::airlib::CameraInfo AirsimWrapper::client_get_camera_info(const std::string& vehicle_name, const std::string& camera_name)
     {
         return airsim_client_state_->simGetCameraInfo(camera_name, vehicle_name);
-    }
-
-    msr::airlib::Vector2r AirsimWrapper::client_get_camera_fov(const std::string& vehicle_name, const std::string& camera_name)
-    {
-        const std::string& fov_string = airsim_client_state_->simGetCurrentFieldOfView(camera_name, vehicle_name);
-
-        // Extract horizontal and vertical FOV values from the string
-        float horizontal_fov = 0.0f;
-        float vertical_fov = 0.0f;
-
-        // Parse the FOV string
-        size_t h_pos = fov_string.find("Horizontal Field Of View: ");
-        size_t v_pos = fov_string.find("Vertical Field Of View: ");
-
-        if (h_pos != std::string::npos) {
-            size_t h_start = h_pos + 26; // Length of "Horizontal Field Of View: "
-            size_t h_end = fov_string.find(";", h_start);
-            if (h_end != std::string::npos) {
-                horizontal_fov = std::stof(fov_string.substr(h_start, h_end - h_start));
-            }
-        }
-
-        if (v_pos != std::string::npos) {
-            size_t v_start = v_pos + 24; // Length of "Vertical Field Of View: "
-            size_t v_end = fov_string.length();
-            vertical_fov = std::stof(fov_string.substr(v_start, v_end - v_start));
-        }
-
-        return msr::airlib::Vector2r(horizontal_fov, vertical_fov);
     }
 
     void AirsimWrapper::client_reset()
@@ -767,12 +715,6 @@ namespace airsim_wrapper
     void AirsimWrapper::client_hover(const std::string& vehicle_name)
     {
         airsim_client_control_->hoverAsync(vehicle_name);
-    }
-
-    void AirsimWrapper::client_move_by_velocity(const float& vx, const float& vy, const float& vz, const float& dt, const std::string& vehicle_name)
-    {
-        airsim_client_control_->moveByVelocityAsync(vx, -vy, -vz, dt,
-            msr::airlib::DrivetrainType::MaxDegreeOfFreedom, msr::airlib::YawMode(), vehicle_name);
     }
 
     void AirsimWrapper::client_set_camera_pose(const std::string& camera_name, const msr::airlib::Pose& pose, const std::string& vehicle_name)
@@ -847,11 +789,6 @@ namespace airsim_wrapper
     rclcpp::Time AirsimWrapper::get_sim_clock_time()
     {
         return ros_clock_.clock;
-    }
-
-    tf2::Quaternion AirsimWrapper::get_tf2_quat(const msr::airlib::Quaternionr& airlib_quat) const
-    {
-        return tf2::Quaternion(airlib_quat.x(), -airlib_quat.y(), -airlib_quat.z(), airlib_quat.w());
     }
 
     msr::airlib::Quaternionr AirsimWrapper::get_airlib_quat(const geometry_msgs::msg::Quaternion& geometry_msgs_quat) const

@@ -14,20 +14,13 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(sensor_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   # Global services and messages
   "srv/Reset.srv"
   "srv/Run.srv"
   "srv/Pause.srv"
-  "msg/Status.msg"
   # Vehicle services and messages
-  "srv/TakeoffGroup.srv"
-  "srv/LandGroup.srv"
-  "srv/HoverGroup.srv"
-  "msg/CameraInfoArray.msg"
-  "msg/VelCmd.msg"
   "msg/CameraFovCmd.msg"
   "msg/GimbalAngleCmd.msg"
   # Window services and messages
@@ -39,7 +32,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/AddClusterGroup.srv"
   "msg/UpdateTargetCmdGroup.msg"
   "msg/UpdateClusterCmdGroup.msg"
-  DEPENDENCIES std_msgs geometry_msgs sensor_msgs LIBRARY_NAME ${PROJECT_NAME}
+  DEPENDENCIES std_msgs geometry_msgs LIBRARY_NAME ${PROJECT_NAME}
 )
 
 ament_export_dependencies(rosidl_default_runtime)

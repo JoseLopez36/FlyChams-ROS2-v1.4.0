@@ -1,7 +1,8 @@
 #include "rclcpp/rclcpp.hpp"
 
 // Control includes
-#include "flychams_control/agent_control/agent_controller.hpp"
+#include "flychams_control/agent_control/uav_controller.hpp"
+#include "flychams_control/agent_control/head_controller.hpp"
 
 // Core includes
 #include "flychams_core/base/discoverer_node.hpp"
@@ -37,34 +38,47 @@ public: // Constructor/Destructor
     void onInit() override
     {
         // Initialize agent controllers
-        agent_controllers_.clear();
+        uav_controllers_.clear();
+        head_controllers_.clear();
     }
 
     void onShutdown() override
     {
         // Destroy agent controllers
-        agent_controllers_.clear();
+        uav_controllers_.clear();
+        head_controllers_.clear();
     }
 
 private: // Element management
     void onAddAgent(const ID& agent_id) override
     {
-        // Create agent controller
-        auto controller = std::make_shared<AgentController>(agent_id, node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
-        agent_controllers_.insert(std::make_pair(agent_id, controller));
+        // Create UAV controller
+        auto controller = std::make_shared<UAVController>(agent_id, node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
+        uav_controllers_.insert(std::make_pair(agent_id, controller));
 
-        RCLCPP_INFO(node_->get_logger(), "Agent controller created for agent %s", agent_id.c_str());
+        // Create head controller
+        auto controller = std::make_shared<HeadController>(agent_id, node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
+        head_controllers_.insert(std::make_pair(agent_id, controller));
+
+        RCLCPP_INFO(node_->get_logger(), "Agent controllers created for agent %s", agent_id.c_str());
     }
 
     void onRemoveAgent(const ID& agent_id) override
     {
-        // Destroy agent controller
-        agent_controllers_.erase(agent_id);
+        // Destroy UAV controller
+        uav_controllers_.erase(agent_id);
+
+        // Destroy head controller
+        head_controllers_.erase(agent_id);
+
+        RCLCPP_INFO(node_->get_logger(), "Agent controllers destroyed for agent %s", agent_id.c_str());
     }
 
 private: // Components
-    // Agent controllers
-    std::unordered_map<ID, AgentController::SharedPtr> agent_controllers_;
+    // UAV controllers
+    std::unordered_map<ID, UAVController::SharedPtr> uav_controllers_;
+    // Head controllers
+    std::unordered_map<ID, HeadController::SharedPtr> head_controllers_;
 };
 
 int main(int argc, char** argv)

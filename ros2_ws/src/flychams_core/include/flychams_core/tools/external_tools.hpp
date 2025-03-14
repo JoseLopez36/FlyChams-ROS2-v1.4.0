@@ -33,22 +33,12 @@ namespace flychams::core
         virtual void addVehicle(const ID& vehicle_id) = 0;
         virtual void removeVehicle(const ID& vehicle_id) = 0;
 
-    public: // Status methods (override)
-        virtual void waitConnection() const = 0;
-        virtual bool isConnected() const = 0;
-        virtual void waitRunning() const = 0;
-        virtual bool isRunning() const = 0;
-
     public: // Global control methods (override)
         virtual bool resetSimulation() = 0;
         virtual bool runSimulation() = 0;
         virtual bool pauseSimulation() = 0;
 
     public: // Vehicle control methods (override)
-        virtual bool takeoffVehicleGroup(const IDs& vehicle_ids) = 0;
-        virtual bool landVehicleGroup(const IDs& vehicle_ids) = 0;
-        virtual bool hoverVehicleGroup(const IDs& vehicle_ids) = 0;
-        virtual void setVehicleVelocity(const ID& vehicle_id, const float& vel_cmd_x, const float& vel_cmd_y, const float& vel_cmd_z, const float& vel_cmd_dt, const std::string& frame_id) = 0;
         virtual void setGimbalAngles(const ID& vehicle_id, const IDs& camera_ids, const std::vector<QuaternionMsg>& target_quats, const std::string& frame_id) = 0;
         virtual void setCameraFovs(const ID& vehicle_id, const IDs& camera_ids, const std::vector<float>& target_fovs, const std::string& frame_id) = 0;
 

@@ -25,10 +25,10 @@ namespace flychams::control
 	 * @date 2025-01-29
 	 * ════════════════════════════════════════════════════════════════
 	 */
-	class AgentController : public core::BaseModule
+	class UAVController : public core::BaseModule
 	{
 	public: // Constructor/Destructor
-		AgentController(const core::ID& agent_id, core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::ExternalTools::SharedPtr ext_tools, core::TopicTools::SharedPtr topic_tools, core::TfTools::SharedPtr tf_tools)
+		UAVController(const core::ID& agent_id, core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::ExternalTools::SharedPtr ext_tools, core::TopicTools::SharedPtr topic_tools, core::TfTools::SharedPtr tf_tools)
 			: BaseModule(node, config_tools, ext_tools, topic_tools, tf_tools), agent_id_(agent_id)
 		{
 			init();
@@ -39,57 +39,30 @@ namespace flychams::control
 		void onShutdown() override;
 
 	public: // Types
-		using SharedPtr = std::shared_ptr<AgentController>;
-		enum class State
-		{
-			Landed,         // Agent is landed
-			Takeoff, 		// Agent will takeoff 
-			Takingoff, 		// Agent is taking off
-			Hover,   		// Agent will hover
-			Hovering,       // Agent is hovering
-			MovingToGoal,   // Agent is moving to an assigned goal
-			Land,  		    // Agent will land
-			Landing         // Agent is landing
-		};
+		using SharedPtr = std::shared_ptr<UAVController>;
 
 	private: // Parameters
 		core::ID agent_id_;
-		float goal_tolerance_;
-		float vel_cmd_duration_;
 
 	private: // Data
-		// Agent state
-		State state_;
-		// Odom
-		core::Vector3r curr_pos_; 	// Current position (x, y, z)
-		core::Vector3r curr_vel_; 	// Current linear velocity (vx, vy, vz)
-		bool has_odom_;
-		// Goal
-		core::Vector3r target_pos_; // Target position (x, y, z)
+		// Position message
 		bool has_goal_;
-		// State, odom and goal mutex
-		std::mutex mutex_;
-		// PID controllers
-		PIDController pid_x_;
-		PIDController pid_y_;
-		PIDController pid_z_;
-		// Time data
-		core::Time prev_time_;
+		core::PoseStampedMsg local_position_msg_;
 
 	private: // Methods
 		// Callbacks
-		void odomCallback(const core::OdometryMsg::SharedPtr msg);
 		void goalCallback(const core::AgentGoalMsg::SharedPtr msg);
-		// Update
-		void updateControl();
-		// Helper methods
-		core::Vector3r computeVelocityCommand(const core::Vector3r& curr_pos, const core::Vector3r& target_pos);
+		// Update control
+		void update();
 
 	private:
-		// Subscribers
-		core::SubscriberPtr<core::OdometryMsg> odom_sub_;
+		// Callback group
+		core::CallbackGroupPtr callback_group_;
+		// Subscriber
 		core::SubscriberPtr<core::AgentGoalMsg> goal_sub_;
-		// Timers
+		// Publisher
+		core::PublisherPtr<core::PoseStampedMsg> local_position_pub_;
+		// Timer
 		core::TimerPtr control_timer_;
 	};
 

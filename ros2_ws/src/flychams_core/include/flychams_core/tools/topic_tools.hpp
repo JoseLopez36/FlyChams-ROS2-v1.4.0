@@ -32,7 +32,6 @@ namespace flychams::core
         {
             std::string registration;
             std::string odom_pattern;
-            std::string camera_info_array_pattern;
             std::string goal_pattern;
             std::string info_pattern;
             std::string tracking_goal_pattern;
@@ -76,7 +75,6 @@ namespace flychams::core
             // Get agent topics
             agent_topics_.registration = RosUtils::getParameter<std::string>(node_, "agent_topics.registration");
             agent_topics_.odom_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.odom");
-            agent_topics_.camera_info_array_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.camera_info_array");
             agent_topics_.goal_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.goal");
             agent_topics_.info_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.info");
             agent_topics_.tracking_goal_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.tracking_goal");
@@ -119,10 +117,6 @@ namespace flychams::core
         std::string getAgentOdomTopic(const ID& agent_id)
         {
             return RosUtils::replacePlaceholder(agent_topics_.odom_pattern, "AGENTID", agent_id);
-        }
-        std::string getAgentCameraInfoArrayTopic(const ID& agent_id)
-        {
-            return RosUtils::replacePlaceholder(agent_topics_.camera_info_array_pattern, "AGENTID", agent_id);
         }
         std::string getAgentGoalTopic(const ID& agent_id)
         {
@@ -252,10 +246,6 @@ namespace flychams::core
         SubscriberPtr<OdometryMsg> createAgentOdomSubscriber(const ID& agent_id, const std::function<void(const OdometryMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
             return node_->create_subscription<OdometryMsg>(getAgentOdomTopic(agent_id), 10, callback, options);
-        }
-        SubscriberPtr<CameraInfoArrayMsg> createAgentCameraInfoArraySubscriber(const ID& agent_id, const std::function<void(const CameraInfoArrayMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
-        {
-            return node_->create_subscription<CameraInfoArrayMsg>(getAgentCameraInfoArrayTopic(agent_id), 10, callback, options);
         }
         SubscriberPtr<AgentGoalMsg> createAgentGoalSubscriber(const ID& agent_id, const std::function<void(const AgentGoalMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {

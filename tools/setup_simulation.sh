@@ -14,7 +14,7 @@ fi
 
 # Launch FlyChams with AirSim
 echo "Setting up FlyingChameleons simulation..."
-ros2 launch flychams_bringup flychams_setup.launch.py &
+ros2 launch flychams_bringup setup.launch.py &
 FLYCHAMS_PID=$!
 
 # Print helpful information
