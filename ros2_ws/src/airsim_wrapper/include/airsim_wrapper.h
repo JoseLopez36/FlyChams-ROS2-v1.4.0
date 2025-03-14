@@ -128,8 +128,6 @@ namespace airsim_wrapper
             virtual ~CameraROS() = default;
             std::string camera_name;
 
-            // Camera data
-            sensor_msgs::msg::CameraInfo camera_info;
             // Camera setting
             CameraSetting camera_setting;
             // Transforms
@@ -149,25 +147,17 @@ namespace airsim_wrapper
             virtual ~VehicleROS() = default;
             std::string vehicle_name;
 
-            // Vehicle data
-            nav_msgs::msg::Odometry curr_odom;
             // Vehicle setting
             VehicleSetting vehicle_setting;
             // Camera data
             std::unordered_map<std::string, std::unique_ptr<CameraROS>> camera_map;
-            // Publisher
-            rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub;
-            rclcpp::Publisher<airsim_interfaces::msg::CameraInfoArray>::SharedPtr camera_info_array_pub;
-            // Subscriber
-            rclcpp::Subscription<airsim_interfaces::msg::VelCmd>::SharedPtr vel_cmd_sub;
+            // Subscribers
             rclcpp::Subscription<airsim_interfaces::msg::GimbalAngleCmd>::SharedPtr gimbal_angle_cmd_sub;
             rclcpp::Subscription<airsim_interfaces::msg::CameraFovCmd>::SharedPtr camera_fov_cmd_sub;
             // Transforms
-            geometry_msgs::msg::TransformStamped vehicle_static_tf_msg;
-            geometry_msgs::msg::TransformStamped odom_tf_msg;
+            geometry_msgs::msg::TransformStamped local_static_tf_msg;
             // Frame IDs
-            std::string vehicle_frame_id;
-            std::string odom_frame_id;
+            std::string local_frame_id;
         };
 
     // ════════════════════════════════════════════════════════════════
@@ -279,8 +269,6 @@ namespace airsim_wrapper
         std::vector<std::vector<float>> get_airlib_colors(const std::vector<std_msgs::msg::ColorRGBA>& std_msgs_colors) const;
         geometry_msgs::msg::Transform get_transform_msg_from_airsim(const msr::airlib::Vector3r& position, const msr::airlib::AirSimSettings::Rotation& rotation);
         geometry_msgs::msg::Transform get_transform_msg_from_airsim(const msr::airlib::Vector3r& position, const msr::airlib::Quaternionr& quaternion);
-        geometry_msgs::msg::Pose get_pose_msg_from_airsim(const msr::airlib::Vector3r& position, const msr::airlib::AirSimSettings::Rotation& rotation);
-        geometry_msgs::msg::Pose get_pose_msg_from_airsim(const msr::airlib::Vector3r& position, const msr::airlib::Quaternionr& quaternion);
 
     // ════════════════════════════════════════════════════════════════
     // PRIVATE: ROS Components
@@ -319,11 +307,8 @@ namespace airsim_wrapper
     private:
         // Settings and configuration
         AirSimSettingsParser airsim_settings_parser_;
-        static const std::unordered_map<int, std::string> image_type_int_to_string_map_;
-        bool is_vulkan_;
         std::string host_ip_;
         uint16_t host_port_;
-        bool enable_api_control_;
         bool enable_world_plot_;
         double update_airsim_state_every_n_sec_;
         double update_sim_clock_every_n_sec_;
@@ -346,10 +331,11 @@ namespace airsim_wrapper
         std::shared_ptr<rclcpp::CallbackGroup> cb_tracking_;
 
         // TF components
-        const std::string AIRSIM_FRAME_ID = "world";
-        std::string world_frame_id_ = AIRSIM_FRAME_ID;
-        const std::string AIRSIM_ODOM_FRAME_ID = "odom";
-        std::string odom_frame_id_ = AIRSIM_ODOM_FRAME_ID;
+        std::string global_frame_id_ = "world";
+        std::string local_frame_id_ = "local";
+        std::string odom_frame_id_ = "odom";
+        std::string camera_body_frame_id_ = "body";
+        std::string camera_optical_frame_id_ = "optical";
         std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
         std::shared_ptr<tf2_ros::StaticTransformBroadcaster> static_tf_pub_;
 
@@ -364,16 +350,6 @@ namespace airsim_wrapper
         bool publish_clock_;
         std::atomic<bool> is_connected_;
         std::atomic<bool> is_running_;
-
-        // Constants
-        static constexpr char CAM_YML_NAME[] = "camera_name";
-        static constexpr char WIDTH_YML_NAME[] = "image_width";
-        static constexpr char HEIGHT_YML_NAME[] = "image_height";
-        static constexpr char K_YML_NAME[] = "camera_matrix";
-        static constexpr char D_YML_NAME[] = "distortion_coefficients";
-        static constexpr char R_YML_NAME[] = "rectification_matrix";
-        static constexpr char P_YML_NAME[] = "projection_matrix";
-        static constexpr char DMODEL_YML_NAME[] = "distortion_model";
     };
 
 } // namespace airsim_wrapper

@@ -19,8 +19,6 @@ namespace airsim_wrapper
         , airsim_client_tracking_(nullptr)
 
         , nh_(nh)
-        , is_connected_(false)
-        , is_running_(false)
     {
         ros_clock_.clock = rclcpp::Time(0);
 
@@ -34,37 +32,28 @@ namespace airsim_wrapper
         tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(nh_);
         static_tf_pub_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(nh_);
 
-        // Initialize AirSim clients0
+        // Initialize AirSim clients
         RCLCPP_INFO(nh_->get_logger(), "Initializing AirSim clients...");
-        initialize_airsim();
-
-        // Post-initialize AirSim
         try
         {
-            // Initialize sim clock
-            ros_clock_.clock = client_get_timestamp();
-
-            // Pause and reset simulation
-            client_pause(true);
-            client_reset();
+            initialize_airsim();
         }
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();
             RCLCPP_ERROR(nh_->get_logger(), "Exception raised by the API:\n%s", msg.c_str());
-            ros_clock_.clock = rclcpp::Time(0);
+            rclcpp::shutdown();
+            return;
         }
 
         // Initialize ROS data and communications
         initialize_ros();
 
-        // Enable control of all vehicles
+        // Initialize simulation state (UAVs armed in the air, windows emptied, no targets or clusters)
         try
         {
-            if (enable_api_control_)
-            {
-                RCLCPP_INFO(nh_->get_logger(), "Enabling control of all vehicles...");
-                client_enable_control();
-            }
+            // Enable control of all vehicles
+            RCLCPP_INFO(nh_->get_logger(), "Enabling control of all vehicles...");
+            client_enable_control();
 
             // Continue simulation for takeoff
             client_pause(false);
@@ -85,9 +74,6 @@ namespace airsim_wrapper
             // Remove all targets and clusters from previous runs
             client_remove_all_targets();
             client_remove_all_clusters();
-
-            // Pause simulation again
-            client_pause(true);
         }
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();
@@ -96,21 +82,14 @@ namespace airsim_wrapper
             return;
         }
 
-        // Run simulation
-        client_pause(false);
-
         // Publish AirSim status
         RCLCPP_WARN(nh_->get_logger(), "AirsimWrapper successfully initialized!");
-        is_connected_.store(true);
-        is_running_.store(true);
 
         // Create timers
         nh_->get_parameter("update_airsim_state_every_n_sec", update_airsim_state_every_n_sec_);
         airsim_state_update_timer_ = nh_->create_wall_timer(std::chrono::duration<double>(update_airsim_state_every_n_sec_), std::bind(&AirsimWrapper::drone_state_timer_cb, this), cb_state_);
         nh_->get_parameter("update_sim_clock_every_n_sec", update_sim_clock_every_n_sec_);
         sim_clock_update_timer_ = nh_->create_wall_timer(std::chrono::duration<double>(update_sim_clock_every_n_sec_), std::bind(&AirsimWrapper::clock_timer_cb, this), cb_state_);
-        nh_->get_parameter("update_airsim_status_every_n_sec", update_airsim_status_every_n_sec_);
-        airsim_status_update_timer_ = nh_->create_wall_timer(std::chrono::duration<double>(update_airsim_status_every_n_sec_), std::bind(&AirsimWrapper::status_timer_cb, this), cb_state_);
     }
 
     AirsimWrapper::~AirsimWrapper()
@@ -121,11 +100,9 @@ namespace airsim_wrapper
 
     void AirsimWrapper::shutdown()
     {
-        is_running_.store(false);
         // Destroy timers
         airsim_state_update_timer_.reset();
         sim_clock_update_timer_.reset();
-        airsim_status_update_timer_.reset();
     }
 
     // ════════════════════════════════════════════════════════════════════════════
@@ -163,15 +140,23 @@ namespace airsim_wrapper
         {
             future.get();
         }
+
+        // Initialize simulation clock
+        ros_clock_.clock = client_get_timestamp();
+
+        // Pause and reset simulation as a starting state
+        client_pause(true);
+        client_reset();
     }
 
     void AirsimWrapper::initialize_ros()
     {
         // ROS params
-        nh_->get_parameter("is_vulkan", is_vulkan_);
-        nh_->get_parameter("publish_clock", publish_clock_);
-        nh_->get_parameter_or("world_frame_id", world_frame_id_, world_frame_id_);
+        nh_->get_parameter_or("global_frame_id", global_frame_id_, global_frame_id_);
+        nh_->get_parameter_or("local_frame_id", local_frame_id_, local_frame_id_);
         nh_->get_parameter_or("odom_frame_id", odom_frame_id_, odom_frame_id_);
+        nh_->get_parameter_or("camera_body_frame_id", camera_body_frame_id_, camera_body_frame_id_);
+        nh_->get_parameter_or("camera_optical_frame_id", camera_optical_frame_id_, camera_optical_frame_id_);
 
         // Initialize callback groups
         cb_state_ = nh_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -185,6 +170,8 @@ namespace airsim_wrapper
 
     void AirsimWrapper::create_ros_comms_from_settings_json()
     {
+        RCLCPP_INFO(nh_->get_logger(), "Creating ROS communications...");
+
         // Get control subscriber options
         auto control_sub_options = rclcpp::SubscriptionOptions();
         control_sub_options.callback_group = cb_control_;
@@ -210,23 +197,11 @@ namespace airsim_wrapper
             std::unique_ptr<VehicleROS> vehicle_ros = std::unique_ptr<VehicleROS>(new VehicleROS());
             vehicle_ros->vehicle_name = vehicle_name;
             vehicle_ros->vehicle_setting = *vehicle_setting;
-            vehicle_ros->vehicle_frame_id = vehicle_name;
+            vehicle_ros->local_frame_id = vehicle_name + "/" + local_frame_id_;
             vehicle_ros->odom_frame_id = vehicle_name + "/" + odom_frame_id_;
-            initialize_vehicle_odom(vehicle_ros.get(), *vehicle_setting);
             initialize_vehicle_tf(vehicle_ros.get(), *vehicle_setting);
 
-            // Initialize vehicle odometry publisher
-            vehicle_ros->odom_pub = nh_->create_publisher<nav_msgs::msg::Odometry>(vehicle_name + "/" + odom_frame_id_, 10);
-            vehicle_ros->camera_info_array_pub = nh_->create_publisher<airsim_interfaces::msg::CameraInfoArray>(vehicle_name + "/camera_info_array", 10);
-
             // Initialize vehicle subscribers
-            vehicle_ros->vel_cmd_sub = nh_->create_subscription<airsim_interfaces::msg::VelCmd>(
-                vehicle_name + "/vel_cmd", 10,
-                [this, vehicle_name](const airsim_interfaces::msg::VelCmd::SharedPtr msg) {
-                    this->vel_cmd_cb(vehicle_name, msg);
-                },
-                control_sub_options
-            );
             vehicle_ros->gimbal_angle_cmd_sub = nh_->create_subscription<airsim_interfaces::msg::GimbalAngleCmd>(
                 vehicle_name + "/gimbal_angle_cmd", 10,
                 [this, vehicle_name](const airsim_interfaces::msg::GimbalAngleCmd::SharedPtr msg) {
@@ -253,9 +228,8 @@ namespace airsim_wrapper
                 auto camera_ros = std::unique_ptr<CameraROS>(new CameraROS());
                 camera_ros->camera_name = camera_name;
                 camera_ros->camera_setting = camera_setting;
-                camera_ros->body_frame_id = vehicle_name + "/" + camera_name + "/body";
-                camera_ros->optical_frame_id = vehicle_name + "/" + camera_name + "/optical";
-                initialize_camera_info(camera_ros.get(), camera_setting, camera_setting.capture_settings.at(0));
+                camera_ros->body_frame_id = vehicle_name + "/" + camera_name + "/" + camera_body_frame_id_;
+                camera_ros->optical_frame_id = vehicle_name + "/" + camera_name + "/" + camera_optical_frame_id_;
                 initialize_camera_tf(vehicle_ros.get(), camera_ros.get(), camera_setting);
 
                 // Add camera to vehicle's camera map
@@ -266,23 +240,12 @@ namespace airsim_wrapper
             vehicle_map_.emplace(vehicle_name, std::move(vehicle_ros));
         }
 
-        // Create ROS communications
-        RCLCPP_INFO(nh_->get_logger(), "Creating ROS communications...");
-        // Create airsim status publisher
-        airsim_status_pub_ = nh_->create_publisher<airsim_interfaces::msg::Status>("status", 1);
         // Create clock publisher
-        if (publish_clock_)
-        {
-            clock_pub_ = nh_->create_publisher<rosgraph_msgs::msg::Clock>("/clock", 1);
-        }
+        clock_pub_ = nh_->create_publisher<rosgraph_msgs::msg::Clock>("/clock", 1);
         // Create global control services
         reset_srvr_ = nh_->create_service<airsim_interfaces::srv::Reset>("reset", std::bind(&AirsimWrapper::reset_srv_cb, this, _1, _2));
         run_srvr_ = nh_->create_service<airsim_interfaces::srv::Run>("run", std::bind(&AirsimWrapper::run_srv_cb, this, _1, _2));
         pause_srvr_ = nh_->create_service<airsim_interfaces::srv::Pause>("pause", std::bind(&AirsimWrapper::pause_srv_cb, this, _1, _2));
-        // Create group of robots services
-        takeoff_group_srvr_ = nh_->create_service<airsim_interfaces::srv::TakeoffGroup>("group_of_robots/takeoff", std::bind(&AirsimWrapper::takeoff_group_srv_cb, this, _1, _2));
-        land_group_srvr_ = nh_->create_service<airsim_interfaces::srv::LandGroup>("group_of_robots/land", std::bind(&AirsimWrapper::land_group_srv_cb, this, _1, _2));
-        hover_group_srvr_ = nh_->create_service<airsim_interfaces::srv::HoverGroup>("group_of_robots/hover", std::bind(&AirsimWrapper::hover_group_srv_cb, this, _1, _2));
         // Create group of windows subscribers
         window_image_cmd_group_sub_ = nh_->create_subscription<airsim_interfaces::msg::WindowImageCmdGroup>(
             "group_of_windows/image_cmd", 10, std::bind(&AirsimWrapper::window_image_cmd_group_cb, this, _1), window_sub_options);
@@ -300,70 +263,16 @@ namespace airsim_wrapper
             "group_of_clusters/update_cmd", 10, std::bind(&AirsimWrapper::update_cluster_cmd_group_cb, this, _1), tracking_sub_options);
     }
 
-    void AirsimWrapper::initialize_vehicle_odom(VehicleROS* vehicle_ros, const VehicleSetting& vehicle_setting)
-    {
-        vehicle_ros->curr_odom.header.frame_id = vehicle_ros->vehicle_frame_id;
-        vehicle_ros->curr_odom.child_frame_id = vehicle_ros->odom_frame_id;
-        vehicle_ros->curr_odom.header.stamp = get_sim_clock_time();
-        vehicle_ros->curr_odom.pose.pose = geometry_msgs::msg::Pose();
-        vehicle_ros->curr_odom.twist.twist = geometry_msgs::msg::Twist();
-    }
-
     void AirsimWrapper::initialize_vehicle_tf(VehicleROS* vehicle_ros, const VehicleSetting& vehicle_setting)
     {
-        auto& vehicle_tf = vehicle_ros->vehicle_static_tf_msg;
-        auto& odom_tf = vehicle_ros->odom_tf_msg;
+        auto& local_tf = vehicle_ros->local_static_tf_msg;
 
-        // World to Vehicle transform
-        vehicle_tf.header.frame_id = world_frame_id_;
-        vehicle_tf.child_frame_id = vehicle_ros->vehicle_frame_id;
-        vehicle_tf.header.stamp = get_sim_clock_time();
-        vehicle_tf.transform = get_transform_msg_from_airsim(vehicle_setting.position, vehicle_setting.rotation);
-        convert_tf_msg_to_ros(vehicle_tf);
-        static_tf_pub_->sendTransform(vehicle_tf);
-
-        // Vehicle to Odom transform
-        odom_tf.header.frame_id = vehicle_ros->vehicle_frame_id;
-        odom_tf.child_frame_id = vehicle_ros->odom_frame_id;
-        odom_tf.header.stamp = get_sim_clock_time();
-        odom_tf.transform = geometry_msgs::msg::Transform();
-        convert_tf_msg_to_ros(odom_tf);
-        tf_broadcaster_->sendTransform(odom_tf);
-    }
-
-    void AirsimWrapper::initialize_camera_info(CameraROS* camera_ros, const CameraSetting& camera_setting, const CaptureSetting& capture_setting)
-    {
-        // Set camera info header
-        camera_ros->camera_info.header.frame_id = camera_ros->optical_frame_id;
-        camera_ros->camera_info.header.stamp = get_sim_clock_time();
-
-        // Get width and height (assuming constant)
-        const auto& width = capture_setting.width;
-        const auto& height = capture_setting.height;
-
-        // Calculate focal length based on FoV
-        float f_x = (width / 2.0f) / tan(math_common::deg2rad(capture_setting.fov_degrees / 2.0f));
-        float f_y = f_x; // Assuming square pixels
-
-        // Principal point at image center
-        float c_x = width / 2.0f;
-        float c_y = height / 2.0f;
-
-        // Set camera intrinsic matrix K (3x3)
-        // Assuming skew is 0
-        camera_ros->camera_info.k = {
-            f_x, 0.0, c_x,
-            0.0, f_y, c_y,
-            0.0, 0.0, 1.0
-        };
-
-        // Set projection matrix P (3x4)
-        // For an ideal camera, P = K * [R|t] where R=I, t=0
-        camera_ros->camera_info.p = {
-            f_x, 0.0, c_x, 0.0,
-            0.0, f_y, c_y, 0.0,
-            0.0, 0.0, 1.0, 0.0
-        };
+        // World to Local transform
+        local_tf.header.frame_id = global_frame_id_;
+        local_tf.child_frame_id = vehicle_ros->local_frame_id;
+        local_tf.header.stamp = get_sim_clock_time();
+        local_tf.transform = get_transform_msg_from_airsim(vehicle_setting.position, vehicle_setting.rotation);
+        static_tf_pub_->sendTransform(local_tf);
     }
 
     void AirsimWrapper::initialize_camera_tf(VehicleROS* vehicle_ros, CameraROS* camera_ros, const CameraSetting& camera_setting)
@@ -374,17 +283,16 @@ namespace airsim_wrapper
         // World to Body transform
         if (camera_setting.external)
         {
-            body_tf.header.frame_id = world_frame_id_;
+            body_tf.header.frame_id = global_frame_id_;
         }
         else
         {
-            body_tf.header.frame_id = vehicle_ros->vehicle_frame_id;
+            body_tf.header.frame_id = vehicle_ros->local_frame_id;
         }
         body_tf.child_frame_id = camera_ros->body_frame_id;
         body_tf.header.stamp = get_sim_clock_time();
         auto camera_info_data = airsim_client_control_->simGetCameraInfo(camera_ros->camera_name, vehicle_ros->vehicle_name);
         body_tf.transform = get_transform_msg_from_airsim(camera_info_data.pose.position, camera_info_data.pose.orientation);
-        convert_tf_msg_to_ros(body_tf);
         tf_broadcaster_->sendTransform(body_tf);
 
         // Body to Optical transform
@@ -396,26 +304,8 @@ namespace airsim_wrapper
     }
 
     // ════════════════════════════════════════════════════════════════════════════
-    // COMMAND CALLBACKS: Thread-safe
+    // COMMAND CALLBACKS
     // ════════════════════════════════════════════════════════════════════════════
-
-    void AirsimWrapper::vel_cmd_cb(const std::string& vehicle_name, const airsim_interfaces::msg::VelCmd::SharedPtr vel_cmd_msg)
-    {
-        // Extract message data
-        const auto& vx = vel_cmd_msg->vel_cmd_x;
-        const auto& vy = vel_cmd_msg->vel_cmd_y;
-        const auto& vz = vel_cmd_msg->vel_cmd_z;
-        const auto& dt = vel_cmd_msg->vel_cmd_dt;
-        try
-        {
-            // Send command to server
-            client_move_by_velocity(vx, vy, vz, dt, vehicle_name);
-        }
-        catch (rpc::rpc_error& e) {
-            std::string msg = e.get_error().as<std::string>();
-            RCLCPP_ERROR(nh_->get_logger(), "Exception raised by the API:\n%s", msg.c_str());
-        }
-    }
 
     void AirsimWrapper::gimbal_angle_cmd_cb(const std::string& vehicle_name, const airsim_interfaces::msg::GimbalAngleCmd::SharedPtr gimbal_angle_cmd_msg)
     {
@@ -582,13 +472,7 @@ namespace airsim_wrapper
             client_pause(true);
             client_reset();
             // We need to re-arm the vehicles after resetting
-            if (enable_api_control_)
-            {
-                client_enable_control();
-            }
-
-            // Update running state
-            is_running_.store(false);
+            client_enable_control();
         }
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();
@@ -610,9 +494,6 @@ namespace airsim_wrapper
         {
             // Send command to server
             client_pause(false);
-
-            // Update running state
-            is_running_.store(true);
         }
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();
@@ -634,78 +515,6 @@ namespace airsim_wrapper
         {
             // Send command to server
             client_pause(true);
-
-            // Update running state
-            is_running_.store(false);
-        }
-        catch (rpc::rpc_error& e) {
-            std::string msg = e.get_error().as<std::string>();
-            RCLCPP_ERROR(nh_->get_logger(), "Exception raised by the API:\n%s", msg.c_str());
-            response->success = false;
-            return false;
-        }
-
-        response->success = true;
-        return true;
-    }
-
-    bool AirsimWrapper::takeoff_group_srv_cb(std::shared_ptr<airsim_interfaces::srv::TakeoffGroup::Request> request, std::shared_ptr<airsim_interfaces::srv::TakeoffGroup::Response> response)
-    {
-        RCLCPP_INFO(nh_->get_logger(), "Taking off group of vehicles");
-
-        try
-        {
-            // Send command to server
-            for (const auto& vehicle_name : request->vehicle_names)
-            {
-                client_takeoff(20, vehicle_name);
-            }
-        }
-        catch (rpc::rpc_error& e) {
-            std::string msg = e.get_error().as<std::string>();
-            RCLCPP_ERROR(nh_->get_logger(), "Exception raised by the API:\n%s", msg.c_str());
-            response->success = false;
-            return false;
-        }
-
-        response->success = true;
-        return true;
-    }
-
-    bool AirsimWrapper::land_group_srv_cb(std::shared_ptr<airsim_interfaces::srv::LandGroup::Request> request, std::shared_ptr<airsim_interfaces::srv::LandGroup::Response> response)
-    {
-        RCLCPP_INFO(nh_->get_logger(), "Landing group of vehicles");
-
-        try
-        {
-            // Send command to server
-            for (const auto& vehicle_name : request->vehicle_names)
-            {
-                client_land(60, vehicle_name);
-            }
-        }
-        catch (rpc::rpc_error& e) {
-            std::string msg = e.get_error().as<std::string>();
-            RCLCPP_ERROR(nh_->get_logger(), "Exception raised by the API:\n%s", msg.c_str());
-            response->success = false;
-            return false;
-        }
-
-        response->success = true;
-        return true;
-    }
-
-    bool AirsimWrapper::hover_group_srv_cb(std::shared_ptr<airsim_interfaces::srv::HoverGroup::Request> request, std::shared_ptr<airsim_interfaces::srv::HoverGroup::Response> response)
-    {
-        RCLCPP_INFO(nh_->get_logger(), "Hovering group of vehicles");
-
-        try
-        {
-            // Send command to server
-            for (const auto& vehicle_name : request->vehicle_names)
-            {
-                client_hover(vehicle_name);
-            }
         }
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();
@@ -771,7 +580,7 @@ namespace airsim_wrapper
     }
 
     // ════════════════════════════════════════════════════════════════════════════
-    // TIMER CALLBACKS: Thread-safe
+    // TIMER CALLBACKS
     // ════════════════════════════════════════════════════════════════════════════
 
     void AirsimWrapper::drone_state_timer_cb()
@@ -790,29 +599,15 @@ namespace airsim_wrapper
                 // Iterate over drones
                 for (auto& [vehicle_name, vehicle_ros] : vehicle_map_)
                 {
-                    // Retrieve multirotor state from server
-                    msr::airlib::MultirotorState multirotor_state;
-                    multirotor_state = client_get_multirotor_state(vehicle_name);
-
-                    // Update vehicle odom and tf
-                    vehicle_ros->curr_odom.header.stamp = curr_time;
-                    vehicle_ros->odom_tf_msg.header.stamp = curr_time;
-                    update_vehicle_odom(vehicle_ros.get(), multirotor_state.kinematics_estimated);
-                    vehicle_ros->odom_tf_msg.transform = get_transform_msg_from_airsim(multirotor_state.getPosition(), multirotor_state.getOrientation());
-                    convert_tf_msg_to_ros(vehicle_ros->odom_tf_msg);
-
                     // Iterate over cameras
                     for (auto& [camera_name, camera_ros] : vehicle_ros->camera_map)
                     {
                         // Retrieve camera info from server
-                        msr::airlib::CameraInfo camera_info_data;
-                        camera_info_data = client_get_camera_info(vehicle_name, camera_name);
+                        const auto& camera_info_data = client_get_camera_info(vehicle_name, camera_name);
 
                         // Update camera info and tf
-                        camera_ros->camera_info.header.stamp = curr_time;
                         camera_ros->body_tf_msg.header.stamp = curr_time;
                         camera_ros->body_tf_msg.transform = get_transform_msg_from_airsim(camera_info_data.pose.position, camera_info_data.pose.orientation);
-                        convert_tf_msg_to_ros(camera_ros->body_tf_msg);
                     }
                 }
             }
@@ -834,10 +629,7 @@ namespace airsim_wrapper
             ros_clock_.clock = client_get_timestamp();
 
             // Publish clock
-            if (publish_clock_)
-            {
-                clock_pub_->publish(ros_clock_);
-            }
+            clock_pub_->publish(ros_clock_);
         }
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();
@@ -845,46 +637,9 @@ namespace airsim_wrapper
         }
     }
 
-    void AirsimWrapper::status_timer_cb()
-    {
-        // Publish AirSim status
-        airsim_interfaces::msg::Status airsim_status_msg;
-        airsim_status_msg.is_connected = is_connected_.load();
-        airsim_status_msg.is_running = is_running_.load();
-        airsim_status_pub_->publish(airsim_status_msg);
-    }
-
     // ════════════════════════════════════════════════════════════════════════════
     // UPDATE FUNCTIONS
     // ════════════════════════════════════════════════════════════════════════════
-
-    void AirsimWrapper::update_vehicle_odom(VehicleROS* vehicle_ros, const msr::airlib::Kinematics::State& kinematics_estimated)
-    {
-        // Get estimated pose and twist
-        auto& est_pose = kinematics_estimated.pose;
-        auto& est_twist = kinematics_estimated.twist;
-
-        // Get odom pose and twist
-        auto& pose = vehicle_ros->curr_odom.pose.pose;
-        auto& twist = vehicle_ros->curr_odom.twist.twist;
-
-        // Update odom pose
-        pose.position.x = est_pose.position.x();
-        pose.position.y = -est_pose.position.y();
-        pose.position.z = -est_pose.position.z();
-        pose.orientation.x = est_pose.orientation.x();
-        pose.orientation.y = -est_pose.orientation.y();
-        pose.orientation.z = -est_pose.orientation.z();
-        pose.orientation.w = est_pose.orientation.w();
-
-        // Update odom twist
-        twist.linear.x = est_twist.linear.x();
-        twist.linear.y = -est_twist.linear.y();
-        twist.linear.z = -est_twist.linear.z();
-        twist.angular.x = est_twist.angular.x();
-        twist.angular.y = -est_twist.angular.y();
-        twist.angular.z = -est_twist.angular.z();
-    }
 
     void AirsimWrapper::update_camera_info(CameraROS* camera_ros, const float& fov)
     {
@@ -906,25 +661,11 @@ namespace airsim_wrapper
     {
         for (auto& [vehicle_name, vehicle_ros] : vehicle_map_)
         {
-            // Publish vehicle odom
-            vehicle_ros->odom_pub->publish(vehicle_ros->curr_odom);
-
-            // Publish vehicle odom tf
-            tf_broadcaster_->sendTransform(vehicle_ros->odom_tf_msg);
-
-            airsim_interfaces::msg::CameraInfoArray camera_info_array;
             for (auto& [camera_name, camera_ros] : vehicle_ros->camera_map)
             {
                 // Publish camera body tf
                 tf_broadcaster_->sendTransform(camera_ros->body_tf_msg);
-
-                // Get camera info
-                camera_info_array.camera_names.push_back(camera_name);
-                camera_info_array.infos.push_back(camera_ros->camera_info);
             }
-
-            // Publish camera info array
-            vehicle_ros->camera_info_array_pub->publish(camera_info_array);
         }
     }
 
@@ -1182,13 +923,13 @@ namespace airsim_wrapper
     {
         geometry_msgs::msg::Transform transform;
         transform.translation.x = position.x();
-        transform.translation.y = position.y();
-        transform.translation.z = position.z();
+        transform.translation.y = -position.y();
+        transform.translation.z = -position.z();
         tf2::Quaternion quat;
         quat.setRPY(rotation.roll * (M_PI / 180.0), rotation.pitch * (M_PI / 180.0), rotation.yaw * (M_PI / 180.0));
         transform.rotation.x = quat.x();
-        transform.rotation.y = quat.y();
-        transform.rotation.z = quat.z();
+        transform.rotation.y = -quat.y();
+        transform.rotation.z = -quat.z();
         transform.rotation.w = quat.w();
 
         return transform;
@@ -1198,44 +939,14 @@ namespace airsim_wrapper
     {
         geometry_msgs::msg::Transform transform;
         transform.translation.x = position.x();
-        transform.translation.y = position.y();
-        transform.translation.z = position.z();
+        transform.translation.y = -position.y();
+        transform.translation.z = -position.z();
         transform.rotation.x = quaternion.x();
-        transform.rotation.y = quaternion.y();
-        transform.rotation.z = quaternion.z();
+        transform.rotation.y = -quaternion.y();
+        transform.rotation.z = -quaternion.z();
         transform.rotation.w = quaternion.w();
 
         return transform;
-    }
-
-    geometry_msgs::msg::Pose AirsimWrapper::get_pose_msg_from_airsim(const msr::airlib::Vector3r& position, const msr::airlib::AirSimSettings::Rotation& rotation)
-    {
-        geometry_msgs::msg::Pose pose;
-        pose.position.x = position.x();
-        pose.position.y = position.y();
-        pose.position.z = position.z();
-        tf2::Quaternion quat;
-        quat.setRPY(rotation.roll * (M_PI / 180.0), rotation.pitch * (M_PI / 180.0), rotation.yaw * (M_PI / 180.0));
-        pose.orientation.x = quat.x();
-        pose.orientation.y = quat.y();
-        pose.orientation.z = quat.z();
-        pose.orientation.w = quat.w();
-
-        return pose;
-    }
-
-    geometry_msgs::msg::Pose AirsimWrapper::get_pose_msg_from_airsim(const msr::airlib::Vector3r& position, const msr::airlib::Quaternionr& quaternion)
-    {
-        geometry_msgs::msg::Pose pose;
-        pose.position.x = position.x();
-        pose.position.y = position.y();
-        pose.position.z = position.z();
-        pose.orientation.x = quaternion.x();
-        pose.orientation.y = quaternion.y();
-        pose.orientation.z = quaternion.z();
-        pose.orientation.w = quaternion.w();
-
-        return pose;
     }
 
     // airsim uses nans for zeros in settings.json. we set them to zeros here for handling tfs in ROS
@@ -1280,14 +991,6 @@ namespace airsim_wrapper
 
         if (std::isnan(camera_setting.rotation.roll))
             camera_setting.rotation.roll = vehicle_setting.rotation.roll;
-    }
-
-    void AirsimWrapper::convert_tf_msg_to_ros(geometry_msgs::msg::TransformStamped& tf_msg)
-    {
-        tf_msg.transform.translation.z = -tf_msg.transform.translation.z;
-        tf_msg.transform.translation.y = -tf_msg.transform.translation.y;
-        tf_msg.transform.rotation.z = -tf_msg.transform.rotation.z;
-        tf_msg.transform.rotation.y = -tf_msg.transform.rotation.y;
     }
 
     geometry_msgs::msg::Transform AirsimWrapper::get_camera_optical_tf() const

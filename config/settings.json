@@ -2,7 +2,7 @@
     "SettingsVersion": 2.0,
     "SimMode": "Multirotor",
     "ClockType": "SteppableClock",
-    "ClockSpeed": 0.10000000149011612,
+    "ClockSpeed": 1.0,
     "ViewMode": "NoDisplay",
     "LogMessagesVisible": true,
     "ApiServerPort": 41451,
