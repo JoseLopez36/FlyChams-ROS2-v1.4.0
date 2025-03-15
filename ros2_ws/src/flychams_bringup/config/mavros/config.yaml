@@ -1,6 +1,8 @@
 /**:
   ros__parameters:
     startup_px4_usb_quirk: false
+    map_frame: "/AGENTID/map"
+    base_link_frame: "/AGENTID/base_link"
 
 # --- system plugins ---
 
@@ -32,23 +34,23 @@
 # global_position
 /**/global_position:
   ros__parameters:
-    frame_id: "map"                 # origin frame
-    child_frame_id: "base_link"     # body-fixed frame
+    frame_id: "/AGENTID/map"                 # origin frame
+    child_frame_id: "/AGENTID/base_link"     # body-fixed frame
     rot_covariance: 99999.0         # covariance for attitude?
     gps_uere: 1.0                   # User Equivalent Range Error (UERE) of GPS sensor (m)
     use_relative_alt: true          # use relative altitude for local coordinates
-    tf.send: FALSE                  # send TF?
-    tf.frame_id: "map"              # TF frame_id
+    tf.send: false                  # send TF?
+    tf.frame_id: "/AGENTID/map"              # TF frame_id
     tf.global_frame_id: "earth"     # TF earth frame_id
-    tf.child_frame_id: "base_link"  # TF child_frame_id
+    tf.child_frame_id: "/AGENTID/base_link"  # TF child_frame_id
 
 # local_position
 /**/local_position:
   ros__parameters:
-    frame_id: "map"
+    frame_id: "/AGENTID/map"
     tf.send: true
-    tf.frame_id: "map"
-    tf.child_frame_id: "base_link"
+    tf.frame_id: "/AGENTID/map"
+    tf.child_frame_id: "/AGENTID/base_link"
     tf.send_fcu: false
 
 # setpoint_accel
@@ -62,16 +64,16 @@
     reverse_thrust: false       # allow reversed thrust
     use_quaternion: false       # enable PoseStamped topic subscriber
     tf.listen: false            # enable tf listener (disable topic subscribers)
-    tf.frame_id: "map"
-    tf.child_frame_id: "target_attitude"
+    tf.frame_id: "/AGENTID/map"
+    tf.child_frame_id: "/AGENTID/target_attitude"
     tf.rate_limit: 50.0
 
 # setpoint_position
 /**/setpoint_position:
   ros__parameters:
     tf.listen: false            # enable tf listener (disable topic subscribers)
-    tf.frame_id: "map"
-    tf.child_frame_id: "target_position"
+    tf.frame_id: "/AGENTID/map"
+    tf.child_frame_id: "/AGENTID/target_position"
     tf.rate_limit: 50.0
     mav_frame: LOCAL_NED
 

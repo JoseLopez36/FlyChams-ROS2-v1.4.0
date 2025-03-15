@@ -45,12 +45,12 @@ public: // Constructor/Destructor
             int udp_port = 14030 + instance;
             int remote_port = 14280 + instance;
 
-            // Create MAVROS instance with namespace set to the agent ID
-            // Format: ros2 launch flychams_bringup mavros.launch tgt_system:=1 fcu_url:=udp://:14030@172.17.0.2:14280 namespace:=mavros/AGENT01
+            // Create MAVROS instance unique to the agent
+            // Format: ros2 launch flychams_bringup mavros.launch.py tgt_system:=1 fcu_url:=udp://:14030@172.17.0.2:14280 agent_id:=AGENT01
             std::string tgt_system_cmd = " tgt_system:=" + std::to_string(instance + 1);
             std::string fcu_url_cmd = " fcu_url:=udp://:" + std::to_string(udp_port) + "@" + control_ip + ":" + std::to_string(remote_port);
-            std::string namespace_cmd = " namespace:=mavros/" + id;
-            std::string cmd = "ros2 launch flychams_bringup mavros.launch" + tgt_system_cmd + fcu_url_cmd + namespace_cmd;
+            std::string agent_id_cmd = " agent_id:=" + id;
+            std::string cmd = "ros2 launch flychams_bringup mavros.launch.py" + tgt_system_cmd + fcu_url_cmd + agent_id_cmd;
             int ret = std::system(cmd.c_str());
             if (ret != 0) {
                 RCLCPP_ERROR(this->get_logger(), "Failed to launch MAVROS instance for agent %s", id.c_str());

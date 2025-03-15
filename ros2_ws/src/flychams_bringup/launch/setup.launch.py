@@ -50,9 +50,9 @@ def generate_launch_description():
             output='screen',
             namespace='airsim',
             parameters=[{
-                'update_airsim_status_every_n_sec': 0.100,
+                'update_airsim_state_every_n_sec': 0.030,
                 'update_sim_clock_every_n_sec': 0.001,
-                'enable_world_plot': False
+                'enable_world_plot': False,
                 'host_ip': 'localhost',
                 'host_port': 41451
             }]
