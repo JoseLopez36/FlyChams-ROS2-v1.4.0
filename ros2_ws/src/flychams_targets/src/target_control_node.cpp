@@ -42,6 +42,9 @@ public: // Constructor/Destructor
         // Initialize target controllers
         target_controllers_.clear();
 
+        // Remove all targets from simulation
+        ext_tools_->removeAllTargets();
+
         // Set target update timer
         prev_time_ = RosUtils::getTimeNow(node_);
         const auto& update_rate = RosUtils::getParameter<float>(node_, "target_control.target_update_rate");
@@ -53,6 +56,9 @@ public: // Constructor/Destructor
     {
         // Lock mutex
         std::lock_guard<std::mutex> lock(mutex_);
+
+        // Remove all targets from simulation
+        ext_tools_->removeAllTargets();
 
         // Destroy target controllers
         target_controllers_.clear();
@@ -72,9 +78,20 @@ private: // Element management
         // Add target data to vectors
         target_ids_.push_back(target_id);
         target_controllers_.push_back(controller);
-        target_positions_.push_back(PointMsg());
+        target_positions_.push_back(controller->getPosition());
 
         RCLCPP_INFO(node_->get_logger(), "Target controller created for target %s", target_id.c_str());
+
+        // Add target to simulation
+        ColorMsg highlight_color;
+        highlight_color.r = 1.0f;
+        highlight_color.g = 0.0f;
+        highlight_color.b = 0.0f;
+        highlight_color.a = 0.2f;
+        ext_tools_->addTargetGroup({ target_id }, { TargetType::Human }, { controller->getPosition() }, config_tools_->getSimulation()->draw_world_markers, { highlight_color });
+
+        // Wait for 0.1 seconds to ensure target is added
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     void onRemoveTarget(const ID& target_id) override
@@ -124,11 +141,11 @@ private: // Update methods
     }
 
 private: // Components
-    // Target controllers
-    std::vector<TargetController::SharedPtr> target_controllers_;
     // Target data
     std::vector<ID> target_ids_;
     std::vector<PointMsg> target_positions_;
+    // Target controllers
+    std::vector<TargetController::SharedPtr> target_controllers_;
     // Mutex
     std::mutex mutex_;
     // Time management

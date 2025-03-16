@@ -57,6 +57,8 @@ namespace flychams::core
     public: // Tracking control methods (override)
         virtual bool addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors) = 0;
         virtual bool addClusterGroup(const IDs& cluster_ids, const std::vector<PointMsg>& centers, const std::vector<float>& radii, const bool& highlight, const std::vector<ColorMsg>& highlight_colors) = 0;
+        virtual bool removeAllTargets() = 0;
+        virtual bool removeAllClusters() = 0;
         virtual void updateTargetGroup(const IDs& target_ids, const std::vector<PointMsg>& positions) = 0;
         virtual void updateClusterGroup(const IDs& cluster_ids, const std::vector<PointMsg>& centers, const std::vector<float>& radii) = 0;
     };

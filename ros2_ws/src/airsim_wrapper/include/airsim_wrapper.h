@@ -73,6 +73,8 @@ STRICT_MODE_ON
 // Tracking commands
 #include <airsim_interfaces/srv/add_target_group.hpp>
 #include <airsim_interfaces/srv/add_cluster_group.hpp>
+#include <airsim_interfaces/srv/remove_all_targets.hpp>
+#include <airsim_interfaces/srv/remove_all_clusters.hpp>
 #include <airsim_interfaces/msg/update_target_cmd_group.hpp>
 #include <airsim_interfaces/msg/update_cluster_cmd_group.hpp>
 
@@ -197,6 +199,8 @@ namespace airsim_wrapper
         bool hover_srv_cb(const std::shared_ptr<airsim_interfaces::srv::Hover::Request> request, const std::shared_ptr<airsim_interfaces::srv::Hover::Response> response);
         bool add_target_group_cb(const std::shared_ptr<airsim_interfaces::srv::AddTargetGroup::Request> request, const std::shared_ptr<airsim_interfaces::srv::AddTargetGroup::Response> response);
         bool add_cluster_group_cb(const std::shared_ptr<airsim_interfaces::srv::AddClusterGroup::Request> request, const std::shared_ptr<airsim_interfaces::srv::AddClusterGroup::Response> response);
+        bool remove_all_targets_cb(const std::shared_ptr<airsim_interfaces::srv::RemoveAllTargets::Request> request, const std::shared_ptr<airsim_interfaces::srv::RemoveAllTargets::Response> response);
+        bool remove_all_clusters_cb(const std::shared_ptr<airsim_interfaces::srv::RemoveAllClusters::Request> request, const std::shared_ptr<airsim_interfaces::srv::RemoveAllClusters::Response> response);
 
     // ════════════════════════════════════════════════════════════════
     // PRIVATE: State Update
@@ -308,6 +312,8 @@ namespace airsim_wrapper
         // Tracking services
         rclcpp::Service<airsim_interfaces::srv::AddTargetGroup>::SharedPtr add_target_group_srvr_;
         rclcpp::Service<airsim_interfaces::srv::AddClusterGroup>::SharedPtr add_cluster_group_srvr_;
+        rclcpp::Service<airsim_interfaces::srv::RemoveAllTargets>::SharedPtr remove_all_targets_srvr_;
+        rclcpp::Service<airsim_interfaces::srv::RemoveAllClusters>::SharedPtr remove_all_clusters_srvr_;
 
         // Tracking subscribers
         rclcpp::Subscription<airsim_interfaces::msg::UpdateTargetCmdGroup>::SharedPtr update_target_cmd_group_sub_;

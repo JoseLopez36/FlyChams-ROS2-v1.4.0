@@ -30,7 +30,7 @@ namespace flychams::targets
         TargetController(const core::ID& target_id, core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::ExternalTools::SharedPtr ext_tools, core::TopicTools::SharedPtr topic_tools, core::TfTools::SharedPtr tf_tools)
             : BaseModule(node, config_tools, ext_tools, topic_tools, tf_tools), target_id_(target_id)
         {
-            // Nothing to do
+            init();
         }
 
     protected: // Overrides

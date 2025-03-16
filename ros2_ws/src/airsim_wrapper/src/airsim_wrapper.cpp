@@ -272,6 +272,8 @@ namespace airsim_wrapper
         // Create tracking services
         add_target_group_srvr_ = nh_->create_service<airsim_interfaces::srv::AddTargetGroup>("targets/cmd/add", std::bind(&AirsimWrapper::add_target_group_cb, this, _1, _2));
         add_cluster_group_srvr_ = nh_->create_service<airsim_interfaces::srv::AddClusterGroup>("clusters/cmd/add", std::bind(&AirsimWrapper::add_cluster_group_cb, this, _1, _2));
+        remove_all_targets_srvr_ = nh_->create_service<airsim_interfaces::srv::RemoveAllTargets>("targets/cmd/remove_all", std::bind(&AirsimWrapper::remove_all_targets_cb, this, _1, _2));
+        remove_all_clusters_srvr_ = nh_->create_service<airsim_interfaces::srv::RemoveAllClusters>("clusters/cmd/remove_all", std::bind(&AirsimWrapper::remove_all_clusters_cb, this, _1, _2));
         // Create tracking subscribers
         update_target_cmd_group_sub_ = nh_->create_subscription<airsim_interfaces::msg::UpdateTargetCmdGroup>(
             "targets/cmd/update", 10, std::bind(&AirsimWrapper::update_target_cmd_group_cb, this, _1), tracking_sub_options);
@@ -841,6 +843,48 @@ namespace airsim_wrapper
         {
             // Send command to server
             client_add_clusters(cluster_names, get_airlib_points(centers), radii, highlight, get_airlib_colors(highlight_color_rgba));
+        }
+        catch (rpc::rpc_error& e) {
+            std::string msg = e.get_error().as<std::string>();
+            RCLCPP_ERROR(nh_->get_logger(), "Exception raised by the API:\n%s", msg.c_str());
+            response->success = false;
+            return false;
+        }
+
+        response->success = true;
+        return true;
+    }
+
+    bool AirsimWrapper::remove_all_targets_cb(const std::shared_ptr<airsim_interfaces::srv::RemoveAllTargets::Request> request, const std::shared_ptr<airsim_interfaces::srv::RemoveAllTargets::Response> response)
+    {
+        RCLCPP_INFO(nh_->get_logger(), "Removing all targets");
+        unused(request);
+
+        try
+        {
+            // Send command to server
+            client_remove_all_targets();
+        }
+        catch (rpc::rpc_error& e) {
+            std::string msg = e.get_error().as<std::string>();
+            RCLCPP_ERROR(nh_->get_logger(), "Exception raised by the API:\n%s", msg.c_str());
+            response->success = false;
+            return false;
+        }
+
+        response->success = true;
+        return true;
+    }
+
+    bool AirsimWrapper::remove_all_clusters_cb(const std::shared_ptr<airsim_interfaces::srv::RemoveAllClusters::Request> request, const std::shared_ptr<airsim_interfaces::srv::RemoveAllClusters::Response> response)
+    {
+        RCLCPP_INFO(nh_->get_logger(), "Removing all clusters");
+        unused(request);
+
+        try
+        {
+            // Send command to server
+            client_remove_all_clusters();
         }
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();

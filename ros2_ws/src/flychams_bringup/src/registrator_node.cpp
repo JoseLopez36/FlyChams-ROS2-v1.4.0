@@ -48,22 +48,9 @@ public: // Constructor/Destructor
         }
 
         // Register targets
-        for (const auto& [group_id, group_config] : config_tools_->getGroups())
+        for (const auto& [target_id, target_config] : config_tools_->getTargets())
         {
-            // Extract number of targets in group
-            const int num_targets = group_config->target_count;
-
-            // Cycle through all targets in group and register them
-            for (int i = 0; i < num_targets; i++)
-            {
-                // Generate target ID
-                std::stringstream ss;
-                ss << group_id << "TARGET" << std::setw(2) << std::setfill('0') << i;
-                const ID target_id = ss.str();
-
-                // Register target
-                registerElement(target_id, ElementType::Target);
-            }
+            registerElement(target_id, ElementType::Target);
         }
 
         // Register clusters

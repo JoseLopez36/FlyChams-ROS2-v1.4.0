@@ -16,7 +16,9 @@ namespace flychams::targets
         float update_rate = RosUtils::getParameterOr<float>(node_, "target_registration.target_update_rate", 20.0f);
 
         // Parse trajectory
-        trajectory_ = TrajectoryParser::parse(RosUtils::getParameterOr<std::string>(node_, "trajectory_root", ""));
+        const auto& path = config_tools_->getTarget(target_id_)->trajectory_path;
+        RCLCPP_INFO(node_->get_logger(), "Parsing trajectory for target %s with path %s", target_id_.c_str(), path.c_str());
+        trajectory_ = TrajectoryParser::parse(path);
 
         // Initialize trajectory data
         current_idx_ = 0;

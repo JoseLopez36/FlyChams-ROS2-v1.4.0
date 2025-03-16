@@ -32,6 +32,8 @@ namespace flychams::core
         // Tracking commands
         add_target_group_client_ = node_->create_client<AddTargetGroup>("/airsim/targets/cmd/add");
         add_cluster_group_client_ = node_->create_client<AddClusterGroup>("/airsim/clusters/cmd/add");
+        remove_all_targets_client_ = node_->create_client<RemoveAllTargets>("/airsim/targets/cmd/remove_all");
+        remove_all_clusters_client_ = node_->create_client<RemoveAllClusters>("/airsim/clusters/cmd/remove_all");
         update_target_cmd_group_pub_ = node_->create_publisher<UpdateTargetCmdGroupMsg>("/airsim/targets/cmd/update", 10);
         update_cluster_cmd_group_pub_ = node_->create_publisher<UpdateClusterCmdGroupMsg>("/airsim/clusters/cmd/update", 10);
 
@@ -60,6 +62,8 @@ namespace flychams::core
         hover_client_.reset();
         add_target_group_client_.reset();
         add_cluster_group_client_.reset();
+        remove_all_targets_client_.reset();
+        remove_all_clusters_client_.reset();
         // Destroy publishers
         vel_cmd_pub_map_.clear();
         pos_cmd_pub_map_.clear();
@@ -366,6 +370,24 @@ namespace flychams::core
 
         // Send request and wait for response
         return RosUtils::sendRequestSync<AddClusterGroup>(node_, add_cluster_group_client_, request, 100000);
+    }
+
+    bool AirsimTools::removeAllTargets()
+    {
+        // Create request
+        auto request = std::make_shared<RemoveAllTargets::Request>();
+
+        // Send request and wait for response
+        return RosUtils::sendRequestSync<RemoveAllTargets>(node_, remove_all_targets_client_, request, 100000);
+    }
+
+    bool AirsimTools::removeAllClusters()
+    {
+        // Create request
+        auto request = std::make_shared<RemoveAllClusters::Request>();
+
+        // Send request and wait for response
+        return RosUtils::sendRequestSync<RemoveAllClusters>(node_, remove_all_clusters_client_, request, 100000);
     }
 
     // ════════════════════════════════════════════════════════════════════════════

@@ -2,4 +2,3 @@
   ros__parameters:
     config_source_file: "/home/testuser/FlyChams-ROS2/config/Configuration.xlsx"
     airsim_settings_destination_file: "/home/testuser/FlyChams-ROS2/config/settings.json"
-    trajectory_root: "/home/testuser/FlyChams-ROS2/config/Trajectories/"

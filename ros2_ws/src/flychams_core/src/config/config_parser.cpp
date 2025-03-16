@@ -31,12 +31,48 @@ namespace flychams::core
 			// 5. Parse Agents
 			AgentConfigMap agents = parseAgents(book, mission->agent_team_id, mission->altitude_constraint);
 
+			// Process groups to extract targets
+			TargetConfigMap targets;
+			for (const auto& [group_id, group] : groups)
+			{
+				// Extract number of targets in group
+				const int& n = group->target_count;
+
+				// Iterate through all targets in group
+				for (int i = 0; i < n; i++)
+				{
+					// Create target config instance
+					TargetConfigPtr target = std::make_shared<TargetConfig>();
+
+					// Generate target ID
+					std::stringstream ss;
+					ss << group_id << "_TARGET" << std::setw(2) << std::setfill('0') << i;
+					const ID target_id = ss.str();
+
+					// Get trajectory path
+					const std::string& root = "/home/testuser/FlyChams-ROS2/config/Trajectories/";
+					const std::string& folder = group->trajectory_folder;
+					const std::string& file = "/TRAJ" + std::to_string(i + 1) + ".csv";
+					const std::string& path = root + folder + file;
+
+					// Populate fields
+					target->target_id = target_id;
+					target->target_type = group->target_type;
+					target->target_priority = group->group_priority;
+					target->trajectory_path = path;
+
+					// Insert target config
+					targets.insert({ target_id, target });
+				}
+			}
+
 			// Assemble config message
 			ConfigPtr config_ptr = std::make_shared<Config>();
 			config_ptr->mission = mission;
 			config_ptr->simulation = simulation;
 			config_ptr->map = map;
 			config_ptr->groups = groups;
+			config_ptr->targets = targets;
 			config_ptr->agents = agents;
 			config_ptr->group_count = static_cast<int>(groups.size());
 			config_ptr->agent_count = static_cast<int>(agents.size());

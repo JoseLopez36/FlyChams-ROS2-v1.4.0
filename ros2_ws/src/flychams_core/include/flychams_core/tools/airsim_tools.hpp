@@ -29,6 +29,8 @@
 // Tracking commands
 #include <airsim_interfaces/srv/add_target_group.hpp>
 #include <airsim_interfaces/srv/add_cluster_group.hpp>
+#include <airsim_interfaces/srv/remove_all_targets.hpp>
+#include <airsim_interfaces/srv/remove_all_clusters.hpp>
 #include <airsim_interfaces/msg/update_target_cmd_group.hpp>
 #include <airsim_interfaces/msg/update_cluster_cmd_group.hpp>
 
@@ -78,6 +80,8 @@ namespace flychams::core
         using WindowStringCmdMsg = airsim_interfaces::msg::WindowStringCmd;
         using AddTargetGroupSrv = airsim_interfaces::srv::AddTargetGroup;
         using AddClusterGroupSrv = airsim_interfaces::srv::AddClusterGroup;
+        using RemoveAllTargetsSrv = airsim_interfaces::srv::RemoveAllTargets;
+        using RemoveAllClustersSrv = airsim_interfaces::srv::RemoveAllClusters;
         using UpdateTargetCmdGroupMsg = airsim_interfaces::msg::UpdateTargetCmdGroup;
         using UpdateClusterCmdGroupMsg = airsim_interfaces::msg::UpdateClusterCmdGroup;
 
@@ -109,6 +113,8 @@ namespace flychams::core
     public: // Tracking control methods
         bool addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors) override;
         bool addClusterGroup(const IDs& cluster_ids, const std::vector<PointMsg>& centers, const std::vector<float>& radii, const bool& highlight, const std::vector<ColorMsg>& highlight_colors) override;
+        bool removeAllTargets() override;
+        bool removeAllClusters() override;
         void updateTargetGroup(const IDs& target_ids, const std::vector<PointMsg>& positions) override;
         void updateClusterGroup(const IDs& cluster_ids, const std::vector<PointMsg>& centers, const std::vector<float>& radii) override;
 
@@ -196,6 +202,8 @@ namespace flychams::core
         // Tracking commands
         ClientPtr<AddTargetGroupSrv> add_target_group_client_;
         ClientPtr<AddClusterGroupSrv> add_cluster_group_client_;
+        ClientPtr<RemoveAllTargetsSrv> remove_all_targets_client_;
+        ClientPtr<RemoveAllClustersSrv> remove_all_clusters_client_;
         PublisherPtr<UpdateTargetCmdGroupMsg> update_target_cmd_group_pub_;
         PublisherPtr<UpdateClusterCmdGroupMsg> update_cluster_cmd_group_pub_;
     };

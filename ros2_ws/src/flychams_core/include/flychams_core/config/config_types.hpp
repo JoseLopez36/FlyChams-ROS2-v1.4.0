@@ -180,6 +180,19 @@ namespace flychams::core
     using GroupConfigPtr = std::shared_ptr<GroupConfig>;
     using GroupConfigMap = std::unordered_map<ID, GroupConfigPtr>;
 
+    struct TargetConfig
+    {
+        // Identifiers
+        ID target_id;
+
+        // Internal config
+        TargetType target_type;
+        Priority target_priority;
+        std::string trajectory_path;
+    };
+    using TargetConfigPtr = std::shared_ptr<TargetConfig>;
+    using TargetConfigMap = std::unordered_map<ID, TargetConfigPtr>;
+
     struct MapConfig
     {
         ID map_id;
@@ -238,6 +251,9 @@ namespace flychams::core
 
         // Group config
         GroupConfigMap groups;
+
+        // Target config
+        TargetConfigMap targets;
 
         // Agent config
         AgentConfigMap agents;

@@ -111,6 +111,16 @@ namespace flychams::core
             return config_ptr_->groups.at(group_id);
         }
 
+        const TargetConfigMap getTargets() const
+        {
+            return config_ptr_->targets;
+        }
+
+        const TargetConfigPtr getTarget(const std::string& target_id) const
+        {
+            return config_ptr_->targets.at(target_id);
+        }
+
         const AgentConfigMap getAgents() const
         {
             return config_ptr_->agents;

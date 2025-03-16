@@ -57,7 +57,7 @@ def generate_launch_description():
                 'vehicle_body_frame_id': 'body',
                 'camera_body_frame_id': 'body',
                 'camera_optical_frame_id': 'optical',
-                'enable_world_plot': False,
+                'enable_world_plot': True,
                 'host_ip': 'localhost',
                 'host_port': 41451
             }]

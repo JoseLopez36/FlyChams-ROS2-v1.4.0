@@ -37,6 +37,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   # Tracking services and messages
   "srv/AddTargetGroup.srv"
   "srv/AddClusterGroup.srv"
+  "srv/RemoveAllTargets.srv"
+  "srv/RemoveAllClusters.srv"
   "msg/UpdateTargetCmdGroup.msg"
   "msg/UpdateClusterCmdGroup.msg"
   DEPENDENCIES std_msgs geometry_msgs LIBRARY_NAME ${PROJECT_NAME}
