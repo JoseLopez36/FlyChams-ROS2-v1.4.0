@@ -42,7 +42,6 @@ namespace flychams::control
 			IDLE,                // Initial state, UAV is inactive
 			INITIALIZING,        // UAV is being initialized
 			DISARMED,            // UAV is disarmed, safe state
-			ARMING,              // UAV is in the process of arming motors
 			ARMED,               // UAV is armed, ready for takeoff
 			TAKING_OFF,          // UAV is taking off
 			HOVERING,            // UAV is hovering in place
@@ -52,19 +51,6 @@ namespace flychams::control
 			ERROR                // Error state, requires reset
 		};
 
-	public: // State control methods
-		// Get the current state
-		State getState() const { return state_; }
-		// State transition requests
-		bool requestArm();
-		bool requestTakeoff();
-		bool requestHover();
-		bool requestLand();
-		bool requestDisarm();
-		bool requestMove(const core::PointMsg& goal_pos);
-		// Reset the UAV controller to IDLE state
-		bool reset();
-
 	private: // Parameters
 		core::ID agent_id_;
 		float update_rate_;
@@ -72,12 +58,14 @@ namespace flychams::control
 		float hover_altitude_;    // Altitude for hovering
 		float takeoff_altitude_;  // Target altitude for takeoff
 		float goal_reach_threshold_;
+		float max_velocity_;
+		float acceleration_limit_;
 
 	private: // Data
 		// Current state
 		State state_{ State::IDLE };
 		// State transition timestamps
-		rclcpp::Time state_entry_time_;
+		core::Time state_entry_time_;
 		// State transition timeouts
 		float arm_timeout_{ 5.0f };
 		float takeoff_timeout_{ 10.0f };
@@ -88,8 +76,24 @@ namespace flychams::control
 		// Goal position message
 		core::PointMsg goal_pos_;
 		bool has_goal_;
+		// Velocity controller parameters
+		core::Vector3r last_velocity_;
+		core::Time last_velocity_update_time_;
 		// Mutex
 		std::mutex mutex_;
+
+	public: // State control methods
+		// Get the current state
+		State getState() const { return state_; }
+		// State transition requests
+		bool requestArm();
+		bool requestTakeoff();
+		bool requestHover();
+		bool requestLand();
+		bool requestDisarm();
+		bool requestMove();
+		// Reset the UAV controller to IDLE state
+		bool reset();
 
 	private: // Methods
 		// Callbacks
@@ -103,7 +107,6 @@ namespace flychams::control
 		void handleIdleState();
 		void handleInitializingState();
 		void handleDisarmedState();
-		void handleArmingState();
 		void handleArmedState();
 		void handleTakingOffState();
 		void handleHoveringState();
@@ -113,6 +116,9 @@ namespace flychams::control
 		void handleErrorState();
 		// Update control
 		void update();
+		// Helper methods
+		float computeVelocity(const core::Vector3r& goal_pos, const core::Vector3r& curr_pos);
+		bool checkGoalReached(const core::Vector3r& goal_pos, const core::Vector3r& curr_pos);
 
 	private:
 		// Callback group

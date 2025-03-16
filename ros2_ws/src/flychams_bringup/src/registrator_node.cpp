@@ -37,9 +37,14 @@ public: // Constructor/Destructor
     void onInit() override
     {
         // Register agents
+        std::string first_agent_id = "";
         for (const auto& [agent_id, agent_config] : config_tools_->getAgents())
         {
             registerElement(agent_id, ElementType::Agent);
+
+            // Get first agent ID
+            if (first_agent_id == "")
+                first_agent_id = agent_id;
         }
 
         // Register targets
@@ -79,6 +84,63 @@ public: // Constructor/Destructor
                 registerElement(cluster_id, ElementType::Cluster);
             }
         }
+
+        // Wait for 2 seconds
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+
+        // Check if there are any agents available
+        if (config_tools_->getAgents().empty()) {
+            RCLCPP_ERROR(node_->get_logger(), "No agents found. Cannot initialize GUI.");
+            return; // Exit early if no agents are available
+        }
+
+        // Get window IDs
+        const ID scene_window_id = RosUtils::getParameter<ID>(node_, "window_ids.scene_id");
+        const ID agent_window_id = RosUtils::getParameter<ID>(node_, "window_ids.agent_id");
+        const ID central_window_id = RosUtils::getParameter<ID>(node_, "window_ids.central_id");
+        const IDs tracking_window_ids = RosUtils::getParameter<IDs>(node_, "window_ids.tracking_ids");
+
+        // Check if tracking window IDs are valid
+        if (tracking_window_ids.size() < 4) {
+            RCLCPP_WARN(node_->get_logger(), "Not enough tracking window IDs provided. Defaulting to empty.");
+        }
+
+        // Get camera IDs
+        const ID scene_camera_id = RosUtils::getParameter<ID>(node_, "camera_ids.scene_id");
+        const ID agent_camera_id = RosUtils::replacePlaceholder(RosUtils::getParameter<ID>(node_, "camera_ids.agent_id"), "AGENTID", first_agent_id);
+        const ID central_camera_id = config_tools_->getAgent(first_agent_id)->central_head_id;
+
+        // Initialize GUI
+        IDs window_ids(7, "");          // Initialize with size 7
+        IDs vehicle_ids(7, "");         // Initialize with size 7
+        IDs camera_ids(7, "");          // Initialize with size 7
+        std::vector<int> crop_x(7, 0);  // Initialize with size 7 and default value 0
+        std::vector<int> crop_y(7, 0);  // Initialize with size 7 and default value 0
+        std::vector<int> crop_w(7, 0);  // Initialize with size 7 and default value 0
+        std::vector<int> crop_h(7, 0);  // Initialize with size 7 and default value 0
+
+        // Set window depending on index
+        window_ids[0] = scene_window_id;
+        vehicle_ids[0] = "";
+        camera_ids[0] = scene_camera_id;
+
+        window_ids[1] = agent_window_id;
+        vehicle_ids[1] = first_agent_id;
+        camera_ids[1] = agent_camera_id;
+
+        window_ids[2] = central_window_id;
+        vehicle_ids[2] = first_agent_id;
+        camera_ids[2] = central_camera_id;
+
+        for (size_t i = 3; i < 7; i++)
+        {
+            if (i - 3 < tracking_window_ids.size())
+                window_ids[i] = tracking_window_ids[i - 3];
+            else
+                window_ids[i] = "";
+        }
+
+        ext_tools_->setWindowImageGroup(window_ids, vehicle_ids, camera_ids, crop_x, crop_y, crop_w, crop_h);
     }
 
     void onShutdown() override

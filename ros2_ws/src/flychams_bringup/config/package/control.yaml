@@ -4,13 +4,15 @@
       # Update rates (Hz)
       control_update_rate: 10.0
       # Takeoff altitude (m)
-      takeoff_altitude: 1.5
+      takeoff_altitude: 1.0
       # Timeouts (s)
-      arm_timeout: 5.0
       takeoff_timeout: 10.0
       landing_timeout: 10.0
       # Goal reach threshold (m)
-      goal_reach_threshold: 0.5
+      goal_reach_threshold: 0.20
+      # Velocity controller parameters
+      max_velocity: 7.5
+      acceleration_limit: 0.4
 
     head_control:
       # Update rates (Hz)

@@ -225,6 +225,7 @@ namespace airsim_wrapper
         // State methods
         rclcpp::Time client_get_timestamp();
         bool client_get_paused();
+        bool client_get_enabled_control(const std::string& vehicle_name);
         msr::airlib::MultirotorState client_get_multirotor_state(const std::string& vehicle_name);
         msr::airlib::CameraInfo client_get_camera_info(const std::string& vehicle_name, const std::string& camera_name);
         msr::airlib::Vector2r client_get_camera_fov(const std::string& vehicle_name, const std::string& camera_name);
@@ -331,6 +332,7 @@ namespace airsim_wrapper
         std::unique_ptr<msr::airlib::MultirotorRpcLibClient> airsim_client_control_;
         std::unique_ptr<msr::airlib::RpcLibClientBase> airsim_client_window_;
         std::unique_ptr<msr::airlib::RpcLibClientBase> airsim_client_tracking_;
+        std::unique_ptr<msr::airlib::MultirotorRpcLibClient> airsim_client_clock_;
 
         // Node and callback groups
         std::shared_ptr<rclcpp::Node> nh_;
@@ -358,6 +360,7 @@ namespace airsim_wrapper
 
         // Message storage
         rosgraph_msgs::msg::Clock ros_clock_;
+        std::mutex clock_mutex_;
     };
 
 } // namespace airsim_wrapper

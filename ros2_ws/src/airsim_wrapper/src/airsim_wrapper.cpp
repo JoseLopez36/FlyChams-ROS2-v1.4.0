@@ -17,6 +17,7 @@ namespace airsim_wrapper
         , airsim_client_control_(nullptr)
         , airsim_client_window_(nullptr)
         , airsim_client_tracking_(nullptr)
+        , airsim_client_clock_(nullptr)
         , nh_(nh)
     {
         ros_clock_.clock = rclcpp::Time(0);
@@ -64,14 +65,14 @@ namespace airsim_wrapper
             return;
         }
 
-        // Publish AirSim status
-        RCLCPP_INFO(nh_->get_logger(), "AirsimWrapper successfully initialized!");
-
         // Create timers
         nh_->get_parameter("update_airsim_state_every_n_sec", update_airsim_state_every_n_sec_);
         airsim_state_update_timer_ = nh_->create_wall_timer(std::chrono::duration<double>(update_airsim_state_every_n_sec_), std::bind(&AirsimWrapper::state_timer_cb, this), cb_state_);
         nh_->get_parameter("update_sim_clock_every_n_sec", update_sim_clock_every_n_sec_);
         sim_clock_update_timer_ = nh_->create_wall_timer(std::chrono::duration<double>(update_sim_clock_every_n_sec_), std::bind(&AirsimWrapper::clock_timer_cb, this), cb_state_);
+        RCLCPP_INFO(nh_->get_logger(), "Created state (%.4f) and clock (%.4f) timers", update_airsim_state_every_n_sec_, update_sim_clock_every_n_sec_);
+
+        RCLCPP_INFO(nh_->get_logger(), "AirsimWrapper successfully initialized!");
     }
 
     AirsimWrapper::~AirsimWrapper()
@@ -98,6 +99,7 @@ namespace airsim_wrapper
         airsim_client_control_ = std::unique_ptr<msr::airlib::MultirotorRpcLibClient>(new msr::airlib::MultirotorRpcLibClient(host_ip_, host_port_));
         airsim_client_window_ = std::unique_ptr<msr::airlib::RpcLibClientBase>(new msr::airlib::RpcLibClientBase(host_ip_, host_port_));
         airsim_client_tracking_ = std::unique_ptr<msr::airlib::RpcLibClientBase>(new msr::airlib::RpcLibClientBase(host_ip_, host_port_));
+        airsim_client_clock_ = std::unique_ptr<msr::airlib::MultirotorRpcLibClient>(new msr::airlib::MultirotorRpcLibClient(host_ip_, host_port_));
 
         // Connect to AirSim in parallel
         std::vector<std::future<void>> futures;
@@ -115,6 +117,10 @@ namespace airsim_wrapper
 
         futures.push_back(std::async(std::launch::async, [this]() {
             airsim_client_tracking_->confirmConnection();
+            }));
+
+        futures.push_back(std::async(std::launch::async, [this]() {
+            airsim_client_clock_->confirmConnection();
             }));
 
         // Wait for all clients to connect
@@ -137,7 +143,7 @@ namespace airsim_wrapper
         nh_->get_parameter_or("camera_optical_frame_id", camera_optical_frame_id_, camera_optical_frame_id_);
 
         // Initialize callback groups
-        cb_state_ = nh_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        cb_state_ = nh_->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
         cb_control_ = nh_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
         cb_window_ = nh_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
         cb_tracking_ = nh_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -342,6 +348,14 @@ namespace airsim_wrapper
 
     void AirsimWrapper::local_vel_cmd_cb(const std::string& vehicle_name, const airsim_interfaces::msg::VelCmd::SharedPtr vel_cmd_msg)
     {
+        RCLCPP_INFO_THROTTLE(nh_->get_logger(), *nh_->get_clock(), 1000.0, "Received local velocity command for vehicle %s", vehicle_name.c_str());
+
+        if (!client_get_enabled_control(vehicle_name))
+        {
+            RCLCPP_ERROR(nh_->get_logger(), "Vehicle %s is not in OFFBOARD mode. Cannot send velocity command", vehicle_name.c_str());
+            return;
+        }
+
         // Extract message data
         const auto& vx = vel_cmd_msg->vel_cmd_x;
         const auto& vy = vel_cmd_msg->vel_cmd_y;
@@ -360,6 +374,14 @@ namespace airsim_wrapper
 
     void AirsimWrapper::local_pos_cmd_cb(const std::string& vehicle_name, const airsim_interfaces::msg::PosCmd::SharedPtr pos_cmd_msg)
     {
+        RCLCPP_INFO_THROTTLE(nh_->get_logger(), *nh_->get_clock(), 1000.0, "Received local position command for vehicle %s", vehicle_name.c_str());
+
+        if (!client_get_enabled_control(vehicle_name))
+        {
+            RCLCPP_ERROR(nh_->get_logger(), "Vehicle %s is not in OFFBOARD mode. Cannot send position command", vehicle_name.c_str());
+            return;
+        }
+
         // Extract message data
         const auto& x = pos_cmd_msg->pos_cmd_x;
         const auto& y = pos_cmd_msg->pos_cmd_y;
@@ -379,6 +401,14 @@ namespace airsim_wrapper
 
     void AirsimWrapper::global_pos_cmd_cb(const std::string& vehicle_name, const airsim_interfaces::msg::PosCmd::SharedPtr pos_cmd_msg)
     {
+        RCLCPP_INFO_THROTTLE(nh_->get_logger(), *nh_->get_clock(), 1000.0, "Received global position command for vehicle %s", vehicle_name.c_str());
+
+        if (!client_get_enabled_control(vehicle_name))
+        {
+            RCLCPP_ERROR(nh_->get_logger(), "Vehicle %s is not in OFFBOARD mode. Cannot send global position command", vehicle_name.c_str());
+            return;
+        }
+
         // Extract message data
         const auto& x = pos_cmd_msg->pos_cmd_x;
         const auto& y = pos_cmd_msg->pos_cmd_y;
@@ -407,6 +437,14 @@ namespace airsim_wrapper
 
     void AirsimWrapper::gimbal_angle_cmd_cb(const std::string& vehicle_name, const airsim_interfaces::msg::GimbalAngleCmd::SharedPtr gimbal_angle_cmd_msg)
     {
+        RCLCPP_INFO_THROTTLE(nh_->get_logger(), *nh_->get_clock(), 1000.0, "Received gimbal angle command for vehicle %s", vehicle_name.c_str());
+
+        if (!client_get_enabled_control(vehicle_name))
+        {
+            RCLCPP_ERROR(nh_->get_logger(), "Vehicle %s is not in OFFBOARD mode. Cannot send gimbal angle command", vehicle_name.c_str());
+            return;
+        }
+
         // Extract message data
         const auto& camera_names = gimbal_angle_cmd_msg->camera_names;
         const auto& orientations = gimbal_angle_cmd_msg->orientations;
@@ -438,6 +476,14 @@ namespace airsim_wrapper
 
     void AirsimWrapper::camera_fov_cmd_cb(const std::string& vehicle_name, const airsim_interfaces::msg::CameraFovCmd::SharedPtr camera_fov_cmd_msg)
     {
+        RCLCPP_INFO_THROTTLE(nh_->get_logger(), *nh_->get_clock(), 1000.0, "Received camera fov command for vehicle %s", vehicle_name.c_str());
+
+        if (!client_get_enabled_control(vehicle_name))
+        {
+            RCLCPP_ERROR(nh_->get_logger(), "Vehicle %s is not in OFFBOARD mode. Cannot send camera fov command", vehicle_name.c_str());
+            return;
+        }
+
         // Extract message data
         const auto& camera_names = camera_fov_cmd_msg->camera_names;
         const auto& fov_cmds = camera_fov_cmd_msg->fovs;
@@ -461,6 +507,8 @@ namespace airsim_wrapper
 
     void AirsimWrapper::window_image_cmd_group_cb(const airsim_interfaces::msg::WindowImageCmdGroup::SharedPtr window_image_cmd_group_msg)
     {
+        RCLCPP_INFO_THROTTLE(nh_->get_logger(), *nh_->get_clock(), 1000.0, "Received window image command group");
+
         // Extract request data
         const auto& window_indices = window_image_cmd_group_msg->window_indices;
         const auto& vehicle_names = window_image_cmd_group_msg->vehicle_names;
@@ -481,6 +529,8 @@ namespace airsim_wrapper
 
     void AirsimWrapper::window_rectangle_cmd_cb(const airsim_interfaces::msg::WindowRectangleCmd::SharedPtr window_rectangle_cmd_msg)
     {
+        RCLCPP_INFO_THROTTLE(nh_->get_logger(), *nh_->get_clock(), 1000.0, "Received window rectangle command");
+
         // Extract request data
         const auto& window_index = window_rectangle_cmd_msg->window_index;
         const auto& corners = window_rectangle_cmd_msg->corners;
@@ -501,6 +551,8 @@ namespace airsim_wrapper
 
     void AirsimWrapper::window_string_cmd_cb(const airsim_interfaces::msg::WindowStringCmd::SharedPtr window_string_cmd_msg)
     {
+        RCLCPP_INFO_THROTTLE(nh_->get_logger(), *nh_->get_clock(), 1000.0, "Received window string command");
+
         // Extract request data
         const auto& window_index = window_string_cmd_msg->window_index;
         const auto& strings = window_string_cmd_msg->strings;
@@ -521,6 +573,8 @@ namespace airsim_wrapper
 
     void AirsimWrapper::update_target_cmd_group_cb(const airsim_interfaces::msg::UpdateTargetCmdGroup::SharedPtr update_target_cmd_group_msg)
     {
+        RCLCPP_INFO_THROTTLE(nh_->get_logger(), *nh_->get_clock(), 1000.0, "Received update target command group");
+
         // Extract message data
         const auto& target_names = update_target_cmd_group_msg->target_names;
         const auto& positions = update_target_cmd_group_msg->positions;
@@ -538,6 +592,8 @@ namespace airsim_wrapper
 
     void AirsimWrapper::update_cluster_cmd_group_cb(const airsim_interfaces::msg::UpdateClusterCmdGroup::SharedPtr update_cluster_cmd_group_msg)
     {
+        RCLCPP_INFO_THROTTLE(nh_->get_logger(), *nh_->get_clock(), 1000.0, "Received update cluster command group");
+
         // Extract message data
         const auto& cluster_names = update_cluster_cmd_group_msg->cluster_names;
         const auto& centers = update_cluster_cmd_group_msg->centers;
@@ -560,7 +616,7 @@ namespace airsim_wrapper
 
     bool AirsimWrapper::reset_srv_cb(std::shared_ptr<airsim_interfaces::srv::Reset::Request> request, std::shared_ptr<airsim_interfaces::srv::Reset::Response> response)
     {
-        RCLCPP_WARN(nh_->get_logger(), "Resetting AirSim");
+        RCLCPP_INFO(nh_->get_logger(), "Resetting AirSim");
         unused(request);
 
         // Pause and reset AirSim
@@ -582,7 +638,7 @@ namespace airsim_wrapper
 
     bool AirsimWrapper::run_srv_cb(std::shared_ptr<airsim_interfaces::srv::Run::Request> request, std::shared_ptr<airsim_interfaces::srv::Run::Response> response)
     {
-        RCLCPP_WARN(nh_->get_logger(), "Running AirSim");
+        RCLCPP_INFO(nh_->get_logger(), "Running AirSim");
         unused(request);
 
         try
@@ -603,7 +659,7 @@ namespace airsim_wrapper
 
     bool AirsimWrapper::pause_srv_cb(std::shared_ptr<airsim_interfaces::srv::Pause::Request> request, std::shared_ptr<airsim_interfaces::srv::Pause::Response> response)
     {
-        RCLCPP_WARN(nh_->get_logger(), "Pausing AirSim");
+        RCLCPP_INFO(nh_->get_logger(), "Pausing AirSim");
         unused(request);
 
         try
@@ -624,7 +680,6 @@ namespace airsim_wrapper
 
     bool AirsimWrapper::enable_control_srv_cb(std::shared_ptr<airsim_interfaces::srv::EnableControl::Request> request, std::shared_ptr<airsim_interfaces::srv::EnableControl::Response> response)
     {
-        RCLCPP_WARN(nh_->get_logger(), "Enabling control of vehicle %s", request->vehicle_name.c_str());
         const auto& vehicle_name = request->vehicle_name;
         const auto& enable = request->enable;
 
@@ -857,7 +912,10 @@ namespace airsim_wrapper
         try
         {
             // Retrieve timestamp from server
-            ros_clock_.clock = client_get_timestamp();
+            {
+                std::lock_guard<std::mutex> lock(clock_mutex_);
+                ros_clock_.clock = client_get_timestamp();
+            }
 
             // Publish clock
             clock_pub_->publish(ros_clock_);
@@ -935,12 +993,17 @@ namespace airsim_wrapper
 
     rclcpp::Time AirsimWrapper::client_get_timestamp()
     {
-        return rclcpp::Time(airsim_client_state_->getTimestamp());
+        return rclcpp::Time(airsim_client_clock_->getTimestamp());
     }
 
     bool AirsimWrapper::client_get_paused()
     {
         return airsim_client_state_->simIsPaused();
+    }
+
+    bool AirsimWrapper::client_get_enabled_control(const std::string& vehicle_name)
+    {
+        return airsim_client_state_->isApiControlEnabled(vehicle_name);
     }
 
     msr::airlib::MultirotorState AirsimWrapper::client_get_multirotor_state(const std::string& vehicle_name)
@@ -1114,6 +1177,7 @@ namespace airsim_wrapper
 
     rclcpp::Time AirsimWrapper::get_sim_clock_time()
     {
+        std::lock_guard<std::mutex> lock(clock_mutex_);
         return ros_clock_.clock;
     }
 

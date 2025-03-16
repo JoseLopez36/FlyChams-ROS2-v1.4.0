@@ -26,14 +26,20 @@ namespace flychams::core
         land_client_ = node_->create_client<Land>("/airsim/vehicles/cmd/land");
         hover_client_ = node_->create_client<Hover>("/airsim/vehicles/cmd/hover");
         // Window commands
-        window_image_cmd_group_pub_ = node_->create_publisher<WindowImageCmdGroup>("/airsim/group_of_windows/image_cmd", 10);
-        window_rectangle_cmd_pub_ = node_->create_publisher<WindowRectangleCmd>("/airsim/group_of_windows/rectangle_cmd", 10);
-        window_string_cmd_pub_ = node_->create_publisher<WindowStringCmd>("/airsim/group_of_windows/string_cmd", 10);
+        window_image_cmd_group_pub_ = node_->create_publisher<WindowImageCmdGroup>("/airsim/windows/cmd/image", 10);
+        window_rectangle_cmd_pub_ = node_->create_publisher<WindowRectangleCmd>("/airsim/windows/cmd/rectangle", 10);
+        window_string_cmd_pub_ = node_->create_publisher<WindowStringCmd>("/airsim/windows/cmd/string", 10);
         // Tracking commands
-        add_target_group_client_ = node_->create_client<AddTargetGroup>("/airsim/group_of_targets/add");
-        add_cluster_group_client_ = node_->create_client<AddClusterGroup>("/airsim/group_of_clusters/add");
-        update_target_cmd_group_pub_ = node_->create_publisher<UpdateTargetCmdGroupMsg>("/airsim/group_of_targets/update_cmd", 10);
-        update_cluster_cmd_group_pub_ = node_->create_publisher<UpdateClusterCmdGroupMsg>("/airsim/group_of_clusters/update_cmd", 10);
+        add_target_group_client_ = node_->create_client<AddTargetGroup>("/airsim/targets/cmd/add");
+        add_cluster_group_client_ = node_->create_client<AddClusterGroup>("/airsim/clusters/cmd/add");
+        update_target_cmd_group_pub_ = node_->create_publisher<UpdateTargetCmdGroupMsg>("/airsim/targets/cmd/update", 10);
+        update_cluster_cmd_group_pub_ = node_->create_publisher<UpdateClusterCmdGroupMsg>("/airsim/clusters/cmd/update", 10);
+
+        // Initialize vehicle maps
+        vel_cmd_pub_map_.clear();
+        pos_cmd_pub_map_.clear();
+        gimbal_angle_cmd_pub_map_.clear();
+        camera_fov_cmd_pub_map_.clear();
     }
 
     AirsimTools::~AirsimTools()
@@ -191,7 +197,14 @@ namespace flychams::core
         msg.vel_cmd_dt = vel_cmd_dt;
 
         // Publish message
-        vel_cmd_pub_map_[vehicle_id]->publish(msg);
+        if (vel_cmd_pub_map_.find(vehicle_id) != vel_cmd_pub_map_.end())
+        {
+            vel_cmd_pub_map_[vehicle_id]->publish(msg);
+        }
+        else
+        {
+            RCLCPP_ERROR(node_->get_logger(), "Vehicle %s not found", vehicle_id.c_str());
+        }
     }
 
     void AirsimTools::setPosition(const ID& vehicle_id, const float& pos_cmd_x, const float& pos_cmd_y, const float& pos_cmd_z, const float& pos_cmd_vel, const float& pos_cmd_timeout)
@@ -205,7 +218,14 @@ namespace flychams::core
         msg.pos_cmd_timeout = pos_cmd_timeout;
 
         // Publish message
-        pos_cmd_pub_map_[vehicle_id]->publish(msg);
+        if (pos_cmd_pub_map_.find(vehicle_id) != pos_cmd_pub_map_.end())
+        {
+            pos_cmd_pub_map_[vehicle_id]->publish(msg);
+        }
+        else
+        {
+            RCLCPP_ERROR(node_->get_logger(), "Vehicle %s not found", vehicle_id.c_str());
+        }
     }
 
     void AirsimTools::setGimbalOrientations(const ID& vehicle_id, const IDs& camera_ids, const std::vector<QuaternionMsg>& target_quats)
@@ -216,7 +236,14 @@ namespace flychams::core
         msg.orientations = target_quats;
 
         // Publish message
-        gimbal_angle_cmd_pub_map_[vehicle_id]->publish(msg);
+        if (gimbal_angle_cmd_pub_map_.find(vehicle_id) != gimbal_angle_cmd_pub_map_.end())
+        {
+            gimbal_angle_cmd_pub_map_[vehicle_id]->publish(msg);
+        }
+        else
+        {
+            RCLCPP_ERROR(node_->get_logger(), "Vehicle %s not found", vehicle_id.c_str());
+        }
     }
 
     void AirsimTools::setCameraFovs(const ID& vehicle_id, const IDs& camera_ids, const std::vector<float>& target_fovs)
@@ -227,7 +254,14 @@ namespace flychams::core
         msg.fovs = target_fovs;
 
         // Publish message
-        camera_fov_cmd_pub_map_[vehicle_id]->publish(msg);
+        if (camera_fov_cmd_pub_map_.find(vehicle_id) != camera_fov_cmd_pub_map_.end())
+        {
+            camera_fov_cmd_pub_map_[vehicle_id]->publish(msg);
+        }
+        else
+        {
+            RCLCPP_ERROR(node_->get_logger(), "Vehicle %s not found", vehicle_id.c_str());
+        }
     }
 
     // ════════════════════════════════════════════════════════════════════════════

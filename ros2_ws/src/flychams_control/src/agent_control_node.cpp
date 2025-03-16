@@ -57,25 +57,15 @@ private: // Element management
         uav_controllers_.insert(std::make_pair(agent_id, uav_controller));
         RCLCPP_INFO(node_->get_logger(), "UAV controller created for agent %s", agent_id.c_str());
 
-        // Initialize UAV states
-        uav_controllers_[agent_id]->requestArm();     // First, arm the UAV
-        uav_controllers_[agent_id]->requestTakeoff(); // After arming, takeoff
-        // After takeoff, the controller will automatically transition to the hover state and start attempting to move to a goal
-
         // Create head controller
-        auto head_controller = std::make_shared<HeadController>(agent_id, node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
-        head_controllers_.insert(std::make_pair(agent_id, head_controller));
-        RCLCPP_INFO(node_->get_logger(), "Head controller created for agent %s", agent_id.c_str());
+        // auto head_controller = std::make_shared<HeadController>(agent_id, node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
+        // head_controllers_.insert(std::make_pair(agent_id, head_controller));
+        // RCLCPP_INFO(node_->get_logger(), "Head controller created for agent %s", agent_id.c_str());
     }
 
     void onRemoveAgent(const ID& agent_id) override
     {
-        // Request landing
-        uav_controllers_[agent_id]->requestLand(); // First, land the UAV
-        // After landing, the controller will automatically transition to the disarmed state
-
         // Destroy UAV controller
-        uav_controllers_[agent_id]->reset();
         uav_controllers_.erase(agent_id);
         RCLCPP_INFO(node_->get_logger(), "UAV controller destroyed for agent %s", agent_id.c_str());
 
