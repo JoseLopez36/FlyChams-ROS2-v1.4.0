@@ -8,11 +8,10 @@ namespace airsim_wrapper
     // CONSTRUCTOR/DESTRUCTOR
     // ════════════════════════════════════════════════════════════════════════════
 
-    AirsimWrapper::AirsimWrapper(const std::shared_ptr<rclcpp::Node> nh, const std::string& host_ip, uint16_t host_port, bool enable_world_plot)
+    AirsimWrapper::AirsimWrapper(const std::shared_ptr<rclcpp::Node> nh, const std::string& host_ip, uint16_t host_port)
         : airsim_settings_parser_(host_ip, host_port)
         , host_ip_(host_ip)
         , host_port_(host_port)
-        , enable_world_plot_(enable_world_plot)
         , airsim_client_state_(nullptr)
         , airsim_client_control_(nullptr)
         , airsim_client_window_(nullptr)

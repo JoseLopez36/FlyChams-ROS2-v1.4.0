@@ -37,7 +37,6 @@ namespace flychams::perception
 
 		// Initialize subscribers and publishers
 		info_subs_ = std::unordered_map<ID, core::SubscriberPtr<core::TargetInfoMsg>>();
-		cluster_registration_pub_ = topic_tools_->createClusterRegistrationPublisher();
 		cluster_pubs_ = std::unordered_map<ID, core::PublisherPtr<core::ClusterInfoMsg>>();
 
 		// Set K-Means parameters
@@ -69,7 +68,6 @@ namespace flychams::perception
 		kmeans_.reset();
 		// Destroy subscribers and publishers
 		info_subs_.clear();
-		cluster_registration_pub_.reset();
 		cluster_pubs_.clear();
 		// Destroy update timers
 		clustering_timer_.reset();
@@ -104,6 +102,13 @@ namespace flychams::perception
 		kmeans_->initialize(target_ids_, cluster_ids_);
 		RCLCPP_WARN(node_->get_logger(), "Target clustering: Cluster added, re-initialized K-means with %d targets and %d clusters",
 			static_cast<int>(target_ids_.size()), static_cast<int>(cluster_ids_.size()));
+		// Add cluster to simulation
+		ColorMsg highlight_color;
+		highlight_color.r = 0.0f;
+		highlight_color.g = 1.0f;
+		highlight_color.b = 1.0f;
+		highlight_color.a = 0.04f;
+		ext_tools_->addClusterGroup({ cluster_id }, { PointMsg() }, { 0.0f }, config_tools_->getSimulation()->draw_world_markers, { highlight_color });
 	}
 
 	void TargetClustering::removeCluster(const ID& cluster_id)
@@ -216,6 +221,9 @@ namespace flychams::perception
 			return;
 
 		// Cycle through each cluster
+		std::vector<ID> cluster_ids;
+		std::vector<PointMsg> cluster_centers;
+		std::vector<float> cluster_radii;
 		for (const auto& cluster_id : cluster_ids_)
 		{
 			// Get cluster points
@@ -237,7 +245,7 @@ namespace flychams::perception
 
 			// Create cluster info message
 			ClusterInfoMsg cluster_info;
-			cluster_info.header = RosUtils::createHeader(node_, tf_tools_->getWorldFrame());
+			cluster_info.header = RosUtils::createHeader(node_, tf_tools_->getGlobalFrame());
 			cluster_info.center.x = circle.C.x;
 			cluster_info.center.y = circle.C.y;
 			cluster_info.center.z = 0.0f;
@@ -245,9 +253,15 @@ namespace flychams::perception
 
 			// Publish cluster info
 			cluster_pubs_[cluster_id]->publish(cluster_info);
-			RCLCPP_INFO(node_->get_logger(), "Target clustering: Cluster %s published with x=%f, y=%f, r=%f",
-				cluster_id.c_str(), circle.C.x, circle.C.y, circle.R);
+
+			// Add cluster to vectors
+			cluster_ids.push_back(cluster_id);
+			cluster_centers.push_back(cluster_info.center);
+			cluster_radii.push_back(cluster_info.radius);
 		}
+
+		// Update clusters in simulation
+		ext_tools_->updateClusterGroup(cluster_ids, cluster_centers, cluster_radii);
 	}
 
 } // namespace flychams::perception

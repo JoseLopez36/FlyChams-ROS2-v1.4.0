@@ -11,11 +11,9 @@ int main(int argc, char** argv)
     std::shared_ptr<rclcpp::Node> nh = rclcpp::Node::make_shared("airsim_node", node_options);
     std::string host_ip;
     uint16_t host_port = 41451;
-    bool enable_world_plot = false;
     nh->get_parameter("host_ip", host_ip);
     nh->get_parameter("host_port", host_port);
-    nh->get_parameter("enable_world_plot", enable_world_plot);
-    airsim_wrapper::AirsimWrapper airsim_wrapper(nh, host_ip, host_port, enable_world_plot);
+    airsim_wrapper::AirsimWrapper airsim_wrapper(nh, host_ip, host_port);
 
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(nh);

@@ -4,7 +4,7 @@
 #include "flychams_perception/clustering/target_clustering.hpp"
 
 // Core includes
-#include "flychams_core/base/discoverer_node.hpp"
+#include "flychams_core/base/base_discoverer_node.hpp"
 
 using namespace flychams::core;
 using namespace flychams::perception;
@@ -25,11 +25,11 @@ using namespace flychams::perception;
  * @date 2025-03-01
  * ════════════════════════════════════════════════════════════════
  */
-class ClusteringNode : public DiscovererNode
+class ClusteringNode : public BaseDiscovererNode
 {
 public: // Constructor/Destructor
     ClusteringNode(const std::string& node_name, const rclcpp::NodeOptions& options)
-        : DiscovererNode(node_name, options)
+        : BaseDiscovererNode(node_name, options)
     {
         // Nothing to do
     }
@@ -38,6 +38,12 @@ public: // Constructor/Destructor
     {
         // Initialize target clustering
         target_clustering_ = std::make_shared<TargetClustering>(node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
+
+        // Remove all clusters from simulation
+        ext_tools_->removeAllClusters();
+
+        // Wait 2 seconds to ensure clusters are removed
+        std::this_thread::sleep_for(std::chrono::seconds(2));
     }
 
     void onShutdown() override

@@ -45,6 +45,9 @@ public: // Constructor/Destructor
         // Remove all targets from simulation
         ext_tools_->removeAllTargets();
 
+        // Wait 2 seconds to ensure targets are removed
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+
         // Set target update timer
         prev_time_ = RosUtils::getTimeNow(node_);
         const auto& update_rate = RosUtils::getParameter<float>(node_, "target_control.target_update_rate");
@@ -56,9 +59,6 @@ public: // Constructor/Destructor
     {
         // Lock mutex
         std::lock_guard<std::mutex> lock(mutex_);
-
-        // Remove all targets from simulation
-        ext_tools_->removeAllTargets();
 
         // Destroy target controllers
         target_controllers_.clear();

@@ -92,7 +92,6 @@ namespace flychams::perception
 		// Subscribers
 		std::unordered_map<core::ID, core::SubscriberPtr<core::TargetInfoMsg>> info_subs_;
 		// Publishers
-		core::PublisherPtr<core::RegistrationMsg> cluster_registration_pub_;
 		std::unordered_map<core::ID, core::PublisherPtr<core::ClusterInfoMsg>> cluster_pubs_;
 		// Timers
 		core::TimerPtr clustering_timer_;
