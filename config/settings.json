@@ -25,67 +25,17 @@
     },
     "Vehicles": {
         "AGENT05": {
-            "VehicleType": "PX4Multirotor",
-            "Model": "Quadcopter",
-            "UseSerial": false,
-            "LockStep": true,
-            "UseTcp": true,
-            "TcpPort": 4560,
-            "ControlIp": "remote",
-            "ControlPortLocal": 14540,
-            "ControlPortRemote": 14580,
-            "LocalHostIp": "172.17.0.1",
-            "Sensors": {
-                "Barometer": {
-                    "SensorType": 1,
-                    "Enabled": true,
-                    "PressureFactorSigma": 0.0001825
-                }
-            },
-            "Parameters": {
-                "NAV_RCL_ACT": 0,
-                "NAV_DLL_ACT": 0,
-                "COM_OBL_ACT": 1,
-                "LPE_LAT": 47.63999938964844,
-                "LPE_LON": -122.13999938964844
-            },
+            "VehicleType": "SimpleFlight",
+            "DefaultVehicleState": "Armed",
+            "AutoCreate": true,
             "X": 15.0,
             "Y": -20.0,
             "Z": -100.0,
             "Roll": 0.0,
             "Pitch": -0.0,
             "Yaw": -0.0,
-            "Gimbals": {
-                "GIM_HEAD13": {
-                    "CameraName": "CAM_HEAD13",
-                    "YawEnabled": true,
-                    "PitchEnabled": true,
-                    "RollEnabled": true,
-                    "YawMin": 0.0,
-                    "PitchMin": -40.0,
-                    "RollMin": -20.0,
-                    "YawMax": 0.0,
-                    "PitchMax": 130.0,
-                    "RollMax": 20.0,
-                    "YawSpeed": 0.0,
-                    "PitchSpeed": 0.054831139743328094,
-                    "RollSpeed": 0.054831139743328094,
-                    "YawRiseTime": 0.0,
-                    "PitchRiseTime": 0.05000000074505806,
-                    "RollRiseTime": 0.10000000149011612,
-                    "YawDamping": 0.0,
-                    "PitchDamping": 0.9900000095367432,
-                    "RollDamping": 0.9700000286102295,
-                    "X": 0.0,
-                    "Y": -0.0,
-                    "Z": 0.15000000596046448,
-                    "Pitch": 0.0,
-                    "Roll": 0.0,
-                    "Yaw": 0.0
-                }
-            },
             "Cameras": {
-                "CAM_HEAD13": {
+                "HEAD13": {
                     "CaptureSettings": [
                         {
                             "ImageType": 0,
@@ -95,11 +45,33 @@
                         }
                     ],
                     "X": 0.0,
-                    "Y": 0.0,
-                    "Z": 0.0,
-                    "Pitch": -90.0,
+                    "Y": -0.0,
+                    "Z": 0.15000000596046448,
                     "Roll": 0.0,
-                    "Yaw": -90.0
+                    "Pitch": -90.0,
+                    "Yaw": 0.0,
+                    "EnableGimbal": true,
+                    "CameraVisible": true,
+                    "Gimbal": {
+                        "YawMin": -320.0,
+                        "PitchMin": -40.0,
+                        "RollMin": -20.0,
+                        "YawMax": 320.0,
+                        "PitchMax": 130.0,
+                        "RollMax": 20.0,
+                        "YawSpeed": 0.08224670588970184,
+                        "PitchSpeed": 0.054831139743328094,
+                        "RollSpeed": 0.054831139743328094,
+                        "YawRiseTime": 0.05999999865889549,
+                        "PitchRiseTime": 0.05000000074505806,
+                        "RollRiseTime": 0.10000000149011612,
+                        "YawDamping": 0.949999988079071,
+                        "PitchDamping": 0.9900000095367432,
+                        "RollDamping": 0.9700000286102295,
+                        "Roll": 0.0,
+                        "Pitch": 0.0,
+                        "Yaw": -90.0
+                    }
                 },
                 "CAM_AGENT05": {
                     "CaptureSettings": [

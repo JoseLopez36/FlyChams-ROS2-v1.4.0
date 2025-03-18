@@ -228,6 +228,9 @@ namespace airsim_wrapper
             vehicle_ros->camera_map.clear();
             for (auto& [camera_name, camera_setting] : vehicle_setting->cameras)
             {
+                if (!camera_setting.enable_gimbal)
+                    continue;
+
                 RCLCPP_INFO(nh_->get_logger(), "Initializing camera %s from settings...", camera_name.c_str());
                 set_nans_to_zeros_in_pose(*vehicle_setting, camera_setting);
 
@@ -456,11 +459,11 @@ namespace airsim_wrapper
                 const auto& camera_name = camera_names[i];
                 const auto& orientation = orientations[i];
 
-                // Convert pose to airlib
-                msr::airlib::Vector3r rpy = get_airlib_rpy(orientation);
+                // Convert orientation to airlib
+                msr::airlib::Quaternionr attitude = get_airlib_quat(orientation);
 
                 // Send command to server
-                client_set_camera_angles(rpy(0), rpy(1), rpy(2), camera_name, vehicle_name);
+                client_set_gimbal_attitude(attitude, camera_name, vehicle_name);
             }
         }
         catch (rpc::rpc_error& e) {
@@ -1114,9 +1117,9 @@ namespace airsim_wrapper
             -1, 1, vehicle_name);
     }
 
-    void AirsimWrapper::client_set_camera_angles(const float& roll, const float& pitch, const float& yaw, const std::string& camera_name, const std::string& vehicle_name)
+    void AirsimWrapper::client_set_gimbal_attitude(const msr::airlib::Quaternionr& attitude, const std::string& camera_name, const std::string& vehicle_name)
     {
-        airsim_client_control_->setCameraAngles(math_common::rad2deg(roll), math_common::rad2deg(pitch), math_common::rad2deg(yaw), camera_name, vehicle_name);
+        airsim_client_control_->setGimbalAttitude(attitude, camera_name, vehicle_name);
     }
 
     void AirsimWrapper::client_set_camera_fov(const std::string& camera_name, const float& fov, const std::string& vehicle_name)

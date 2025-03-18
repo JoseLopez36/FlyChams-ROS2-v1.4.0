@@ -122,9 +122,12 @@ namespace flychams::control
 			return false;
 		}
 
+		// Enable OFFBOARD mode
+		bool result = ext_tools_->enableControl(agent_id_, true);
+
 		// Request arming
 		RCLCPP_INFO(node_->get_logger(), "UAV controller: Arming...");
-		bool result = ext_tools_->armDisarm(agent_id_, true);
+		result = result && ext_tools_->armDisarm(agent_id_, true);
 
 		if (result)
 		{
@@ -148,9 +151,12 @@ namespace flychams::control
 			return false;
 		}
 
+		// Enable OFFBOARD mode
+		bool result = ext_tools_->enableControl(agent_id_, true);
+
 		// Request takeoff
 		RCLCPP_INFO(node_->get_logger(), "UAV controller: Taking off...");
-		bool result = ext_tools_->takeoff(agent_id_);
+		result = result && ext_tools_->takeoff(agent_id_);
 
 		if (result)
 		{
@@ -228,9 +234,12 @@ namespace flychams::control
 			return false;
 		}
 
+		// Enable OFFBOARD mode
+		bool result = ext_tools_->enableControl(agent_id_, true);
+
 		// Request landing
 		RCLCPP_INFO(node_->get_logger(), "UAV controller: Landing...");
-		bool result = ext_tools_->land(agent_id_);
+		result = result && ext_tools_->land(agent_id_);
 
 		if (result)
 		{
@@ -254,9 +263,12 @@ namespace flychams::control
 			return false;
 		}
 
+		// Enable OFFBOARD mode
+		bool result = ext_tools_->enableControl(agent_id_, true);
+
 		// Request disarming
 		RCLCPP_INFO(node_->get_logger(), "UAV controller: Disarming...");
-		bool result = ext_tools_->armDisarm(agent_id_, false);
+		result = result && ext_tools_->armDisarm(agent_id_, false);
 
 		if (result)
 		{
@@ -279,6 +291,7 @@ namespace flychams::control
 			// If we're in flight, try to land
 			if (state_ == State::HOVERING || state_ == State::MOVING || state_ == State::REACHED)
 			{
+				ext_tools_->enableControl(agent_id_, true);
 				ext_tools_->land(agent_id_);
 			}
 
@@ -286,7 +299,9 @@ namespace flychams::control
 			rclcpp::sleep_for(std::chrono::seconds(2));
 
 			// Disarm
+			ext_tools_->enableControl(agent_id_, true);
 			ext_tools_->armDisarm(agent_id_, false);
+			ext_tools_->enableControl(agent_id_, false);
 		}
 
 		// Reset state
@@ -461,19 +476,19 @@ namespace flychams::control
 
 	void UAVController::handleTakingOffState()
 	{
+		// Check if takeoff altitude is reached
+		if (has_odom_ && curr_pos_.z >= takeoff_altitude_)
+		{
+			RCLCPP_INFO(node_->get_logger(), "UAV controller: Takeoff complete, starting hover. Altitude: %.2f m", curr_pos_.z);
+			requestHover();
+		}
+
 		// Check if takeoff has timed out
 		if ((RosUtils::getTimeNow(node_) - state_entry_time_).seconds() > takeoff_timeout_)
 		{
 			RCLCPP_ERROR(node_->get_logger(), "UAV controller: Takeoff timeout");
 			setState(State::ERROR);
 			return;
-		}
-
-		// Check if takeoff altitude is reached
-		if (has_odom_ && curr_pos_.z >= takeoff_altitude_)
-		{
-			RCLCPP_INFO(node_->get_logger(), "UAV controller: Takeoff complete, starting hover. Altitude: %.2f m", curr_pos_.z);
-			requestHover();
 		}
 	}
 

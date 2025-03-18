@@ -128,7 +128,10 @@ namespace flychams::core
 
 					mission->agent_team_id = getCellValueOrFail<std::string>(row.findCell(8));
 
-					auto altitude_constraint_str = getCellValueOrFail<std::string>(row.findCell(9));
+					const std::string& autopilot_str = getCellValueOrFail<std::string>(row.findCell(9));
+					mission->autopilot = autopilotFromString(autopilot_str);
+
+					auto altitude_constraint_str = getCellValueOrFail<std::string>(row.findCell(10));
 					auto altitude_constraint_vec = parseStringToVector<float>(altitude_constraint_str, 2, ',');
 					if (altitude_constraint_vec.size() >= 2)
 					{
@@ -136,7 +139,7 @@ namespace flychams::core
 						mission->altitude_constraint(1) = altitude_constraint_vec[1];
 					}
 
-					auto tracking_scene_resolution_str = getCellValueOrFail<std::string>(row.findCell(10));
+					auto tracking_scene_resolution_str = getCellValueOrFail<std::string>(row.findCell(11));
 					auto tracking_scene_resolution_vec = parseStringToVector<int>(tracking_scene_resolution_str, 2, 'x');
 					if (tracking_scene_resolution_vec.size() >= 2)
 					{
@@ -144,7 +147,7 @@ namespace flychams::core
 						mission->tracking_scene_resolution(1) = tracking_scene_resolution_vec[1];
 					}
 
-					auto tracking_view_resolution_str = getCellValueOrFail<std::string>(row.findCell(11));
+					auto tracking_view_resolution_str = getCellValueOrFail<std::string>(row.findCell(12));
 					auto tracking_view_resolution_vec = parseStringToVector<int>(tracking_view_resolution_str, 2, 'x');
 					if (tracking_view_resolution_vec.size() >= 2)
 					{
@@ -880,26 +883,43 @@ namespace flychams::core
 			Vector3r ini_pos = agent_ptr->initial_position;
 			Vector3r ini_ori = agent_ptr->initial_orientation;
 
-			vehicles[agent_id] = {
-				{"VehicleType", "PX4Multirotor"},
-				//{"PawnPath", pawn_path},
-				{"Model", vehicle_model},
-				{"UseSerial", false},
-				{"LockStep", true},
-				{"UseTcp", true},
-				{"TcpPort", 4560 + instance},
-				{"ControlIp", "remote"},
-				{"ControlPortLocal", 14540 + instance},
-				{"ControlPortRemote", 14580 + instance},
-				{"LocalHostIp", "172.17.0.1"},
-				{"Sensors", {{"Barometer", {{"SensorType", 1}, {"Enabled", true}, {"PressureFactorSigma", 0.0001825}}}}},
-				{"Parameters", {{"NAV_RCL_ACT", 0}, {"NAV_DLL_ACT", 0}, {"COM_OBL_ACT", 1}, {"LPE_LAT", config_ptr->map->origin_geopoint.latitude}, {"LPE_LON", config_ptr->map->origin_geopoint.longitude}}},
-				{"X", ini_pos.x()},
-				{"Y", -ini_pos.y()},
-				{"Z", -ini_pos.z()},
-				{"Roll", MathUtils::radToDeg(ini_ori.x())},
-				{"Pitch", MathUtils::radToDeg(-ini_ori.y())},
-				{"Yaw", MathUtils::radToDeg(-ini_ori.z())} };
+			if (config_ptr->mission->autopilot == Autopilot::PX4)
+			{
+				vehicles[agent_id] = {
+					{"VehicleType", "PX4Multirotor"},
+					//{"PawnPath", pawn_path},
+					{"Model", vehicle_model},
+					{"UseSerial", false},
+					{"LockStep", true},
+					{"UseTcp", true},
+					{"TcpPort", 4560 + instance},
+					{"ControlIp", "remote"},
+					{"ControlPortLocal", 14540 + instance},
+					{"ControlPortRemote", 14580 + instance},
+					{"LocalHostIp", "172.17.0.1"},
+					{"Sensors", {{"Barometer", {{"SensorType", 1}, {"Enabled", true}, {"PressureFactorSigma", 0.0001825}}}}},
+					{"Parameters", {{"NAV_RCL_ACT", 0}, {"NAV_DLL_ACT", 0}, {"COM_OBL_ACT", 1}, {"LPE_LAT", config_ptr->map->origin_geopoint.latitude}, {"LPE_LON", config_ptr->map->origin_geopoint.longitude}}},
+					{"X", ini_pos.x()},
+					{"Y", -ini_pos.y()},
+					{"Z", -ini_pos.z()},
+					{"Roll", MathUtils::radToDeg(ini_ori.x())},
+					{"Pitch", MathUtils::radToDeg(-ini_ori.y())},
+					{"Yaw", MathUtils::radToDeg(-ini_ori.z())} };
+			}
+			else
+			{
+				vehicles[agent_id] = {
+					{"VehicleType", "SimpleFlight"},
+					//{"PawnPath", pawn_path},
+					{"DefaultVehicleState", "Armed"},
+					{"AutoCreate", true},
+					{ "X", ini_pos.x() },
+					{ "Y", -ini_pos.y() },
+					{ "Z", -ini_pos.z() },
+					{ "Roll", MathUtils::radToDeg(ini_ori.x()) },
+					{ "Pitch", MathUtils::radToDeg(-ini_ori.y()) },
+					{ "Yaw", MathUtils::radToDeg(-ini_ori.z()) } };
+			}
 
 			// Add cameras to the vehicle
 			populateCameras(agent_id, agent_ptr->heads, vehicles[agent_id]["Cameras"]);
@@ -913,9 +933,9 @@ namespace flychams::core
 
 			// Update instance offset
 			instance++;
-		}
 
-		settings["Vehicles"] = vehicles;
+			settings["Vehicles"] = vehicles;
+		}
 	}
 
 	// Helper method: Populate cameras and gimbals
@@ -988,18 +1008,24 @@ namespace flychams::core
 			}
 
 			cameras[head_id] = {
-				{"CaptureSettings", {{{"ImageType", 0}, {"Width", width}, {"Height", height}, {"FOV_Degrees", fov}}}},
+				{"CaptureSettings", {
+					{
+						{"ImageType", 0},
+						{"Width", width},
+						{"Height", height},
+						{"FOV_Degrees", fov}
+					}
+				}},
 				{"X", mount_pos.x()}, {"Y", -mount_pos.y()}, {"Z", -mount_pos.z()},
-				{"Roll", MathUtils::radToDeg(mount_ori.x())}, {"Pitch", MathUtils::radToDeg(-mount_ori.y())}, {"Yaw", MathUtils::radToDeg(-mount_ori.z())},
-				{"GimbalEnabled", true}, {"CameraVisible", true},
+				{"Roll", 0.0f}, {"Pitch", MathUtils::radToDeg(-mount_ori.y())}, {"Yaw", 0.0f},
+				{"EnableGimbal", true}, {"CameraVisible", true},
 				{"Gimbal", {
-					{"CameraName", "CAM_" + head_id},
 					{"YawMin", yaw_min}, {"PitchMin", pitch_min}, {"RollMin", roll_min},
 					{"YawMax", yaw_max}, {"PitchMax", pitch_max}, {"RollMax", roll_max},
 					{"YawSpeed", yaw_speed}, {"PitchSpeed", pitch_speed}, {"RollSpeed", roll_speed},
 					{"YawRiseTime", yaw_rise_time}, {"PitchRiseTime", pitch_rise_time}, {"RollRiseTime", roll_rise_time},
 					{"YawDamping", yaw_damping}, {"PitchDamping", pitch_damping}, {"RollDamping", roll_damping},
-					{"Pitch", 0.0f}, {"Roll", 0.0f}, {"Yaw", 0.0f}
+					{"Roll", MathUtils::radToDeg(mount_ori.x())}, { "Pitch", 0.0f }, {"Yaw", MathUtils::radToDeg(-mount_ori.z())}
 				}}
 			};
 		}
@@ -1008,14 +1034,21 @@ namespace flychams::core
 		Vector3r agent_view_pos;
 		agent_view_pos.x() = -1.5f;
 		agent_view_pos.y() = -1.5f;
-		agent_view_pos.z() = 1.5f;
+		agent_view_pos.z() = -1.5f;
 		Vector3r agent_view_rot;
 		agent_view_rot.x() = 0.0f;
-		agent_view_rot.y() = 33.33f;
+		agent_view_rot.y() = -33.33f;
 		agent_view_rot.z() = 45.0f;
 
 		cameras["CAM_" + agent_id] = {
-			{"CaptureSettings", {{{"ImageType", 0}, {"Width", 1280}, {"Height", 720}, {"FOV_Degrees", 70}}}},
+			{"CaptureSettings",{
+				{
+					{"ImageType", 0},
+					{"Width", 1280},
+					{"Height", 720},
+					{"FOV_Degrees", 70}
+				}
+			}},
 			{"X", agent_view_pos.x()},
 			{"Y", -agent_view_pos.y()},
 			{"Z", -agent_view_pos.z()},
@@ -1037,7 +1070,14 @@ namespace flychams::core
 		scene_view_rot.z() = 45.0f;
 
 		cameras["CAM_SCENE"] = {
-			{"CaptureSettings", {{{"ImageType", 0}, {"Width", 1920}, {"Height", 1080}, {"FOV_Degrees", 90}}}},
+			{"CaptureSettings",{
+				{
+					{"ImageType", 0},
+					{"Width", 1920},
+					{"Height", 1080},
+					{"FOV_Degrees", 90}
+				}
+			}},
 			{"X", scene_view_pos.x()},
 			{"Y", -scene_view_pos.y()},
 			{"Z", -scene_view_pos.z()},

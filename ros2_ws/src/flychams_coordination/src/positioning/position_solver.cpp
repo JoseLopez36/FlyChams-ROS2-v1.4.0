@@ -353,7 +353,7 @@ namespace flychams::coordination
         const float lambda_i = 0.0f; // Non-convex term is not considered
 
         const float mu_i = 1.0f;
-        const float nu_i = 30.0f;
+        const float nu_i = 1.0f;
         const float gamma_i = mu_i * (x - p_ref).transpose() * (x - p_ref) + nu_i * pow((d - (x - z).transpose() * Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
         // Accumulate into the total index
@@ -415,7 +415,7 @@ namespace flychams::coordination
         const float lambda_i = 1.0f * pow((std::max)(0.0f, L0 - d_proj), alpha) + 2.0f * pow((std::max)(0.0f, L1 - d_proj), alpha) + 10.0f * pow((std::max)(0.0f, L2 - d_proj), alpha);
 
         const float mu_i = 1.0f;
-        const float nu_i = 30.0f;
+        const float nu_i = 1.0f;
         const float gamma_i = mu_i * (x - p_ref).transpose() * (x - p_ref) + nu_i * pow((d - (x - z).transpose() * Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
         // Accumulate into the total index

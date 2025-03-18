@@ -224,6 +224,7 @@ namespace flychams::core
         ID group_bundle_id;
         ID parameter_set_id;
         ID agent_team_id;
+        Autopilot autopilot;
         Vector2r altitude_constraint;
         Vector2i tracking_scene_resolution;
         Vector2i tracking_view_resolution;

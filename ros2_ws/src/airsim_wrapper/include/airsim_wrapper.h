@@ -245,7 +245,7 @@ namespace airsim_wrapper
         void client_hover(const std::string& vehicle_name);
         void client_move_by_velocity(const float& vx, const float& vy, const float& vz, const float& dt, const std::string& vehicle_name);
         void client_move_by_position(const float& x, const float& y, const float& z, const float& vel, const float& timeout, const std::string& vehicle_name);
-        void client_set_camera_angles(const float& roll, const float& pitch, const float& yaw, const std::string& camera_name, const std::string& vehicle_name);
+        void client_set_gimbal_attitude(const msr::airlib::Quaternionr& attitude, const std::string& camera_name, const std::string& vehicle_name);
         void client_set_camera_fov(const std::string& camera_name, const float& fov, const std::string& vehicle_name);
 
         // Window methods

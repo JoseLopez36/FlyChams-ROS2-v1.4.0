@@ -19,5 +19,5 @@
         "TRACKING03"
         ]
     camera_ids:
-      scene_id: "SCENE"
-      agent_id: "AGENTID"
+      scene_id: "CAM_SCENE"
+      agent_id: "CAM_AGENTID"
