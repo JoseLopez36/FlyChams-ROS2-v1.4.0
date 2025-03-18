@@ -323,15 +323,8 @@ namespace airsim_wrapper
         auto& body_tf = camera_ros->body_tf_msg;
         auto& optical_tf = camera_ros->optical_static_tf_msg;
 
-        // World to Body transform
-        if (camera_setting.external)
-        {
-            body_tf.header.frame_id = world_frame_id_;
-        }
-        else
-        {
-            body_tf.header.frame_id = vehicle_ros->local_frame_id;
-        }
+        // Vehicle Local to Camera Body transform
+        body_tf.header.frame_id = vehicle_ros->local_frame_id;
         body_tf.child_frame_id = camera_ros->body_frame_id;
         body_tf.header.stamp = get_sim_clock_time();
         const auto& pose = client_get_camera_pose(vehicle_ros->vehicle_name, camera_ros->camera_name);

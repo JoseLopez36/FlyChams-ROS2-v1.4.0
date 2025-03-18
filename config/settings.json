@@ -6,6 +6,14 @@
     "ViewMode": "NoDisplay",
     "LogMessagesVisible": true,
     "ApiServerPort": 41451,
+    "PawnPaths": {
+        "FlyChamsQuadcopter": {
+            "PawnBP": "Class'/AirSim/Blueprints/BP_FlyChamsQuadcopter.BP_FlyChamsQuadcopter_C'"
+        },
+        "FlyChamsHexacopter": {
+            "PawnBP": "Class'/AirSim/Blueprints/BP_FlyChamsHexacopter.BP_FlyChamsHexacopter_C'"
+        }
+    },
     "OriginGeopoint": {
         "Latitude": 35.98655700683594,
         "Longitude": -5.89301061630249,
@@ -29,12 +37,7 @@
                 "ImageType": 0,
                 "Width": 1920,
                 "Height": 1080,
-                "FOV_Degrees": 90,
-                "LumenGIEnable": true,
-                "LumenReflectionEnable": true,
-                "LumenFinalQuality": 2,
-                "LumenSceneDetail": 2,
-                "LumenSceneLightningDetail": 2
+                "FOV_Degrees": 90
             }
         ],
         "NoiseSettings": [
@@ -63,15 +66,30 @@
     },
     "Vehicles": {
         "AGENT05": {
-            "VehicleType": "SimpleFlight",
-            "DefaultVehicleState": "Armed",
-            "AutoCreate": true,
-            "X": 15.0,
-            "Y": -20.0,
-            "Z": -100.0,
+            "VehicleType": "PX4Multirotor",
+            "PawnPath": "FlyChamsHexacopter",
+            "Model": "Hexacopter",
+            "UseSerial": false,
+            "LockStep": true,
+            "UseTcp": true,
+            "TcpPort": 4560,
+            "ControlIp": "remote",
+            "ControlPortLocal": 14540,
+            "ControlPortRemote": 14580,
+            "LocalHostIp": "172.17.0.1",
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 0.0,
             "Roll": 0.0,
             "Pitch": -0.0,
             "Yaw": -0.0,
+            "Parameters": {
+                "NAV_RCL_ACT": 0,
+                "NAV_DLL_ACT": 0,
+                "COM_OBL_ACT": 1,
+                "LPE_LAT": 35.98655700683594,
+                "LPE_LON": -5.89301061630249
+            },
             "Sensors": {
                 "Barometer": {
                     "SensorType": 1,

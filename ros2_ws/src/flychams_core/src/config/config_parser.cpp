@@ -892,11 +892,9 @@ namespace flychams::core
 		settings["LogMessagesVisible"] = true;
 		settings["ApiServerPort"] = 41451;
 
-		/*
 		settings["PawnPaths"] = {
-			{"DefaultQuadrotor", {{"PawnBP", "Class'/Game/Agents/BP_DJI_S900_Quadcopter.BP_DJI_S900_Quadcopter_C'"}}},
-			{"DefaultHexacopter", {{"PawnBP", "Class'/Game/Agents/BP_DJI_S900_Hexacopter.BP_DJI_S900_Hexacopter_C'"}}}};
-		*/
+			{"FlyChamsQuadcopter", {{"PawnBP", "Class'/AirSim/Blueprints/BP_FlyChamsQuadcopter.BP_FlyChamsQuadcopter_C'"}}},
+			{"FlyChamsHexacopter", {{"PawnBP", "Class'/AirSim/Blueprints/BP_FlyChamsHexacopter.BP_FlyChamsHexacopter_C'"}}} };
 
 		settings["OriginGeopoint"] = {
 			{"Latitude", config_ptr->map->origin_geopoint.latitude},
@@ -973,7 +971,7 @@ namespace flychams::core
 		{
 			// Agent arameters
 			std::string vehicle_model = (agent_ptr->drone->drone_type == DroneType::Quadcopter) ? "Quadcopter" : "Hexacopter";
-			std::string pawn_path = (agent_ptr->drone->drone_type == DroneType::Quadcopter) ? "DefaultQuadrotor" : "DefaultHexacopter";
+			std::string pawn_path = (agent_ptr->drone->drone_type == DroneType::Quadcopter) ? "FlyChamsQuadcopter" : "FlyChamsHexacopter";
 			Vector3r ini_pos = agent_ptr->initial_position;
 			Vector3r ini_ori = agent_ptr->initial_orientation;
 
@@ -994,7 +992,7 @@ namespace flychams::core
 			{
 				vehicles[agent_id] = {
 					{"VehicleType", "PX4Multirotor"},
-					//{"PawnPath", pawn_path},
+					{"PawnPath", pawn_path},
 					{"Model", vehicle_model},
 					{"UseSerial", false},
 					{"LockStep", true},
@@ -1053,7 +1051,7 @@ namespace flychams::core
 			{
 				vehicles[agent_id] = {
 					{"VehicleType", "SimpleFlight"},
-					//{"PawnPath", pawn_path},
+					{"PawnPath", pawn_path},
 					{"DefaultVehicleState", "Armed"},
 					{"AutoCreate", true},
 					{ "X", ini_pos.x() },
@@ -1236,9 +1234,9 @@ namespace flychams::core
 
 		// Get agent view camera pose (ENU frame)
 		Vector3r agent_view_pos;
-		agent_view_pos.x() = -0.75f;
-		agent_view_pos.y() = -0.75f;
-		agent_view_pos.z() = -0.75f;
+		agent_view_pos.x() = -1.75f;
+		agent_view_pos.y() = -1.75f;
+		agent_view_pos.z() = -1.75f;
 		Vector3r agent_view_rot;
 		agent_view_rot.x() = 0.0f;
 		agent_view_rot.y() = -33.33f;
