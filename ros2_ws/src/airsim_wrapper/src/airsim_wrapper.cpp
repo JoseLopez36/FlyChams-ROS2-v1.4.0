@@ -925,7 +925,14 @@ namespace airsim_wrapper
                     update_vehicle_odom(vehicle_ros.get(), multirotor_state.kinematics_estimated);
                     vehicle_ros->body_tf_msg.transform = get_transform_msg_from_airsim(multirotor_state.getPosition(), multirotor_state.getOrientation());
 
-                    // Iterate over cameras
+                    // Debug: Get ground truth position and compare with estimated position
+                    // msr::airlib::Pose ground_truth_pose = client_get_ground_truth_multirotor_state(vehicle_name).kinematics_estimated.pose;
+                    // RCLCPP_INFO(nh_->get_logger(), "Ground truth vs estimated position: %f, %f, %f",
+                    //     ground_truth_pose.position.x() - multirotor_state.kinematics_estimated.pose.position.x(),
+                    //     ground_truth_pose.position.y() - multirotor_state.kinematics_estimated.pose.position.y(),
+                    //     ground_truth_pose.position.z() - multirotor_state.kinematics_estimated.pose.position.z());
+
+                        // Iterate over cameras
                     for (auto& [camera_name, camera_ros] : vehicle_ros->camera_map)
                     {
                         // Get camera pose
@@ -1049,6 +1056,13 @@ namespace airsim_wrapper
     msr::airlib::MultirotorState AirsimWrapper::client_get_multirotor_state(const std::string& vehicle_name)
     {
         return airsim_client_state_->getMultirotorState(vehicle_name);
+    }
+
+    msr::airlib::MultirotorState AirsimWrapper::client_get_ground_truth_multirotor_state(const std::string& vehicle_name)
+    {
+        msr::airlib::MultirotorState multirotor_state;
+        multirotor_state.kinematics_estimated.pose = airsim_client_state_->simGetVehiclePose(vehicle_name);
+        return multirotor_state;
     }
 
     msr::airlib::Pose AirsimWrapper::client_get_camera_pose(const std::string& vehicle_name, const std::string& gimbal_name)

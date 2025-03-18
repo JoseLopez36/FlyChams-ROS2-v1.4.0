@@ -24,7 +24,9 @@ namespace flychams::control
 		const auto& central_camera_params = config_tools_->getCameraParameters(agent_id_, central_head_id_);
 
 		// Calculate central head fixed orientation and fov
-		MsgConversions::toMsg(MathUtils::eulerToQuaternion(Vector3r(0.0f, 0.0f, 0.0f)), central_head_orientation_);
+		const auto& central_head_config = config_tools_->getHead(agent_id_, central_head_id_);
+		const auto& central_head_rpy = Vector3r(0.0f, 0.0f, central_head_config->mount_orientation.z());
+		MsgConversions::toMsg(MathUtils::eulerToQuaternion(central_head_rpy), central_head_orientation_);
 		central_head_fov_ = CameraUtils::computeFov(central_camera_params.f_ref, central_camera_params.sensor_width);
 
 		// Subscribe to goal topic

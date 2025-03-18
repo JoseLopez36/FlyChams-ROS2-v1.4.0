@@ -231,6 +231,7 @@ namespace airsim_wrapper
         bool client_get_paused();
         bool client_get_enabled_control(const std::string& vehicle_name);
         msr::airlib::MultirotorState client_get_multirotor_state(const std::string& vehicle_name);
+        msr::airlib::MultirotorState client_get_ground_truth_multirotor_state(const std::string& vehicle_name);
         msr::airlib::Pose client_get_camera_pose(const std::string& vehicle_name, const std::string& camera_name);
 
         // Global methods
