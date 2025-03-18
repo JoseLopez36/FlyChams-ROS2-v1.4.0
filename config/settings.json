@@ -7,13 +7,13 @@
     "LogMessagesVisible": true,
     "ApiServerPort": 41451,
     "OriginGeopoint": {
-        "Latitude": 47.63999938964844,
-        "Longitude": -122.13999938964844,
-        "Altitude": 122.0
+        "Latitude": 35.98655700683594,
+        "Longitude": -5.89301061630249,
+        "Altitude": 8.539999961853027
     },
     "TimeOfDay": {
         "Enabled": true,
-        "StartDateTime": "2024-12-13 20:0:0",
+        "StartDateTime": "2024-12-13 17:0:0",
         "CelestialClockSpeed": 1,
         "StartDateTimeDst": false,
         "UpdateIntervalSecs": 1
@@ -84,9 +84,9 @@
                     ],
                     "X": -1.5,
                     "Y": 1.5,
-                    "Z": -1.5,
+                    "Z": 1.5,
                     "Roll": 0.0,
-                    "Pitch": -33.33000183105469,
+                    "Pitch": 33.33000183105469,
                     "Yaw": -45.0
                 },
                 "CAM_SCENE": {
@@ -112,7 +112,7 @@
     "SubWindows": [
         {
             "WindowID": 0,
-            "CameraName": "",
+            "CameraName": "CAM_SCENE",
             "ImageType": 0,
             "VehicleName": "",
             "Visible": true

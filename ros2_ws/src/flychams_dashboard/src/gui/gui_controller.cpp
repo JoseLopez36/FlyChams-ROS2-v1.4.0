@@ -177,6 +177,12 @@ namespace flychams::dashboard
                 // Digital tracking unit data
                 const ID camera_id = goal.camera_id;
                 const CropMsg crop = goal.crops[j];
+                // Check if crop is valid
+                if (crop.x <= 0.0f || crop.y <= 0.0f || crop.w <= 0.0f || crop.h <= 0.0f)
+                {
+                    camera_ids_[i] = "";
+                    continue;
+                }
                 // Add tracking window (with crop)
                 camera_ids_[i] = camera_id;
                 crop_x_[i] = crop.x;

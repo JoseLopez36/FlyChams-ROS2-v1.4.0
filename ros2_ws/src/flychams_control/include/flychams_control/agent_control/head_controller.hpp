@@ -41,6 +41,9 @@ namespace flychams::control
 	private: // Parameters
 		// Agent parameters
 		core::ID agent_id_;
+		core::ID central_head_id_;
+		core::QuaternionMsg central_head_orientation_;
+		float central_head_fov_;
 
 	private: // Data
 		// Goal

@@ -238,6 +238,17 @@ namespace flychams::coordination
             const auto& r = tab_r(i);
             const auto& p = tab_p.col(i);
 
+            // Check if target is out of the view
+            if (p(0) <= 0.0f || p(0) >= camera_params.width || p(1) <= 0.0f || p(1) >= camera_params.height)
+            {
+                goal.crops[i].x = -1;
+                goal.crops[i].y = -1;
+                goal.crops[i].w = -1;
+                goal.crops[i].h = -1;
+                goal.resolution_factors[i] = 0;
+                continue;
+            }
+
             // Create tracking crop parameters
             float lambda;
             Vector2i size = TrackingUtils::computeWindowSize(wPt, r, wPc, window_params, projection_params, lambda);

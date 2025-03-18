@@ -1094,7 +1094,7 @@ namespace flychams::core
 
 		// Scene view sub-window
 		settings["SubWindows"].push_back({ {"WindowID", idx++},
-										  {"CameraName", ""},
+										  {"CameraName", "CAM_SCENE"},
 										  {"ImageType", 0},
 										  {"VehicleName", ""},
 										  {"Visible", true} });
