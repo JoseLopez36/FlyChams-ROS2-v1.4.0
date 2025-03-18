@@ -39,6 +39,8 @@ namespace flychams::core
         float default_focal;
         float sensor_width;
         float sensor_height;
+        LensDistortion lens_distortion;
+        RandomNoise random_noise;
         float weight;
         float idle_power;
         float active_power;

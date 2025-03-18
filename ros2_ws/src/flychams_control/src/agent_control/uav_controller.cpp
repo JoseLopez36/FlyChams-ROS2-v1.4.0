@@ -484,12 +484,12 @@ namespace flychams::control
 		}
 
 		// Check if takeoff has timed out
-		if ((RosUtils::getTimeNow(node_) - state_entry_time_).seconds() > takeoff_timeout_)
-		{
-			RCLCPP_ERROR(node_->get_logger(), "UAV controller: Takeoff timeout");
-			setState(State::ERROR);
-			return;
-		}
+		// if ((RosUtils::getTimeNow(node_) - state_entry_time_).seconds() > takeoff_timeout_)
+		// {
+		// 	RCLCPP_ERROR(node_->get_logger(), "UAV controller: Takeoff timeout");
+		// 	setState(State::ERROR);
+		// 	return;
+		// }
 	}
 
 	void UAVController::handleHoveringState()

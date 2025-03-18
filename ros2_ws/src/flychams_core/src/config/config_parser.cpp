@@ -781,11 +781,29 @@ namespace flychams::core
 
 					camera->sensor_height = getCellValueOrFail<float>(row.findCell(7)) / 1000.0f;
 
-					camera->weight = getCellValueOrFail<float>(row.findCell(8));
+					auto lens_distortion_str = getCellValueOrFail<std::string>(row.findCell(8));
+					auto lens_distortion_vec = parseStringToVector<float>(lens_distortion_str, 3, ',');
+					if (lens_distortion_vec.size() >= 3)
+					{
+						camera->lens_distortion.strength = lens_distortion_vec[0];
+						camera->lens_distortion.area_radius = lens_distortion_vec[1];
+						camera->lens_distortion.area_falloff = lens_distortion_vec[2];
+					}
 
-					camera->idle_power = getCellValueOrFail<float>(row.findCell(9));
+					auto random_noise_str = getCellValueOrFail<std::string>(row.findCell(9));
+					auto random_noise_vec = parseStringToVector<float>(random_noise_str, 3, ',');
+					if (random_noise_vec.size() >= 3)
+					{
+						camera->random_noise.rand_contrib = random_noise_vec[0];
+						camera->random_noise.rand_size = random_noise_vec[1];
+						camera->random_noise.rand_speed = random_noise_vec[2];
+					}
 
-					camera->active_power = getCellValueOrFail<float>(row.findCell(10));
+					camera->weight = getCellValueOrFail<float>(row.findCell(10));
+
+					camera->idle_power = getCellValueOrFail<float>(row.findCell(11));
+
+					camera->active_power = getCellValueOrFail<float>(row.findCell(12));
 
 					// Only first found camera model is loaded
 					return camera;
@@ -867,6 +885,32 @@ namespace flychams::core
 			{"X", config_ptr->map->wind_velocity.x()},
 			{"Y", -config_ptr->map->wind_velocity.y()},
 			{"Z", -config_ptr->map->wind_velocity.z()} };
+
+		settings["CameraDefaults"] = {
+			{"NoiseSettings", {
+				{
+					{"Enabled", true},
+					{"ImageType", 0},
+					{"RandContrib", 0.01f},
+					{"RandSpeed", 50000.0f},
+					{"RandSize", 500.0f},
+					{"RandDensity", 2},
+					{"HorzWaveContrib", 0.003f},
+					{"HorzWaveStrength", 0.008f},
+					{"HorzWaveVertSize", 1.0f},
+					{"HorzWaveScreenSize", 1.0f},
+					{"HorzNoiseLinesContrib", 0.1f},
+					{"HorzNoiseLinesDensityY", 0.001f},
+					{"HorzNoiseLinesDensityXY", 0.05f},
+					{"HorzDistortionContrib", 0.1f},
+					{"HorzDistortionStrength", 0.002f},
+					{"LensDistortionEnable", true},
+					{"LensDistortionAreaFalloff", 0.02f},
+					{"LensDistortionAreaRadius", 2.0f},
+					{"LensDistortionInvert", false}
+				}
+			}},
+		};
 	}
 
 	void ConfigParser::populateVehicles(const ConfigPtr& config_ptr, nlohmann::ordered_json& settings)
@@ -953,6 +997,8 @@ namespace flychams::core
 			const auto& sensor_height = head_ptr->camera->sensor_height;
 			const auto& focal = head_ptr->initial_focal;
 			const auto& fov = MathUtils::radToDeg(CameraUtils::computeFov(focal, sensor_width));
+			const auto& lens_distortion = head_ptr->camera->lens_distortion;
+			const auto& random_noise = head_ptr->camera->random_noise;
 
 			// Get gimbal parameters
 			float yaw_min = 0.0f;
@@ -1016,9 +1062,6 @@ namespace flychams::core
 						{"FOV_Degrees", fov}
 					}
 				}},
-				{"X", mount_pos.x()}, {"Y", -mount_pos.y()}, {"Z", -mount_pos.z()},
-				{"Roll", 0.0f}, {"Pitch", MathUtils::radToDeg(-mount_ori.y())}, {"Yaw", 0.0f},
-				{"EnableGimbal", true}, {"CameraVisible", true},
 				{"Gimbal", {
 					{"YawMin", yaw_min}, {"PitchMin", pitch_min}, {"RollMin", roll_min},
 					{"YawMax", yaw_max}, {"PitchMax", pitch_max}, {"RollMax", roll_max},
@@ -1026,7 +1069,33 @@ namespace flychams::core
 					{"YawRiseTime", yaw_rise_time}, {"PitchRiseTime", pitch_rise_time}, {"RollRiseTime", roll_rise_time},
 					{"YawDamping", yaw_damping}, {"PitchDamping", pitch_damping}, {"RollDamping", roll_damping},
 					{"Roll", MathUtils::radToDeg(mount_ori.x())}, { "Pitch", 0.0f }, {"Yaw", MathUtils::radToDeg(-mount_ori.z())}
-				}}
+				}},
+				{"NoiseSettings", {
+					{
+						{"Enabled", true},
+						{"ImageType", 0},
+						{"RandContrib", random_noise.rand_contrib},
+						{"RandSpeed", random_noise.rand_speed},
+						{"RandSize", random_noise.rand_size},
+						{"RandDensity", 2},
+						{"HorzWaveContrib", 0.03},
+						{"HorzWaveStrength", 0.08},
+						{"HorzWaveVertSize", 1.0},
+						{"HorzWaveScreenSize", 1.0},
+						{"HorzNoiseLinesContrib", 0.1},
+						{"HorzNoiseLinesDensityY", 0.001},
+						{"HorzNoiseLinesDensityXY", 0.05},
+						{"HorzDistortionContrib", 0.1},
+						{"HorzDistortionStrength", lens_distortion.strength},
+						{"LensDistortionEnable", true},
+						{"LensDistortionAreaFalloff", lens_distortion.area_falloff},
+						{"LensDistortionAreaRadius", lens_distortion.area_radius},
+						{"LensDistortionInvert", false}
+					}
+				}},
+				{"X", mount_pos.x()}, {"Y", -mount_pos.y()}, {"Z", -mount_pos.z()},
+				{"Roll", 0.0f}, {"Pitch", MathUtils::radToDeg(-mount_ori.y())}, {"Yaw", 0.0f},
+				{"EnableGimbal", true}, {"CameraVisible", true}
 			};
 		}
 

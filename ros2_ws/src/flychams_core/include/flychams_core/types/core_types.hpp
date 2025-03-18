@@ -576,4 +576,18 @@ namespace flychams::core
         double altitude;
     };
 
+    struct LensDistortion
+    {
+        float strength;
+        float area_radius;
+        float area_falloff;
+    };
+
+    struct RandomNoise
+    {
+        float rand_contrib;
+        float rand_size;
+        float rand_speed;
+    };
+
 } // namespace flychams::core 

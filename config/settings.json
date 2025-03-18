@@ -23,6 +23,31 @@
         "Y": -0.0,
         "Z": -0.0
     },
+    "CameraDefaults": {
+        "NoiseSettings": [
+            {
+                "Enabled": true,
+                "ImageType": 0,
+                "RandContrib": 0.009999999776482582,
+                "RandSpeed": 50000.0,
+                "RandSize": 500.0,
+                "RandDensity": 2,
+                "HorzWaveContrib": 0.003000000026077032,
+                "HorzWaveStrength": 0.00800000037997961,
+                "HorzWaveVertSize": 1.0,
+                "HorzWaveScreenSize": 1.0,
+                "HorzNoiseLinesContrib": 0.10000000149011612,
+                "HorzNoiseLinesDensityY": 0.0010000000474974513,
+                "HorzNoiseLinesDensityXY": 0.05000000074505806,
+                "HorzDistortionContrib": 0.10000000149011612,
+                "HorzDistortionStrength": 0.0020000000949949026,
+                "LensDistortionEnable": true,
+                "LensDistortionAreaFalloff": 0.019999999552965164,
+                "LensDistortionAreaRadius": 2.0,
+                "LensDistortionInvert": false
+            }
+        ]
+    },
     "Vehicles": {
         "AGENT05": {
             "VehicleType": "SimpleFlight",
@@ -44,14 +69,6 @@
                             "FOV_Degrees": 146.283203125
                         }
                     ],
-                    "X": 0.0,
-                    "Y": -0.0,
-                    "Z": 0.15000000596046448,
-                    "Roll": 0.0,
-                    "Pitch": -90.0,
-                    "Yaw": 0.0,
-                    "EnableGimbal": true,
-                    "CameraVisible": true,
                     "Gimbal": {
                         "YawMin": -320.0,
                         "PitchMin": -40.0,
@@ -71,7 +88,38 @@
                         "Roll": 0.0,
                         "Pitch": 0.0,
                         "Yaw": -90.0
-                    }
+                    },
+                    "NoiseSettings": [
+                        {
+                            "Enabled": true,
+                            "ImageType": 0,
+                            "RandContrib": 0.009999999776482582,
+                            "RandSpeed": 50000.0,
+                            "RandSize": 500.0,
+                            "RandDensity": 2,
+                            "HorzWaveContrib": 0.03,
+                            "HorzWaveStrength": 0.08,
+                            "HorzWaveVertSize": 1.0,
+                            "HorzWaveScreenSize": 1.0,
+                            "HorzNoiseLinesContrib": 0.1,
+                            "HorzNoiseLinesDensityY": 0.001,
+                            "HorzNoiseLinesDensityXY": 0.05,
+                            "HorzDistortionContrib": 0.1,
+                            "HorzDistortionStrength": 0.02500000037252903,
+                            "LensDistortionEnable": true,
+                            "LensDistortionAreaFalloff": 0.20000000298023224,
+                            "LensDistortionAreaRadius": 2.0,
+                            "LensDistortionInvert": false
+                        }
+                    ],
+                    "X": 0.0,
+                    "Y": -0.0,
+                    "Z": 0.15000000596046448,
+                    "Roll": 0.0,
+                    "Pitch": -90.0,
+                    "Yaw": 0.0,
+                    "EnableGimbal": true,
+                    "CameraVisible": true
                 },
                 "CAM_AGENT05": {
                     "CaptureSettings": [
