@@ -83,7 +83,9 @@ public: // Constructor/Destructor
 
         // Get window IDs
         const ID scene_window_id = RosUtils::getParameter<ID>(node_, "window_ids.scene_id");
-        const ID agent_window_id = RosUtils::getParameter<ID>(node_, "window_ids.agent_id");
+        const ID agent_1_window_id = RosUtils::getParameter<ID>(node_, "window_ids.agent_1_id");
+        const ID agent_2_window_id = RosUtils::getParameter<ID>(node_, "window_ids.agent_2_id");
+        const ID map_window_id = RosUtils::getParameter<ID>(node_, "window_ids.map_id");
         const ID central_window_id = RosUtils::getParameter<ID>(node_, "window_ids.central_id");
         const IDs tracking_window_ids = RosUtils::getParameter<IDs>(node_, "window_ids.tracking_ids");
 
@@ -94,35 +96,44 @@ public: // Constructor/Destructor
 
         // Get camera IDs
         const ID scene_camera_id = RosUtils::getParameter<ID>(node_, "camera_ids.scene_id");
-        const ID agent_camera_id = RosUtils::replacePlaceholder(RosUtils::getParameter<ID>(node_, "camera_ids.agent_id"), "AGENTID", first_agent_id);
+        const ID agent_1_camera_id = RosUtils::replacePlaceholder(RosUtils::getParameter<ID>(node_, "camera_ids.agent_1_id"), "AGENTID", first_agent_id);
+        const ID agent_2_camera_id = RosUtils::replacePlaceholder(RosUtils::getParameter<ID>(node_, "camera_ids.agent_2_id"), "AGENTID", first_agent_id);
         const ID central_camera_id = config_tools_->getAgent(first_agent_id)->central_head_id;
 
         // Initialize GUI
-        IDs window_ids(7, "");          // Initialize with size 7
-        IDs vehicle_ids(7, "");         // Initialize with size 7
-        IDs camera_ids(7, "");          // Initialize with size 7
-        std::vector<int> crop_x(7, 0);  // Initialize with size 7 and default value 0
-        std::vector<int> crop_y(7, 0);  // Initialize with size 7 and default value 0
-        std::vector<int> crop_w(7, 0);  // Initialize with size 7 and default value 0
-        std::vector<int> crop_h(7, 0);  // Initialize with size 7 and default value 0
+        IDs window_ids(9, "");          // Initialize with size 9
+        IDs vehicle_ids(9, "");         // Initialize with size 9
+        IDs camera_ids(9, "");          // Initialize with size 9
+        std::vector<int> crop_x(9, 0);  // Initialize with size 9 and default value 0
+        std::vector<int> crop_y(9, 0);  // Initialize with size 9 and default value 0
+        std::vector<int> crop_w(9, 0);  // Initialize with size 9 and default value 0
+        std::vector<int> crop_h(9, 0);  // Initialize with size 9 and default value 0
 
         // Set window depending on index
         window_ids[0] = scene_window_id;
         vehicle_ids[0] = "";
         camera_ids[0] = scene_camera_id;
 
-        window_ids[1] = agent_window_id;
+        window_ids[1] = agent_1_window_id;
         vehicle_ids[1] = first_agent_id;
-        camera_ids[1] = agent_camera_id;
+        camera_ids[1] = agent_1_camera_id;
 
-        window_ids[2] = central_window_id;
+        window_ids[2] = agent_2_window_id;
         vehicle_ids[2] = first_agent_id;
-        camera_ids[2] = central_camera_id;
+        camera_ids[2] = agent_2_camera_id;
 
-        for (size_t i = 3; i < 7; i++)
+        window_ids[3] = map_window_id;
+        vehicle_ids[3] = "";
+        camera_ids[3] = "";
+
+        window_ids[4] = central_window_id;
+        vehicle_ids[4] = first_agent_id;
+        camera_ids[4] = central_camera_id;
+
+        for (size_t i = 5; i < 9; i++)
         {
-            if (i - 3 < tracking_window_ids.size())
-                window_ids[i] = tracking_window_ids[i - 3];
+            if (i - 5 < tracking_window_ids.size())
+                window_ids[i] = tracking_window_ids[i - 5];
             else
                 window_ids[i] = "";
         }

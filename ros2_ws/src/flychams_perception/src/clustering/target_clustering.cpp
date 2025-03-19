@@ -107,8 +107,9 @@ namespace flychams::perception
 		highlight_color.r = 0.0f;
 		highlight_color.g = 1.0f;
 		highlight_color.b = 1.0f;
-		highlight_color.a = 0.04f;
-		ext_tools_->addClusterGroup({ cluster_id }, { PointMsg() }, { 0.0f }, config_tools_->getSimulation()->draw_world_markers, { highlight_color });
+		highlight_color.a = 0.005f;
+		if (config_tools_->getSimulation()->draw_world_markers)
+			ext_tools_->addClusterGroup({ cluster_id }, { PointMsg() }, { 0.0f }, true, { highlight_color });
 	}
 
 	void TargetClustering::removeCluster(const ID& cluster_id)

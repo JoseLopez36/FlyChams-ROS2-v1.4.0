@@ -14,13 +14,16 @@ namespace flychams::dashboard
         // Get parameters from parameter server
         // Get window IDs
         scene_window_id_ = RosUtils::getParameter<core::ID>(node_, "window_ids.scene_id");
-        agent_window_id_ = RosUtils::getParameter<core::ID>(node_, "window_ids.agent_id");
+        agent_1_window_id_ = RosUtils::getParameter<core::ID>(node_, "window_ids.agent_1_id");
+        agent_2_window_id_ = RosUtils::getParameter<core::ID>(node_, "window_ids.agent_2_id");
+        map_window_id_ = RosUtils::getParameter<core::ID>(node_, "window_ids.map_id");
         central_window_id_ = RosUtils::getParameter<core::ID>(node_, "window_ids.central_id");
         tracking_window_ids_ = RosUtils::getParameter<std::vector<core::ID>>(node_, "window_ids.tracking_ids");
-        num_windows_ = 3 + static_cast<int>(tracking_window_ids_.size());
+        num_windows_ = 5 + static_cast<int>(tracking_window_ids_.size());
         // Get fixed camera IDs
         scene_camera_id_ = RosUtils::getParameter<core::ID>(node_, "camera_ids.scene_id");
-        agent_camera_id_ = RosUtils::replacePlaceholder(RosUtils::getParameter<core::ID>(node_, "camera_ids.agent_id"), "AGENTID", agent_id_);
+        agent_1_camera_id_ = RosUtils::replacePlaceholder(RosUtils::getParameter<core::ID>(node_, "camera_ids.agent_1_id"), "AGENTID", agent_id_);
+        agent_2_camera_id_ = RosUtils::replacePlaceholder(RosUtils::getParameter<core::ID>(node_, "camera_ids.agent_2_id"), "AGENTID", agent_id_);
         central_camera_id_ = config_tools_->getAgent(agent_id_)->central_head_id;
 
         // Initialize GUI data
@@ -45,26 +48,44 @@ namespace flychams::dashboard
         crop_w_[0] = 0;
         crop_h_[0] = 0;
 
-        // Set agent view window
-        window_ids_[1] = agent_window_id_;
+        // Set agent 1 view window
+        window_ids_[1] = agent_1_window_id_;
         vehicle_ids_[1] = agent_id_;
-        camera_ids_[1] = agent_camera_id_;
+        camera_ids_[1] = agent_1_camera_id_;
         crop_x_[1] = 0;
         crop_y_[1] = 0;
         crop_w_[1] = 0;
         crop_h_[1] = 0;
 
-        // Set central view window
-        window_ids_[2] = central_window_id_;
+        // Set agent 2 view window
+        window_ids_[2] = agent_2_window_id_;
         vehicle_ids_[2] = agent_id_;
-        camera_ids_[2] = central_camera_id_;
+        camera_ids_[2] = agent_2_camera_id_;
         crop_x_[2] = 0;
         crop_y_[2] = 0;
         crop_w_[2] = 0;
         crop_h_[2] = 0;
 
+        // Set map view window
+        window_ids_[3] = map_window_id_;
+        vehicle_ids_[3] = "";
+        camera_ids_[3] = "";
+        crop_x_[3] = 0;
+        crop_y_[3] = 0;
+        crop_w_[3] = 0;
+        crop_h_[3] = 0;
+
+        // Set central view window
+        window_ids_[4] = central_window_id_;
+        vehicle_ids_[4] = agent_id_;
+        camera_ids_[4] = central_camera_id_;
+        crop_x_[4] = 0;
+        crop_y_[4] = 0;
+        crop_w_[4] = 0;
+        crop_h_[4] = 0;
+
         // Initialize tracking windows
-        for (size_t i = 3, j = 0; i < num_windows_; i++, j++)
+        for (size_t i = 5, j = 0; i < num_windows_; i++, j++)
         {
             window_ids_[i] = tracking_window_ids_[j];
             vehicle_ids_[i] = agent_id_;
@@ -152,7 +173,7 @@ namespace flychams::dashboard
         }
 
         // Update tracking command vectors
-        for (size_t i = 3, j = 0; i < std::min(num_windows_, 3 + static_cast<int>(goal.window_ids.size())); i++, j++)
+        for (size_t i = 5, j = 0; i < std::min(num_windows_, 5 + static_cast<int>(goal.window_ids.size())); i++, j++)
         {
             const auto& goal_window_id = goal.window_ids[j];
             const auto& goal_type = static_cast<TrackingUnitType>(goal.unit_types[j]);

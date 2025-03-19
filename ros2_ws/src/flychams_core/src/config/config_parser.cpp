@@ -124,14 +124,12 @@ namespace flychams::core
 
 					mission->group_bundle_id = getCellValueOrFail<std::string>(row.findCell(6));
 
-					mission->parameter_set_id = getCellValueOrFail<std::string>(row.findCell(7));
+					mission->agent_team_id = getCellValueOrFail<std::string>(row.findCell(7));
 
-					mission->agent_team_id = getCellValueOrFail<std::string>(row.findCell(8));
-
-					const std::string& autopilot_str = getCellValueOrFail<std::string>(row.findCell(9));
+					const std::string& autopilot_str = getCellValueOrFail<std::string>(row.findCell(8));
 					mission->autopilot = autopilotFromString(autopilot_str);
 
-					auto altitude_constraint_str = getCellValueOrFail<std::string>(row.findCell(10));
+					auto altitude_constraint_str = getCellValueOrFail<std::string>(row.findCell(9));
 					auto altitude_constraint_vec = parseStringToVector<float>(altitude_constraint_str, 2, ',');
 					if (altitude_constraint_vec.size() >= 2)
 					{
@@ -139,7 +137,7 @@ namespace flychams::core
 						mission->altitude_constraint(1) = altitude_constraint_vec[1];
 					}
 
-					auto tracking_scene_resolution_str = getCellValueOrFail<std::string>(row.findCell(11));
+					auto tracking_scene_resolution_str = getCellValueOrFail<std::string>(row.findCell(10));
 					auto tracking_scene_resolution_vec = parseStringToVector<int>(tracking_scene_resolution_str, 2, 'x');
 					if (tracking_scene_resolution_vec.size() >= 2)
 					{
@@ -147,7 +145,7 @@ namespace flychams::core
 						mission->tracking_scene_resolution(1) = tracking_scene_resolution_vec[1];
 					}
 
-					auto tracking_view_resolution_str = getCellValueOrFail<std::string>(row.findCell(12));
+					auto tracking_view_resolution_str = getCellValueOrFail<std::string>(row.findCell(11));
 					auto tracking_view_resolution_vec = parseStringToVector<int>(tracking_view_resolution_str, 2, 'x');
 					if (tracking_view_resolution_vec.size() >= 2)
 					{
@@ -197,18 +195,15 @@ namespace flychams::core
 
 					simulation->simulation_name = getCellValueOrFail<std::string>(row.findCell(2));
 
-					const std::string& autopilot_str = getCellValueOrFail<std::string>(row.findCell(3));
-					simulation->autopilot = autopilotFromString(autopilot_str);
+					simulation->clock_speed = getCellValueOrFail<float>(row.findCell(3));
 
-					simulation->clock_speed = getCellValueOrFail<float>(row.findCell(4));
+					simulation->record_metrics = getCellValueOrFail<bool>(row.findCell(4));
 
-					simulation->record_metrics = getCellValueOrFail<bool>(row.findCell(5));
+					simulation->draw_rviz_markers = getCellValueOrFail<bool>(row.findCell(5));
 
-					simulation->draw_rviz_markers = getCellValueOrFail<bool>(row.findCell(6));
+					simulation->draw_world_markers = getCellValueOrFail<bool>(row.findCell(6));
 
-					simulation->draw_world_markers = getCellValueOrFail<bool>(row.findCell(7));
-
-					simulation->enable_lumen = getCellValueOrFail<bool>(row.findCell(8));
+					simulation->enable_lumen = getCellValueOrFail<bool>(row.findCell(7));
 
 					// Only first found simulation is loaded
 					return simulation;
@@ -889,7 +884,7 @@ namespace flychams::core
 		settings["ClockType"] = "SteppableClock";
 		settings["ClockSpeed"] = config_ptr->simulation->clock_speed;
 		settings["ViewMode"] = "NoDisplay";
-		settings["LogMessagesVisible"] = true;
+		settings["LogMessagesVisible"] = false;
 		settings["ApiServerPort"] = 41451;
 
 		settings["PawnPaths"] = {
@@ -937,7 +932,7 @@ namespace flychams::core
 			}},
 			{"NoiseSettings", {
 				{
-					{"Enabled", true},
+					{"Enabled", false},
 					{"ImageType", 0},
 					{"RandContrib", 0.01f},
 					{"RandSpeed", 50000.0f},
@@ -1205,20 +1200,20 @@ namespace flychams::core
 				}},
 				{"NoiseSettings", {
 					{
-						{"Enabled", true},
+						{"Enabled", false},
 						{"ImageType", 0},
 						{"RandContrib", random_noise.rand_contrib},
 						{"RandSpeed", random_noise.rand_speed},
 						{"RandSize", random_noise.rand_size},
 						{"RandDensity", 2},
-						{"HorzWaveContrib", 0.03},
-						{"HorzWaveStrength", 0.08},
-						{"HorzWaveVertSize", 1.0},
-						{"HorzWaveScreenSize", 1.0},
-						{"HorzNoiseLinesContrib", 0.1},
-						{"HorzNoiseLinesDensityY", 0.001},
-						{"HorzNoiseLinesDensityXY", 0.05},
-						{"HorzDistortionContrib", 0.1},
+						{"HorzWaveContrib", 0.003f},
+						{"HorzWaveStrength", 0.008f},
+						{"HorzWaveVertSize", 1.0f},
+						{"HorzWaveScreenSize", 1.0f},
+						{"HorzNoiseLinesContrib", 0.1f},
+						{"HorzNoiseLinesDensityY", 0.001f},
+						{"HorzNoiseLinesDensityXY", 0.05f},
+						{"HorzDistortionContrib", 0.1f},
 						{"HorzDistortionStrength", lens_distortion.strength},
 						{"LensDistortionEnable", true},
 						{"LensDistortionAreaFalloff", lens_distortion.area_falloff},
@@ -1233,22 +1228,40 @@ namespace flychams::core
 		}
 
 		// Get agent view camera pose (ENU frame)
-		Vector3r agent_view_pos;
-		agent_view_pos.x() = -1.75f;
-		agent_view_pos.y() = -1.75f;
-		agent_view_pos.z() = -1.75f;
-		Vector3r agent_view_rot;
-		agent_view_rot.x() = 0.0f;
-		agent_view_rot.y() = -33.33f;
-		agent_view_rot.z() = 45.0f;
+		Vector3r agent_view_1_pos;
+		agent_view_1_pos.x() = -1.15f;
+		agent_view_1_pos.y() = -1.15f;
+		agent_view_1_pos.z() = 1.15f;
+		Vector3r agent_view_1_rot;
+		agent_view_1_rot.x() = 0.0f;
+		agent_view_1_rot.y() = 33.33f;
+		agent_view_1_rot.z() = 45.0f;
+		Vector3r agent_view_2_pos;
+		agent_view_2_pos.x() = -0.6f;
+		agent_view_2_pos.y() = -0.6f;
+		agent_view_2_pos.z() = -0.3f;
+		Vector3r agent_view_2_rot;
+		agent_view_2_rot.x() = 0.0f;
+		agent_view_2_rot.y() = 0.0f;
+		agent_view_2_rot.z() = 45.0f;
 
-		cameras["CAM_" + agent_id] = {
-			{"X", agent_view_pos.x()},
-			{"Y", -agent_view_pos.y()},
-			{"Z", -agent_view_pos.z()},
-			{"Roll", agent_view_rot.x()},
-			{"Pitch", -agent_view_rot.y()},
-			{"Yaw", -agent_view_rot.z()} };
+		// Agent view camera 1 (whole UAV view)
+		cameras["CAM_" + agent_id + "_1"] = {
+			{"X", agent_view_1_pos.x()},
+			{"Y", -agent_view_1_pos.y()},
+			{"Z", -agent_view_1_pos.z()},
+			{"Roll", agent_view_1_rot.x()},
+			{"Pitch", -agent_view_1_rot.y()},
+			{"Yaw", -agent_view_1_rot.z()} };
+
+		// Agent view camera 2 (Payload view)
+		cameras["CAM_" + agent_id + "_2"] = {
+			{"X", agent_view_2_pos.x()},
+			{"Y", -agent_view_2_pos.y()},
+			{"Z", -agent_view_2_pos.z()},
+			{"Roll", agent_view_2_rot.x()},
+			{"Pitch", -agent_view_2_rot.y()},
+			{"Yaw", -agent_view_2_rot.z()} };
 	}
 
 	void ConfigParser::populateExternalCameras(nlohmann::ordered_json& cameras)

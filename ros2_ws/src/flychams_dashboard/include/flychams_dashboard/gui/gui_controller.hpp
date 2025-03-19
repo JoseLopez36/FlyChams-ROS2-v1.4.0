@@ -43,14 +43,15 @@ namespace flychams::dashboard
         core::ID agent_id_;
         // Window IDs
         core::ID scene_window_id_;
-        core::ID agent_window_id_;
-        core::ID data_window_id_;
+        core::ID agent_1_window_id_;
+        core::ID agent_2_window_id_;
         core::ID map_window_id_;
         core::ID central_window_id_;
         std::vector<core::ID> tracking_window_ids_;
         // Camera IDs (for fixed windows)
         core::ID scene_camera_id_;
-        core::ID agent_camera_id_;
+        core::ID agent_1_camera_id_;
+        core::ID agent_2_camera_id_;
         core::ID central_camera_id_;
         // Number of windows
         int num_windows_;

@@ -55,7 +55,7 @@ namespace flychams::core
         virtual void setWindowStrings(const ID& window_id, const std::vector<std::string>& strings, const std::vector<PointMsg>& positions, const ColorMsg& color, const float& scale) = 0;
 
     public: // Tracking control methods (override)
-        virtual bool addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors) = 0;
+        virtual bool addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors, const RegionType& region) = 0;
         virtual bool addClusterGroup(const IDs& cluster_ids, const std::vector<PointMsg>& centers, const std::vector<float>& radii, const bool& highlight, const std::vector<ColorMsg>& highlight_colors) = 0;
         virtual bool removeAllTargets() = 0;
         virtual bool removeAllClusters() = 0;

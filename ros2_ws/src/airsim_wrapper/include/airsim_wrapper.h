@@ -50,6 +50,7 @@ STRICT_MODE_ON
 #include "yaml-cpp/yaml.h"
 
 // Global commands
+#include <airsim_interfaces/srv/load_level.hpp>
 #include <airsim_interfaces/srv/reset.hpp>
 #include <airsim_interfaces/srv/run.hpp>
 #include <airsim_interfaces/srv/pause.hpp>
@@ -189,6 +190,7 @@ namespace airsim_wrapper
         void update_cluster_cmd_group_cb(const airsim_interfaces::msg::UpdateClusterCmdGroup::SharedPtr update_cluster_cmd_group_msg);
 
         /// Service callbacks
+        bool load_level_srv_cb(const std::shared_ptr<airsim_interfaces::srv::LoadLevel::Request> request, const std::shared_ptr<airsim_interfaces::srv::LoadLevel::Response> response);
         bool reset_srv_cb(const std::shared_ptr<airsim_interfaces::srv::Reset::Request> request, const std::shared_ptr<airsim_interfaces::srv::Reset::Response> response);
         bool run_srv_cb(const std::shared_ptr<airsim_interfaces::srv::Run::Request> request, const std::shared_ptr<airsim_interfaces::srv::Run::Response> response);
         bool pause_srv_cb(const std::shared_ptr<airsim_interfaces::srv::Pause::Request> request, const std::shared_ptr<airsim_interfaces::srv::Pause::Response> response);
@@ -235,6 +237,7 @@ namespace airsim_wrapper
         msr::airlib::Pose client_get_camera_pose(const std::string& vehicle_name, const std::string& camera_name);
 
         // Global methods
+        void client_load_level(const std::string& level_name);
         void client_reset();
         void client_pause(const bool& is_paused);
 
@@ -294,6 +297,7 @@ namespace airsim_wrapper
         rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr clock_pub_;
 
         // Global services
+        rclcpp::Service<airsim_interfaces::srv::LoadLevel>::SharedPtr load_level_srvr_;
         rclcpp::Service<airsim_interfaces::srv::Reset>::SharedPtr reset_srvr_;
         rclcpp::Service<airsim_interfaces::srv::Run>::SharedPtr run_srvr_;
         rclcpp::Service<airsim_interfaces::srv::Pause>::SharedPtr pause_srvr_;

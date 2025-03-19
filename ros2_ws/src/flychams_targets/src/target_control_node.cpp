@@ -87,8 +87,10 @@ private: // Element management
         highlight_color.r = 1.0f;
         highlight_color.g = 0.0f;
         highlight_color.b = 0.0f;
-        highlight_color.a = 0.2f;
-        ext_tools_->addTargetGroup({ target_id }, { TargetType::Human }, { controller->getPosition() }, config_tools_->getSimulation()->draw_world_markers, { highlight_color });
+        highlight_color.a = 0.015f;
+        PointMsg position = controller->getPosition();
+        position.z += 4.0f;
+        ext_tools_->addTargetGroup({ target_id }, { config_tools_->getTarget(target_id)->target_type }, { position }, config_tools_->getSimulation()->draw_world_markers, { highlight_color }, config_tools_->getMap()->region_type);
 
         // Wait for 0.1 seconds to ensure target is added
         std::this_thread::sleep_for(std::chrono::milliseconds(100));

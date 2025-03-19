@@ -111,7 +111,7 @@ namespace flychams::core
         void setWindowStrings(const ID& window_id, const std::vector<std::string>& strings, const std::vector<PointMsg>& positions, const ColorMsg& color, const float& scale) override;
 
     public: // Tracking control methods
-        bool addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors) override;
+        bool addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors, const RegionType& region) override;
         bool addClusterGroup(const IDs& cluster_ids, const std::vector<PointMsg>& centers, const std::vector<float>& radii, const bool& highlight, const std::vector<ColorMsg>& highlight_colors) override;
         bool removeAllTargets() override;
         bool removeAllClusters() override;
@@ -125,15 +125,15 @@ namespace flychams::core
             {
                 return 0;
             }
-            else if (window_id == "AGENT")
+            else if (window_id == "AGENT_1")
             {
                 return 1;
             }
-            else if (window_id == "DATA")
+            else if (window_id == "MAP")
             {
                 return 2;
             }
-            else if (window_id == "MAP")
+            else if (window_id == "AGENT_2")
             {
                 return 3;
             }

@@ -328,7 +328,7 @@ namespace flychams::core
     // TRACKING CONTROL: Service-based control methods
     // ════════════════════════════════════════════════════════════════════════════
 
-    bool AirsimTools::addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors)
+    bool AirsimTools::addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors, const RegionType& region)
     {
         // Create request
         auto request = std::make_shared<AddTargetGroup::Request>();
@@ -343,10 +343,22 @@ namespace flychams::core
             switch (target_types[i])
             {
             case TargetType::Cube:
-                request->target_types.push_back("Cube");
+                if (region != RegionType::Coastal)
+                    request->target_types.push_back("Cube");
+                else
+                    request->target_types.push_back("FloatingCube");
                 break;
             case TargetType::Human:
-                request->target_types.push_back("Human");
+                if (region != RegionType::Coastal)
+                    request->target_types.push_back("Human");
+                else
+                    request->target_types.push_back("FloatingHuman");
+                break;
+            case TargetType::MetaHuman:
+                if (region != RegionType::Coastal)
+                    request->target_types.push_back("MetaHuman");
+                else
+                    request->target_types.push_back("FloatingMetaHuman");
                 break;
             default:
                 RCLCPP_ERROR(node_->get_logger(), "Unknown target type: %d", static_cast<int>(target_types[i]));

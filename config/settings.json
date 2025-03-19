@@ -4,7 +4,7 @@
     "ClockType": "SteppableClock",
     "ClockSpeed": 1.0,
     "ViewMode": "NoDisplay",
-    "LogMessagesVisible": true,
+    "LogMessagesVisible": false,
     "ApiServerPort": 41451,
     "PawnPaths": {
         "FlyChamsQuadcopter": {
@@ -21,7 +21,7 @@
     },
     "TimeOfDay": {
         "Enabled": true,
-        "StartDateTime": "2024-12-13 17:0:0",
+        "StartDateTime": "2024-12-13 19:0:0",
         "CelestialClockSpeed": 1,
         "StartDateTimeDst": false,
         "UpdateIntervalSecs": 1
@@ -37,12 +37,17 @@
                 "ImageType": 0,
                 "Width": 1920,
                 "Height": 1080,
-                "FOV_Degrees": 90
+                "FOV_Degrees": 90,
+                "LumenGIEnable": true,
+                "LumenReflectionEnable": true,
+                "LumenFinalQuality": 2,
+                "LumenSceneDetail": 2,
+                "LumenSceneLightningDetail": 2
             }
         ],
         "NoiseSettings": [
             {
-                "Enabled": true,
+                "Enabled": false,
                 "ImageType": 0,
                 "RandContrib": 0.009999999776482582,
                 "RandSpeed": 50000.0,
@@ -78,8 +83,8 @@
             "ControlPortRemote": 14580,
             "LocalHostIp": "172.17.0.1",
             "X": 0.0,
-            "Y": 0.0,
-            "Z": 0.0,
+            "Y": -0.0,
+            "Z": -0.0,
             "Roll": 0.0,
             "Pitch": -0.0,
             "Yaw": -0.0,
@@ -125,8 +130,8 @@
                     "CaptureSettings": [
                         {
                             "ImageType": 0,
-                            "Width": 5120,
-                            "Height": 2880,
+                            "Width": 7680,
+                            "Height": 4320,
                             "FOV_Degrees": 146.283203125,
                             "LumenGIEnable": true,
                             "LumenReflectionEnable": true,
@@ -157,20 +162,20 @@
                     },
                     "NoiseSettings": [
                         {
-                            "Enabled": true,
+                            "Enabled": false,
                             "ImageType": 0,
                             "RandContrib": 0.009999999776482582,
                             "RandSpeed": 50000.0,
                             "RandSize": 500.0,
                             "RandDensity": 2,
-                            "HorzWaveContrib": 0.03,
-                            "HorzWaveStrength": 0.08,
+                            "HorzWaveContrib": 0.003000000026077032,
+                            "HorzWaveStrength": 0.00800000037997961,
                             "HorzWaveVertSize": 1.0,
                             "HorzWaveScreenSize": 1.0,
-                            "HorzNoiseLinesContrib": 0.1,
-                            "HorzNoiseLinesDensityY": 0.001,
-                            "HorzNoiseLinesDensityXY": 0.05,
-                            "HorzDistortionContrib": 0.1,
+                            "HorzNoiseLinesContrib": 0.10000000149011612,
+                            "HorzNoiseLinesDensityY": 0.0010000000474974513,
+                            "HorzNoiseLinesDensityXY": 0.05000000074505806,
+                            "HorzDistortionContrib": 0.10000000149011612,
                             "HorzDistortionStrength": 0.02500000037252903,
                             "LensDistortionEnable": true,
                             "LensDistortionAreaFalloff": 0.20000000298023224,
@@ -187,12 +192,20 @@
                     "EnableGimbal": true,
                     "CameraVisible": true
                 },
-                "CAM_AGENT05": {
-                    "X": -0.75,
-                    "Y": 0.75,
-                    "Z": 0.75,
+                "CAM_AGENT05_1": {
+                    "X": -1.149999976158142,
+                    "Y": 1.149999976158142,
+                    "Z": -1.149999976158142,
                     "Roll": 0.0,
-                    "Pitch": 33.33000183105469,
+                    "Pitch": -33.33000183105469,
+                    "Yaw": -45.0
+                },
+                "CAM_AGENT05_2": {
+                    "X": -0.6000000238418579,
+                    "Y": 0.6000000238418579,
+                    "Z": 0.30000001192092896,
+                    "Roll": 0.0,
+                    "Pitch": -0.0,
                     "Yaw": -45.0
                 },
                 "CAM_SCENE": {

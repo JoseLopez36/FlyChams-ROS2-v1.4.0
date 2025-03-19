@@ -255,6 +255,7 @@ namespace airsim_wrapper
         // Create clock publisher
         clock_pub_ = nh_->create_publisher<rosgraph_msgs::msg::Clock>("/clock", 1);
         // Create global control services
+        load_level_srvr_ = nh_->create_service<airsim_interfaces::srv::LoadLevel>("load_level", std::bind(&AirsimWrapper::load_level_srv_cb, this, _1, _2));
         reset_srvr_ = nh_->create_service<airsim_interfaces::srv::Reset>("reset", std::bind(&AirsimWrapper::reset_srv_cb, this, _1, _2));
         run_srvr_ = nh_->create_service<airsim_interfaces::srv::Run>("run", std::bind(&AirsimWrapper::run_srv_cb, this, _1, _2));
         pause_srvr_ = nh_->create_service<airsim_interfaces::srv::Pause>("pause", std::bind(&AirsimWrapper::pause_srv_cb, this, _1, _2));
@@ -605,6 +606,28 @@ namespace airsim_wrapper
     // ════════════════════════════════════════════════════════════════════════════
     // COMMAND SERVICES
     // ════════════════════════════════════════════════════════════════════════════
+
+    bool AirsimWrapper::load_level_srv_cb(std::shared_ptr<airsim_interfaces::srv::LoadLevel::Request> request, std::shared_ptr<airsim_interfaces::srv::LoadLevel::Response> response)
+    {
+        RCLCPP_INFO(nh_->get_logger(), "Loading level %s", request->level_name.c_str());
+        const auto& level_name = request->level_name;
+
+        // Load level
+        try
+        {
+            // Send command to server
+            client_load_level(level_name);
+        }
+        catch (rpc::rpc_error& e) {
+            std::string msg = e.get_error().as<std::string>();
+            RCLCPP_ERROR(nh_->get_logger(), "Exception raised by the API:\n%s", msg.c_str());
+            response->success = false;
+            return false;
+        }
+
+        response->success = true;
+        return true;
+    }
 
     bool AirsimWrapper::reset_srv_cb(std::shared_ptr<airsim_interfaces::srv::Reset::Request> request, std::shared_ptr<airsim_interfaces::srv::Reset::Response> response)
     {
@@ -1061,6 +1084,11 @@ namespace airsim_wrapper
     msr::airlib::Pose AirsimWrapper::client_get_camera_pose(const std::string& vehicle_name, const std::string& gimbal_name)
     {
         return airsim_client_state_->getCameraPose(gimbal_name, vehicle_name);
+    }
+
+    void AirsimWrapper::client_load_level(const std::string& level_name)
+    {
+        airsim_client_control_->simLoadLevel(level_name);
     }
 
     void AirsimWrapper::client_reset()

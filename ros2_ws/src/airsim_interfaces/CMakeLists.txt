@@ -17,6 +17,7 @@ find_package(geometry_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   # Global services and messages
+  "srv/LoadLevel.srv"
   "srv/Reset.srv"
   "srv/Run.srv"
   "srv/Pause.srv"

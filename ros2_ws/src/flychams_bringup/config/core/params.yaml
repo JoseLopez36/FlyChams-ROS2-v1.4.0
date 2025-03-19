@@ -8,8 +8,8 @@
     # Window IDs (for GUI purposes)
     window_ids:
       scene_id: "SCENE"
-      agent_id: "AGENT"
-      data_id: "DATA"
+      agent_1_id: "AGENT_1"
+      agent_2_id: "AGENT_2"
       map_id: "MAP"
       central_id: "CENTRAL"
       tracking_ids: [
@@ -21,4 +21,5 @@
     # Camera IDs (for GUI purposes)
     camera_ids:
       scene_id: "CAM_SCENE"
-      agent_id: "CAM_AGENTID"
+      agent_1_id: "CAM_AGENTID_1"
+      agent_2_id: "CAM_AGENTID_2"
