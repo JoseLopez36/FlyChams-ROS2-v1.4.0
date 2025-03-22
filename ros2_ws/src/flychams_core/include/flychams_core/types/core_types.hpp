@@ -580,6 +580,7 @@ namespace flychams::core
 
     struct LensDistortion
     {
+        bool enabled;
         float strength;
         float area_radius;
         float area_falloff;
@@ -587,6 +588,7 @@ namespace flychams::core
 
     struct RandomNoise
     {
+        bool enabled;
         float rand_contrib;
         float rand_size;
         float rand_speed;
@@ -594,18 +596,21 @@ namespace flychams::core
 
     struct BarometerParams
     {
+        bool enabled;
         float pressure_factor_sigma;    // Pressure factor sigma
         float uncorrelated_noise_sigma; // Uncorrelated noise sigma
     };
 
     struct ImuParams
     {
+        bool enabled;
         float gyro_noise;        // Angular random walk
         float accel_noise;       // Velocity random walk
     };
 
     struct GpsParams
     {
+        bool enabled;
         float eph_initial;       // Initial horizontal position accuracy
         float epv_initial;       // Initial vertical position accuracy
         float eph_final;         // Final horizontal position accuracy
@@ -614,6 +619,7 @@ namespace flychams::core
 
     struct MagnetometerParams
     {
+        bool enabled;
         float noise_sigma;       // Sensor noise sigma
         float scale_factor;      // Scale factor for readings
         float noise_bias;        // Noise bias

@@ -90,6 +90,10 @@ namespace flychams::core
         // Internal config
         float cruise_speed;
         float max_speed;
+        BarometerParams barometer_params;
+        ImuParams imu_params;
+        GpsParams gps_params;
+        MagnetometerParams magnetometer_params;
         float base_weight;
         float max_payload_weight;
         float hover_power;
@@ -118,6 +122,7 @@ namespace flychams::core
         float initial_focal;
         float min_focal;
         float max_focal;
+        float ref_focal;
 
         // External config
         GimbalConfigPtr gimbal;
@@ -141,10 +146,6 @@ namespace flychams::core
         Vector3r initial_orientation;
         float safety_radius;
         float max_altitude;
-        BarometerParams barometer_params;
-        ImuParams imu_params;
-        GpsParams gps_params;
-        MagnetometerParams magnetometer_params;
         float battery_capacity;
 
         // External config

@@ -171,7 +171,7 @@ namespace flychams::core
             // Camera focal length limits (m)
             params.f_min = head_ptr->min_focal;
             params.f_max = head_ptr->max_focal;
-            params.f_ref = camera_ptr->default_focal;
+            params.f_ref = head_ptr->ref_focal;
 
             // Camera resolution (pix)
             params.width = camera_ptr->resolution(0);
@@ -260,7 +260,7 @@ namespace flychams::core
 
             // Reference apparent size (in pixels)
             // Calculated using kappaS (half-width fraction) parameter
-            float s_ref_pix = s_max_pix * kappa_s + s_min_pix * (1.0f - kappa_s); // [pix]
+            float s_ref_pix = sensor_half_size * ref_apparent_size; // [pix]
             params.s_ref_pix = s_ref_pix; // [pix]
 
             // Conversion to metric distances on the sensor surface

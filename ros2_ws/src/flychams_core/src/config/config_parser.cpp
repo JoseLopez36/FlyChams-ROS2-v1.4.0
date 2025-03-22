@@ -420,42 +420,7 @@ namespace flychams::core
 
 					agent->max_altitude = getCellValueOrFail<float>(row.findCell(10));
 
-					auto barometer_params_str = getCellValueOrFail<std::string>(row.findCell(11));
-					auto barometer_params_vec = parseStringToVector<float>(barometer_params_str, 2, ',');
-					if (barometer_params_vec.size() >= 2)
-					{
-						agent->barometer_params.pressure_factor_sigma = barometer_params_vec[0];
-						agent->barometer_params.uncorrelated_noise_sigma = barometer_params_vec[1];
-					}
-
-					auto imu_params_str = getCellValueOrFail<std::string>(row.findCell(12));
-					auto imu_params_vec = parseStringToVector<float>(imu_params_str, 2, ',');
-					if (imu_params_vec.size() >= 2)
-					{
-						agent->imu_params.gyro_noise = imu_params_vec[0];
-						agent->imu_params.accel_noise = imu_params_vec[1];
-					}
-
-					auto gps_params_str = getCellValueOrFail<std::string>(row.findCell(13));
-					auto gps_params_vec = parseStringToVector<float>(gps_params_str, 4, ',');
-					if (gps_params_vec.size() >= 4)
-					{
-						agent->gps_params.eph_initial = gps_params_vec[0];
-						agent->gps_params.epv_initial = gps_params_vec[1];
-						agent->gps_params.eph_final = gps_params_vec[2];
-						agent->gps_params.epv_final = gps_params_vec[3];
-					}
-
-					auto magnetometer_params_str = getCellValueOrFail<std::string>(row.findCell(14));
-					auto magnetometer_params_vec = parseStringToVector<float>(magnetometer_params_str, 3, ',');
-					if (magnetometer_params_vec.size() >= 3)
-					{
-						agent->magnetometer_params.noise_sigma = magnetometer_params_vec[0];
-						agent->magnetometer_params.scale_factor = magnetometer_params_vec[1];
-						agent->magnetometer_params.noise_bias = magnetometer_params_vec[2];
-					}
-
-					agent->battery_capacity = getCellValueOrFail<float>(row.findCell(15));
+					agent->battery_capacity = getCellValueOrFail<float>(row.findCell(11));
 
 					// Resolve external ID references
 					agent->heads = parseAgentPayload(book, agent->head_payload_id);
@@ -571,6 +536,8 @@ namespace flychams::core
 
 					head->max_focal = getCellValueOrFail<float>(row.findCell(11)) / 1000.0f;
 
+					head->ref_focal = getCellValueOrFail<float>(row.findCell(12)) / 1000.0f;
+
 					// Resolve external ID references
 					head->gimbal = parseGimbalModel(book, head->gimbal_model_id);
 					if (!head->gimbal)
@@ -627,15 +594,58 @@ namespace flychams::core
 
 					drone->max_speed = getCellValueOrFail<float>(row.findCell(5));
 
-					drone->base_weight = getCellValueOrFail<float>(row.findCell(6));
+					auto barometer_params_str = getCellValueOrFail<std::string>(row.findCell(6));
+					auto barometer_params_vec_1 = parseStringToVector<bool>(barometer_params_str, 1, ',');
+					auto barometer_params_vec_2 = parseStringToVector<float>(barometer_params_str, 2, ',');
+					if (barometer_params_vec_1.size() >= 1 && barometer_params_vec_2.size() >= 2)
+					{
+						drone->barometer_params.enabled = barometer_params_vec_1[0];
+						drone->barometer_params.pressure_factor_sigma = barometer_params_vec_2[0];
+						drone->barometer_params.uncorrelated_noise_sigma = barometer_params_vec_2[1];
+					}
 
-					drone->max_payload_weight = getCellValueOrFail<float>(row.findCell(7));
+					auto imu_params_str = getCellValueOrFail<std::string>(row.findCell(7));
+					auto imu_params_vec_1 = parseStringToVector<bool>(imu_params_str, 1, ',');
+					auto imu_params_vec_2 = parseStringToVector<float>(imu_params_str, 2, ',');
+					if (imu_params_vec_1.size() >= 1 && imu_params_vec_2.size() >= 2)
+					{
+						drone->imu_params.enabled = imu_params_vec_1[0];
+						drone->imu_params.gyro_noise = imu_params_vec_2[0];
+						drone->imu_params.accel_noise = imu_params_vec_2[1];
+					}
 
-					drone->hover_power = getCellValueOrFail<float>(row.findCell(8));
+					auto gps_params_str = getCellValueOrFail<std::string>(row.findCell(8));
+					auto gps_params_vec_1 = parseStringToVector<bool>(gps_params_str, 1, ',');
+					auto gps_params_vec_2 = parseStringToVector<float>(gps_params_str, 4, ',');
+					if (gps_params_vec_1.size() >= 1 && gps_params_vec_2.size() >= 4)
+					{
+						drone->gps_params.enabled = gps_params_vec_1[0];
+						drone->gps_params.eph_initial = gps_params_vec_2[0];
+						drone->gps_params.epv_initial = gps_params_vec_2[1];
+						drone->gps_params.eph_final = gps_params_vec_2[2];
+						drone->gps_params.epv_final = gps_params_vec_2[3];
+					}
 
-					drone->cruise_power = getCellValueOrFail<float>(row.findCell(9));
+					auto magnetometer_params_str = getCellValueOrFail<std::string>(row.findCell(9));
+					auto magnetometer_params_vec_1 = parseStringToVector<bool>(magnetometer_params_str, 1, ',');
+					auto magnetometer_params_vec_2 = parseStringToVector<float>(magnetometer_params_str, 3, ',');
+					if (magnetometer_params_vec_1.size() >= 1 && magnetometer_params_vec_2.size() >= 3)
+					{
+						drone->magnetometer_params.enabled = magnetometer_params_vec_1[0];
+						drone->magnetometer_params.noise_sigma = magnetometer_params_vec_2[0];
+						drone->magnetometer_params.scale_factor = magnetometer_params_vec_2[1];
+						drone->magnetometer_params.noise_bias = magnetometer_params_vec_2[2];
+					}
 
-					drone->load_factor = getCellValueOrFail<float>(row.findCell(10));
+					drone->base_weight = getCellValueOrFail<float>(row.findCell(10));
+
+					drone->max_payload_weight = getCellValueOrFail<float>(row.findCell(11));
+
+					drone->hover_power = getCellValueOrFail<float>(row.findCell(12));
+
+					drone->cruise_power = getCellValueOrFail<float>(row.findCell(13));
+
+					drone->load_factor = getCellValueOrFail<float>(row.findCell(14));
 
 					// Only first found drone model is loaded
 					return drone;
@@ -814,21 +824,25 @@ namespace flychams::core
 					camera->sensor_height = getCellValueOrFail<float>(row.findCell(7)) / 1000.0f;
 
 					auto lens_distortion_str = getCellValueOrFail<std::string>(row.findCell(8));
-					auto lens_distortion_vec = parseStringToVector<float>(lens_distortion_str, 3, ',');
-					if (lens_distortion_vec.size() >= 3)
+					auto lens_distortion_vec_1 = parseStringToVector<bool>(lens_distortion_str, 1, ',');
+					auto lens_distortion_vec_2 = parseStringToVector<float>(lens_distortion_str, 3, ',');
+					if (lens_distortion_vec_1.size() >= 1 && lens_distortion_vec_2.size() >= 3)
 					{
-						camera->lens_distortion.strength = lens_distortion_vec[0];
-						camera->lens_distortion.area_radius = lens_distortion_vec[1];
-						camera->lens_distortion.area_falloff = lens_distortion_vec[2];
+						camera->lens_distortion.enabled = lens_distortion_vec_1[0];
+						camera->lens_distortion.strength = lens_distortion_vec_2[0];
+						camera->lens_distortion.area_radius = lens_distortion_vec_2[1];
+						camera->lens_distortion.area_falloff = lens_distortion_vec_2[2];
 					}
 
 					auto random_noise_str = getCellValueOrFail<std::string>(row.findCell(9));
-					auto random_noise_vec = parseStringToVector<float>(random_noise_str, 3, ',');
-					if (random_noise_vec.size() >= 3)
+					auto random_noise_vec_1 = parseStringToVector<bool>(random_noise_str, 1, ',');
+					auto random_noise_vec_2 = parseStringToVector<float>(random_noise_str, 3, ',');
+					if (random_noise_vec_1.size() >= 1 && random_noise_vec_2.size() >= 3)
 					{
-						camera->random_noise.rand_contrib = random_noise_vec[0];
-						camera->random_noise.rand_size = random_noise_vec[1];
-						camera->random_noise.rand_speed = random_noise_vec[2];
+						camera->random_noise.enabled = random_noise_vec_1[0];
+						camera->random_noise.rand_contrib = random_noise_vec_2[0];
+						camera->random_noise.rand_size = random_noise_vec_2[1];
+						camera->random_noise.rand_speed = random_noise_vec_2[2];
 					}
 
 					camera->weight = getCellValueOrFail<float>(row.findCell(10));
@@ -947,7 +961,7 @@ namespace flychams::core
 					{"HorzNoiseLinesDensityXY", 0.05f},
 					{"HorzDistortionContrib", 0.1f},
 					{"HorzDistortionStrength", 0.002f},
-					{"LensDistortionEnable", true},
+					{"LensDistortionEnable", false},
 					{"LensDistortionAreaFalloff", 0.02f},
 					{"LensDistortionAreaRadius", 2.0f},
 					{"LensDistortionInvert", false}
@@ -971,17 +985,21 @@ namespace flychams::core
 			Vector3r ini_ori = agent_ptr->initial_orientation;
 
 			// Sensor parameters
-			float barometer_pressure_factor_sigma = agent_ptr->barometer_params.pressure_factor_sigma;
-			float barometer_uncorrelated_noise_sigma = agent_ptr->barometer_params.uncorrelated_noise_sigma;
-			float imu_gyro_noise = agent_ptr->imu_params.gyro_noise;
-			float imu_accel_noise = agent_ptr->imu_params.accel_noise;
-			float gps_eph_initial = agent_ptr->gps_params.eph_initial;
-			float gps_epv_initial = agent_ptr->gps_params.epv_initial;
-			float gps_eph_final = agent_ptr->gps_params.eph_final;
-			float gps_epv_final = agent_ptr->gps_params.epv_final;
-			float magnetometer_noise_sigma = agent_ptr->magnetometer_params.noise_sigma;
-			float magnetometer_scale_factor = agent_ptr->magnetometer_params.scale_factor;
-			float magnetometer_noise_bias = agent_ptr->magnetometer_params.noise_bias;
+			bool barometer_enabled = agent_ptr->drone->barometer_params.enabled;
+			float barometer_pressure_factor_sigma = agent_ptr->drone->barometer_params.pressure_factor_sigma;
+			float barometer_uncorrelated_noise_sigma = agent_ptr->drone->barometer_params.uncorrelated_noise_sigma;
+			bool imu_enabled = agent_ptr->drone->imu_params.enabled;
+			float imu_gyro_noise = agent_ptr->drone->imu_params.gyro_noise;
+			float imu_accel_noise = agent_ptr->drone->imu_params.accel_noise;
+			bool gps_enabled = agent_ptr->drone->gps_params.enabled;
+			float gps_eph_initial = agent_ptr->drone->gps_params.eph_initial;
+			float gps_epv_initial = agent_ptr->drone->gps_params.epv_initial;
+			float gps_eph_final = agent_ptr->drone->gps_params.eph_final;
+			float gps_epv_final = agent_ptr->drone->gps_params.epv_final;
+			bool magnetometer_enabled = agent_ptr->drone->magnetometer_params.enabled;
+			float magnetometer_noise_sigma = agent_ptr->drone->magnetometer_params.noise_sigma;
+			float magnetometer_scale_factor = agent_ptr->drone->magnetometer_params.scale_factor;
+			float magnetometer_noise_bias = agent_ptr->drone->magnetometer_params.noise_bias;
 
 			if (config_ptr->mission->autopilot == Autopilot::PX4)
 			{
@@ -1013,20 +1031,20 @@ namespace flychams::core
 					{"Sensors", {
 						{"Barometer", {
 							{"SensorType", 1},
-							{"Enabled", true},
+							{"Enabled", barometer_enabled},
 							{"PressureFactorSigma", std::max(barometer_pressure_factor_sigma, 0.0001825f)}, // More than 0.0001825 can generate problem with PX4
 							{"UncorrelatedNoiseSigma", barometer_uncorrelated_noise_sigma}
 						}},
 						{"Imu", {
 							{"SensorType", 2},
-							{"Enabled", true},
+							{"Enabled", imu_enabled},
 							{"GenerateNoise", true},
 							{"AngularRandomWalk", imu_gyro_noise},
 							{"VelocityRandomWalk", imu_accel_noise}
 						}},
 						{"Gps", {
 							{"SensorType", 3},
-							{"Enabled", true},
+							{"Enabled", gps_enabled},
 							{"EphInitial", gps_eph_initial},
 							{"EpvInitial", gps_epv_initial},
 							{"EphFinal", gps_eph_final},
@@ -1034,7 +1052,7 @@ namespace flychams::core
 						}},
 						{"Magnetometer", {
 							{"SensorType", 4},
-							{"Enabled", true},
+							{"Enabled", magnetometer_enabled},
 							{"NoiseSigma", magnetometer_noise_sigma},
 							{"ScaleFactor", magnetometer_scale_factor},
 							{"NoiseBias", magnetometer_noise_bias}
@@ -1058,20 +1076,20 @@ namespace flychams::core
 					{"Sensors", {
 						{"Barometer", {
 							{"SensorType", 1},
-							{"Enabled", true},
+							{"Enabled", barometer_enabled},
 							{"PressureFactorSigma", barometer_pressure_factor_sigma},
 							{"UncorrelatedNoiseSigma", barometer_uncorrelated_noise_sigma}
 						}},
 						{"Imu", {
 							{"SensorType", 2},
-							{"Enabled", true},
+							{"Enabled", imu_enabled},
 							{"GenerateNoise", true},
 							{"AngularRandomWalk", imu_gyro_noise},
 							{"VelocityRandomWalk", imu_accel_noise}
 						}},
 						{"Gps", {
 							{"SensorType", 3},
-							{"Enabled", true},
+							{"Enabled", gps_enabled},
 							{"EphInitial", gps_eph_initial},
 							{"EpvInitial", gps_epv_initial},
 							{"EphFinal", gps_eph_final},
@@ -1079,7 +1097,7 @@ namespace flychams::core
 						}},
 						{"Magnetometer", {
 							{"SensorType", 4},
-							{"Enabled", true},
+							{"Enabled", magnetometer_enabled},
 							{"NoiseSigma", magnetometer_noise_sigma},
 							{"ScaleFactor", magnetometer_scale_factor},
 							{"NoiseBias", magnetometer_noise_bias}
@@ -1119,7 +1137,15 @@ namespace flychams::core
 			const auto& focal = head_ptr->initial_focal;
 			const auto& fov = MathUtils::radToDeg(CameraUtils::computeFov(focal, sensor_width));
 			const auto& lens_distortion = head_ptr->camera->lens_distortion;
+			bool lens_distortion_enabled = lens_distortion.enabled;
+			float lens_distortion_strength = lens_distortion.strength;
+			float lens_distortion_area_radius = lens_distortion.area_radius;
+			float lens_distortion_area_falloff = lens_distortion.area_falloff;
 			const auto& random_noise = head_ptr->camera->random_noise;
+			bool random_noise_enabled = random_noise.enabled;
+			float random_noise_rand_contrib = random_noise.rand_contrib;
+			float random_noise_rand_size = random_noise.rand_size;
+			float random_noise_rand_speed = random_noise.rand_speed;
 
 			// Get gimbal parameters
 			float yaw_min = 0.0f;
@@ -1198,11 +1224,11 @@ namespace flychams::core
 				}},
 				{"NoiseSettings", {
 					{
-						{"Enabled", false},
+						{"Enabled", random_noise_enabled},
 						{"ImageType", 0},
-						{"RandContrib", random_noise.rand_contrib},
-						{"RandSpeed", random_noise.rand_speed},
-						{"RandSize", random_noise.rand_size},
+						{"RandContrib", random_noise_rand_contrib},
+						{"RandSpeed", random_noise_rand_speed},
+						{"RandSize", random_noise_rand_size},
 						{"RandDensity", 2},
 						{"HorzWaveContrib", 0.003f},
 						{"HorzWaveStrength", 0.008f},
@@ -1212,10 +1238,10 @@ namespace flychams::core
 						{"HorzNoiseLinesDensityY", 0.001f},
 						{"HorzNoiseLinesDensityXY", 0.05f},
 						{"HorzDistortionContrib", 0.1f},
-						{"HorzDistortionStrength", lens_distortion.strength},
-						{"LensDistortionEnable", true},
-						{"LensDistortionAreaFalloff", lens_distortion.area_falloff},
-						{"LensDistortionAreaRadius", lens_distortion.area_radius},
+						{"HorzDistortionStrength", lens_distortion_strength},
+						{"LensDistortionEnable", lens_distortion_enabled},
+						{"LensDistortionAreaFalloff", lens_distortion_area_falloff},
+						{"LensDistortionAreaRadius", lens_distortion_area_radius},
 						{"LensDistortionInvert", false}
 					}
 				}},
