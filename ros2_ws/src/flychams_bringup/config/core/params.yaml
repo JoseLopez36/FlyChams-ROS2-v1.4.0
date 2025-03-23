@@ -5,7 +5,7 @@
       num_tracking_windows: 4 # For MultiWindowTracking mode
       min_apparent_size: 0.2  # Minimum fraction of half-sensor that the target will occupy in the image
       max_apparent_size: 0.9  # Maximum fraction of half-sensor that the target will occupy in the image
-      ref_apparent_size: 0.8  # Reference fraction of half-sensor that the target will occupy in the image
+      ref_apparent_size: 0.65  # Reference fraction of half-sensor that the target will occupy in the image
     # Window IDs (for GUI purposes)
     fixed_window_ids: ["SCENE", "AGENT00", "AGENT01", "MAP"]
     central_window_id: "CENTRAL"
