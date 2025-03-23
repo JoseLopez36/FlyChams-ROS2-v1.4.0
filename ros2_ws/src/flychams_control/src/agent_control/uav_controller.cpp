@@ -19,20 +19,22 @@ namespace flychams::control
 		// Get timeouts
 		takeoff_timeout_ = RosUtils::getParameterOr<float>(node_, "uav_control.takeoff_timeout", 10.0f);
 		landing_timeout_ = RosUtils::getParameterOr<float>(node_, "uav_control.landing_timeout", 10.0f);
-		// Get goal reach threshold
-		goal_reach_threshold_ = RosUtils::getParameterOr<float>(node_, "uav_control.goal_reach_threshold", 0.5f);
-		// Get velocity controller parameters
-		max_velocity_ = RosUtils::getParameterOr<float>(node_, "uav_control.max_velocity", 10.0f);
-		acceleration_limit_ = RosUtils::getParameterOr<float>(node_, "uav_control.acceleration_limit", 2.0f);
+		// Get speed scheduling parameters
+		min_speed_ = RosUtils::getParameterOr<float>(node_, "uav_control.min_speed", 0.5f);
+		max_speed_ = RosUtils::getParameterOr<float>(node_, "uav_control.max_speed", 12.0f);
+		min_distance_ = RosUtils::getParameterOr<float>(node_, "uav_control.min_distance", 0.20f);
+		max_distance_ = RosUtils::getParameterOr<float>(node_, "uav_control.max_distance", 50.0f);
+		max_acceleration_ = RosUtils::getParameterOr<float>(node_, "uav_control.max_acceleration", 2.0f);
+		speed_slope_ = (max_speed_ - min_speed_) / (max_distance_ - min_distance_);
 
 		// Initialize agent data
 		curr_pos_ = PointMsg();
 		has_odom_ = false;
 		goal_pos_ = PointMsg();
 		has_goal_ = false;
+		last_speed_ = 0.0f;
 		pos_timeout_ = update_rate_ * 1.1f; // 10% more than update rate
-		last_velocity_ = Vector3r(0.0f, 0.0f, 0.0f);
-		last_velocity_update_time_ = RosUtils::getTimeNow(node_);
+		last_speed_update_time_ = RosUtils::getTimeNow(node_);
 
 		// Initialize UAV states
 		setState(State::INITIALIZING);
@@ -90,10 +92,7 @@ namespace flychams::control
 		has_goal_ = true;
 
 		// Transition to moving
-		if (state_ == State::HOVERING)
-		{
-			requestMove();
-		}
+		requestMove();
 	}
 
 	// ════════════════════════════════════════════════════════════════════════════
@@ -203,7 +202,7 @@ namespace flychams::control
 	bool UAVController::requestMove()
 	{
 		// Check if we're in a state where movement is permitted
-		if (state_ != State::HOVERING && state_ != State::REACHED)
+		if (state_ != State::HOVERING && state_ != State::MOVING && state_ != State::REACHED)
 		{
 			RCLCPP_ERROR(node_->get_logger(), "UAV controller: Cannot move from state %d", static_cast<int>(state_));
 			return false;
@@ -373,7 +372,7 @@ namespace flychams::control
 
 		case State::MOVING:
 			// From MOVING, we can go to REACHED, HOVERING, LANDING, or ERROR
-			return to == State::REACHED || to == State::HOVERING || to == State::LANDING || to == State::ERROR;
+			return to == State::REACHED || to == State::MOVING || to == State::HOVERING || to == State::LANDING || to == State::ERROR;
 
 		case State::REACHED:
 			// From REACHED, we can go to HOVERING, MOVING, LANDING, or ERROR
@@ -495,7 +494,7 @@ namespace flychams::control
 	void UAVController::handleHoveringState()
 	{
 		// In hovering state, just maintain current position
-		last_velocity_ = Vector3r(0.0f, 0.0f, 0.0f);
+		last_speed_ = 0.0f;
 	}
 
 	void UAVController::handleMovingState()
@@ -505,7 +504,7 @@ namespace flychams::control
 		{
 			RCLCPP_WARN(node_->get_logger(), "UAV controller: No goal or odom set in MOVING state");
 			setState(State::HOVERING);
-			last_velocity_ = Vector3r(0.0f, 0.0f, 0.0f);
+			last_speed_ = 0.0f;
 			return;
 		}
 
@@ -517,26 +516,23 @@ namespace flychams::control
 		if (checkGoalReached(goal_pos_vec, curr_pos_vec))
 		{
 			setState(State::REACHED);
-			last_velocity_ = Vector3r(0.0f, 0.0f, 0.0f);
+			last_speed_ = 0.0f;
 			return;
 		}
 
 		// Compute velocity for the commanded position
-		const float velocity = computeVelocity(goal_pos_vec, curr_pos_vec);
+		const float speed = computeSpeed(goal_pos_vec, curr_pos_vec);
 
 		// Send position command to external tools
-		RCLCPP_INFO_THROTTLE(node_->get_logger(), *node_->get_clock(), 1000.0, "UAV controller: Moving to goal (%.2f, %.2f, %.2f) with velocity %.2f m/s...",
-			goal_pos_.x, goal_pos_.y, goal_pos_.z, velocity);
-		ext_tools_->setPosition(agent_id_, goal_pos_.x, goal_pos_.y, goal_pos_.z, velocity, pos_timeout_);
+		RCLCPP_INFO_THROTTLE(node_->get_logger(), *node_->get_clock(), 1000.0, "UAV controller: Moving to goal (%.2f, %.2f, %.2f) with speed %.2f m/s...",
+			goal_pos_.x, goal_pos_.y, goal_pos_.z, speed);
+		ext_tools_->setPosition(agent_id_, goal_pos_.x, goal_pos_.y, goal_pos_.z, speed, pos_timeout_);
 	}
 
 	void UAVController::handleReachedState()
 	{
-		// In REACHED state, hold position briefly then go to hovering
-		if ((RosUtils::getTimeNow(node_) - state_entry_time_).seconds() > 2.0)
-		{
-			setState(State::HOVERING);
-		}
+		// In REACHED state, go to hovering
+		setState(State::HOVERING);
 	}
 
 	void UAVController::handleLandingState()
@@ -579,7 +575,7 @@ namespace flychams::control
 		const auto& dist = (goal_pos - curr_pos).norm();
 
 		// Check if goal is reached
-		if (dist < goal_reach_threshold_)
+		if (dist < min_distance_)
 		{
 			RCLCPP_INFO(node_->get_logger(), "UAV controller: Goal reached. Distance to goal: %.2f m", dist);
 			return true;
@@ -590,69 +586,48 @@ namespace flychams::control
 		}
 	}
 
-	float UAVController::computeVelocity(const Vector3r& goal_pos, const Vector3r& curr_pos)
+	float UAVController::computeSpeed(const Vector3r& goal_pos, const Vector3r& curr_pos)
 	{
 		// Get current time and calculate time difference
 		auto current_time = RosUtils::getTimeNow(node_);
-		float dt = (current_time - last_velocity_update_time_).seconds();
-		last_velocity_update_time_ = current_time;
+		float dt = (current_time - last_speed_update_time_).seconds();
+		last_speed_update_time_ = current_time;
 
 		// Limit dt to prevent extreme values after pauses
-		dt = std::min(dt, 1.0f / update_rate_);
+		dt = std::min(dt, (1.0f / update_rate_) * 1.5f);
 
 		// Calculate direction vector and distance to goal
 		Vector3r direction = goal_pos - curr_pos;
 		float distance = direction.norm();
 
-		// Normalize direction vector if distance is not zero
-		if (distance > 1e-6) {
-			direction /= distance;
+		// Normalize direction vector if distance is greater than min_distance_
+		float target_speed = 0.0f;
+		if (distance > min_distance_ && distance < max_distance_) {
+			// We're in the middle of the range, compute speed based on distance
+			target_speed = min_speed_ + speed_slope_ * (distance - min_distance_);
+		}
+		else if (distance > max_distance_) {
+			// We're far from the goal, return max speed
+			target_speed = max_speed_;
+		}
+		else if (distance < min_distance_) {
+			// We're very close to the goal, return zero speed
+			target_speed = min_speed_;
 		}
 		else {
-			// We're essentially at the goal, return zero velocity
-			last_velocity_ = Vector3r(0.0f, 0.0f, 0.0f);
-			return 0.0f;
+			target_speed = min_speed_;
 		}
 
-		// Calculate deceleration distance based on current velocity
-		// Using d = v²/(2*a) where v is current velocity and a is deceleration
-		float current_speed = last_velocity_.norm();
-		float decel_distance = (current_speed * current_speed) / (2.0f * acceleration_limit_);
-
-		// Calculate desired speed based on trapezoidal profile
-		float desired_speed;
-
-		if (distance < decel_distance) {
-			// Deceleration phase - slow down as we approach the goal
-			// v = sqrt(2*a*d) where a is deceleration and d is distance to goal
-			desired_speed = std::sqrt(2.0f * acceleration_limit_ * distance);
-		}
-		else {
-		 // Acceleration or constant velocity phase
-			desired_speed = max_velocity_;
+		// Apply trapezoidal speed profile
+		if (dt > 0.0f)
+		{
+			float acceleration = (target_speed - last_speed_) / dt;
+			acceleration = std::clamp(acceleration, -max_acceleration_, max_acceleration_);
+			float speed_change = acceleration * dt;
+			last_speed_ += speed_change;
 		}
 
-		// Limit acceleration and deceleration
-		float speed_diff = desired_speed - current_speed;
-		float max_speed_change = acceleration_limit_ * dt;
-
-		if (speed_diff > max_speed_change) {
-			// Accelerating - limit to max acceleration
-			desired_speed = current_speed + max_speed_change;
-		}
-		else if (speed_diff < -max_speed_change) {
-		 // Decelerating - limit to max deceleration
-			desired_speed = current_speed - max_speed_change;
-		}
-
-		// Calculate target velocity vector
-		Vector3r v_ref = direction * desired_speed;
-
-		// Update last velocity for next iteration
-		last_velocity_ = v_ref;
-
-		// Return smoothed velocity magnitude
-		return v_ref.norm();
+		return last_speed_;
 	}
 
 

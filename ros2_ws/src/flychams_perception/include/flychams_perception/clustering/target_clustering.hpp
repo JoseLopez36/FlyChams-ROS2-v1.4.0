@@ -65,10 +65,8 @@ namespace flychams::perception
 		// Target assignments (target ID -> cluster ID)
 		KmeansMod::Assignments assignments_;
 		bool has_assignments_;
-
 		// Thread-safety
 		std::mutex mutex_;
-
 		// Time data
 		core::Time prev_time_;
 		// K-Means clustering

@@ -90,7 +90,6 @@ namespace flychams::core
             if (!node->get_parameter(param_name, value))
             {
                 RCLCPP_ERROR(node->get_logger(), "Failed to get parameter '%s'. Shutting down node '%s'", param_name.c_str(), node->get_name());
-                rclcpp::shutdown();
                 throw rclcpp::exceptions::ParameterNotDeclaredException(param_name);
             }
             return value;

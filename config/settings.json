@@ -21,7 +21,7 @@
     },
     "TimeOfDay": {
         "Enabled": true,
-        "StartDateTime": "2024-12-13 19:0:0",
+        "StartDateTime": "2024-12-13 17:0:0",
         "CelestialClockSpeed": 1,
         "StartDateTimeDst": false,
         "UpdateIntervalSecs": 1
@@ -44,36 +44,13 @@
                 "LumenSceneDetail": 2,
                 "LumenSceneLightningDetail": 2
             }
-        ],
-        "NoiseSettings": [
-            {
-                "Enabled": false,
-                "ImageType": 0,
-                "RandContrib": 0.009999999776482582,
-                "RandSpeed": 50000.0,
-                "RandSize": 500.0,
-                "RandDensity": 2,
-                "HorzWaveContrib": 0.003000000026077032,
-                "HorzWaveStrength": 0.00800000037997961,
-                "HorzWaveVertSize": 1.0,
-                "HorzWaveScreenSize": 1.0,
-                "HorzNoiseLinesContrib": 0.10000000149011612,
-                "HorzNoiseLinesDensityY": 0.0010000000474974513,
-                "HorzNoiseLinesDensityXY": 0.05000000074505806,
-                "HorzDistortionContrib": 0.10000000149011612,
-                "HorzDistortionStrength": 0.0020000000949949026,
-                "LensDistortionEnable": true,
-                "LensDistortionAreaFalloff": 0.019999999552965164,
-                "LensDistortionAreaRadius": 2.0,
-                "LensDistortionInvert": false
-            }
         ]
     },
     "Vehicles": {
         "AGENT05": {
             "VehicleType": "PX4Multirotor",
             "PawnPath": "FlyChamsHexacopter",
-            "Model": "Hexacopter",
+            "Model": "FlyChamsHexacopter",
             "UseSerial": false,
             "LockStep": true,
             "UseTcp": true,
@@ -162,24 +139,24 @@
                     },
                     "NoiseSettings": [
                         {
-                            "Enabled": false,
+                            "Enabled": true,
                             "ImageType": 0,
-                            "RandContrib": 0.009999999776482582,
+                            "RandContrib": 0.00800000037997961,
                             "RandSpeed": 50000.0,
                             "RandSize": 500.0,
                             "RandDensity": 2,
-                            "HorzWaveContrib": 0.003000000026077032,
-                            "HorzWaveStrength": 0.00800000037997961,
+                            "HorzWaveContrib": 0.00039999998989515007,
+                            "HorzWaveStrength": 0.000699999975040555,
                             "HorzWaveVertSize": 1.0,
                             "HorzWaveScreenSize": 1.0,
-                            "HorzNoiseLinesContrib": 0.10000000149011612,
-                            "HorzNoiseLinesDensityY": 0.0010000000474974513,
-                            "HorzNoiseLinesDensityXY": 0.05000000074505806,
-                            "HorzDistortionContrib": 0.10000000149011612,
-                            "HorzDistortionStrength": 0.02500000037252903,
+                            "HorzNoiseLinesContrib": 0.0007999999797903001,
+                            "HorzNoiseLinesDensityY": 9.999999747378752e-05,
+                            "HorzNoiseLinesDensityXY": 0.004000000189989805,
+                            "HorzDistortionContrib": 0.0007999999797903001,
+                            "HorzDistortionStrength": 0.019999999552965164,
                             "LensDistortionEnable": true,
-                            "LensDistortionAreaFalloff": 0.20000000298023224,
-                            "LensDistortionAreaRadius": 2.0,
+                            "LensDistortionAreaFalloff": 0.15000000596046448,
+                            "LensDistortionAreaRadius": 1.7999999523162842,
                             "LensDistortionInvert": false
                         }
                     ],
@@ -192,7 +169,7 @@
                     "EnableGimbal": true,
                     "CameraVisible": true
                 },
-                "CAM_AGENT05_1": {
+                "CAM_AGENT05_00": {
                     "X": -1.149999976158142,
                     "Y": 1.149999976158142,
                     "Z": -1.149999976158142,
@@ -200,20 +177,20 @@
                     "Pitch": -33.33000183105469,
                     "Yaw": -45.0
                 },
-                "CAM_AGENT05_2": {
-                    "X": -0.6000000238418579,
-                    "Y": 0.6000000238418579,
-                    "Z": 0.30000001192092896,
+                "CAM_AGENT05_01": {
+                    "X": -0.699999988079071,
+                    "Y": 0.699999988079071,
+                    "Z": 0.5,
                     "Roll": 0.0,
                     "Pitch": -0.0,
                     "Yaw": -45.0
                 },
                 "CAM_SCENE": {
-                    "X": -75.0,
-                    "Y": 75.0,
-                    "Z": -75.0,
+                    "X": -250.0,
+                    "Y": 250.0,
+                    "Z": -150.0,
                     "Roll": 0.0,
-                    "Pitch": -33.33000183105469,
+                    "Pitch": -15.0,
                     "Yaw": -45.0,
                     "External": true
                 }
@@ -223,7 +200,7 @@
     "SubWindows": [
         {
             "WindowID": 0,
-            "CameraName": "CAM_SCENE",
+            "CameraName": "",
             "ImageType": 0,
             "VehicleName": "",
             "Visible": true

@@ -38,12 +38,6 @@ public: // Constructor/Destructor
     {
         // Initialize target clustering
         target_clustering_ = std::make_shared<TargetClustering>(node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
-
-        // Remove all clusters from simulation
-        ext_tools_->removeAllClusters();
-
-        // Wait 2 seconds to ensure clusters are removed
-        std::this_thread::sleep_for(std::chrono::seconds(2));
     }
 
     void onShutdown() override

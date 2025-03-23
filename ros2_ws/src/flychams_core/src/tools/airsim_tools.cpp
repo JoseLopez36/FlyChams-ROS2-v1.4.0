@@ -27,6 +27,8 @@ namespace flychams::core
         hover_client_ = node_->create_client<Hover>("/airsim/vehicles/cmd/hover");
         // Window commands
         window_image_cmd_group_pub_ = node_->create_publisher<WindowImageCmdGroup>("/airsim/windows/cmd/image", 10);
+        window_rectangle_cmd_pub_ = node_->create_publisher<WindowRectangleCmd>("/airsim/windows/cmd/rectangle", 10);
+        window_string_cmd_pub_ = node_->create_publisher<WindowStringCmd>("/airsim/windows/cmd/string", 10);
         // Tracking commands
         add_target_group_client_ = node_->create_client<AddTargetGroup>("/airsim/targets/cmd/add");
         add_cluster_group_client_ = node_->create_client<AddClusterGroup>("/airsim/clusters/cmd/add");
@@ -68,6 +70,8 @@ namespace flychams::core
         gimbal_angle_cmd_pub_map_.clear();
         camera_fov_cmd_pub_map_.clear();
         window_image_cmd_group_pub_.reset();
+        window_rectangle_cmd_pub_.reset();
+        window_string_cmd_pub_.reset();
         update_target_cmd_group_pub_.reset();
         update_cluster_cmd_group_pub_.reset();
         // Destroy node
@@ -292,6 +296,34 @@ namespace flychams::core
         window_image_cmd_group_pub_->publish(msg);
     }
 
+    void AirsimTools::setWindowRectangles(const ID& window_id, const std::vector<PointMsg>& corners, const std::vector<PointMsg>& sizes, const ColorMsg& color, const float& thickness)
+    {
+        // Create message
+        WindowRectangleCmd msg;
+        msg.window_index = getWindowIndex(window_id);
+        msg.corners = corners;
+        msg.sizes = sizes;
+        msg.color = color;
+        msg.thickness = thickness;
+
+        // Publish message
+        window_rectangle_cmd_pub_->publish(msg);
+    }
+
+    void AirsimTools::setWindowStrings(const ID& window_id, const std::vector<std::string>& strings, const std::vector<PointMsg>& positions, const ColorMsg& color, const float& scale)
+    {
+        // Create message
+        WindowStringCmd msg;
+        msg.window_index = getWindowIndex(window_id);
+        msg.strings = strings;
+        msg.positions = positions;
+        msg.color = color;
+        msg.scale = scale;
+
+        // Publish message
+        window_string_cmd_pub_->publish(msg);
+    }
+
     // ════════════════════════════════════════════════════════════════════════════
     // TRACKING CONTROL: Service-based control methods
     // ════════════════════════════════════════════════════════════════════════════
@@ -311,22 +343,13 @@ namespace flychams::core
             switch (target_types[i])
             {
             case TargetType::Cube:
-                if (region != RegionType::Coastal)
-                    request->target_types.push_back("Cube");
-                else
-                    request->target_types.push_back("FloatingCube");
+                request->target_types.push_back("Cube");
                 break;
             case TargetType::Human:
-                if (region != RegionType::Coastal)
-                    request->target_types.push_back("Human");
-                else
-                    request->target_types.push_back("FloatingHuman");
+                request->target_types.push_back("Human");
                 break;
             case TargetType::MetaHuman:
-                if (region != RegionType::Coastal)
-                    request->target_types.push_back("MetaHuman");
-                else
-                    request->target_types.push_back("FloatingMetaHuman");
+                request->target_types.push_back("MetaHuman");
                 break;
             default:
                 RCLCPP_ERROR(node_->get_logger(), "Unknown target type: %d", static_cast<int>(target_types[i]));

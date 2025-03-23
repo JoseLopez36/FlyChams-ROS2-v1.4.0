@@ -7,23 +7,9 @@
       max_apparent_size: 0.9  # Maximum fraction of half-sensor that the target will occupy in the image
       ref_apparent_size: 0.8  # Reference fraction of half-sensor that the target will occupy in the image
     # Window IDs (for GUI purposes)
-    fixed_window_ids: [
-      scene_view: "SCENE"
-      agent_view_0: "AGENT00"
-      agent_view_1: "AGENT01"
-      map_view: "MAP"
-    ]
-    dynamic_window_ids: [
-      central_view: "CENTRAL"
-      tracking_view_0: "TRACKING00"
-      tracking_view_1: "TRACKING01"
-      tracking_view_2: "TRACKING02"
-      tracking_view_3: "TRACKING03"
-    ]
+    fixed_window_ids: ["SCENE", "AGENT00", "AGENT01", "MAP"]
+    central_window_id: "CENTRAL"
+    tracking_window_ids: ["TRACKING00", "TRACKING01", "TRACKING02", "TRACKING03"]
     # Fixed camera IDs (for GUI purposes)
-    fixed_camera_ids: [
-      scene_camera: "CAM_SCENE"
-      agent_camera_0: "CAM_AGENTID_00"
-      agent_camera_1: "CAM_AGENTID_01"
-      map_camera: ""
-    ]
+    fixed_camera_ids: ["CAM_SCENE", "CAM_AGENTID_00", "CAM_AGENTID_01", ""]
+

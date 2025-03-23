@@ -62,7 +62,7 @@ namespace flychams::core
 		static void populateGeneralSettings(const ConfigPtr& config_ptr, nlohmann::ordered_json& settings);
 		static void populateVehicles(const ConfigPtr& config_ptr, nlohmann::ordered_json& settings);
 		static void populateCameras(const ID& agent_id, const ConfigPtr& config_ptr, const HeadConfigMap& heads, nlohmann::ordered_json& cameras);
-		static void populateExternalCameras(const ID& agent_id, const bool& is_first_agent, nlohmann::ordered_json& cameras);
+		static void populateExternalCameras(const ID& agent_id, const bool& is_first_agent, const ConfigPtr& config_ptr, nlohmann::ordered_json& cameras);
 		static void populateSubWindows(nlohmann::ordered_json& settings);
 
 	private: // Helper methods

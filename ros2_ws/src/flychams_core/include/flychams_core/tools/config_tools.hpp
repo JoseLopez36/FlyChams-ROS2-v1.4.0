@@ -42,6 +42,7 @@ namespace flychams::core
             const std::string& config_path = RosUtils::getParameter<std::string>(node_, "config_source_file");
             try
             {
+                RCLCPP_INFO(node_->get_logger(), "Parsing config file: %s", config_path.c_str());
                 config_ptr_ = ConfigParser::parseExcelFile(config_path);
             }
             catch (const std::exception& e)
@@ -258,8 +259,7 @@ namespace flychams::core
             float s_max_pix = sensor_half_size * max_apparent_size;
             params.s_max_pix = s_max_pix; // [pix]
 
-            // Reference apparent size (in pixels)
-            // Calculated using kappaS (half-width fraction) parameter
+            // Reference apparent size of the object in the image (in pixels)
             float s_ref_pix = sensor_half_size * ref_apparent_size; // [pix]
             params.s_ref_pix = s_ref_pix; // [pix]
 

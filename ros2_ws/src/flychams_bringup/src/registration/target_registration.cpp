@@ -23,9 +23,6 @@ namespace flychams::bringup
 	{
 		// Destroy targets
 		targets_.clear();
-
-		// Remove targets from simulation
-		ext_tools_->removeAllTargets();
 	}
 
 	// ════════════════════════════════════════════════════════════════════════════
@@ -40,12 +37,13 @@ namespace flychams::bringup
 		std::vector<ColorMsg> highlight_colors;
 		RegionType region_type = config_tools_->getMap()->region_type;
 		bool draw_world_markers = config_tools_->getSimulation()->draw_world_markers;
+		int i = 0;
 		for (const auto& target_id : targets_)
 		{
 			// Position
 			PointMsg position;
-			position.x = 500.0f; // Position away from origin
-			position.y = 500.0f;
+			position.x = 500.0f + 10.0f * i; // Position away from origin
+			position.y = 500.0f + 10.0f * i;
 			position.z = 10.0f;
 			positions.push_back(position);
 
@@ -59,6 +57,8 @@ namespace flychams::bringup
 			highlight_color.b = 0.0f;
 			highlight_color.a = 0.015f;
 			highlight_colors.push_back(highlight_color);
+
+			i++;
 		}
 
 		// Add targets to simulation

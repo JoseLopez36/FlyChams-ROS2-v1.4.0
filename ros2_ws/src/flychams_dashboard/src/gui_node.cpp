@@ -62,6 +62,9 @@ private: // Update methods
             // Update GUI controller
             auto controller = gui_controllers_[selected_agent_id_];
             controller->setTrackingWindows();
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            controller->drawOnCentralWindow();
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
     }
 
@@ -102,6 +105,9 @@ private: // Agent management
         {
             auto controller = gui_controllers_[selected_agent_id_];
             controller->setFixedWindows();
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            controller->setCentralWindow();
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
     }
 

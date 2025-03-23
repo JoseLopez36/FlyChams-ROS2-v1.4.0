@@ -35,11 +35,13 @@ namespace flychams::bringup
 
 	private: // Data
 		core::IDs fixed_window_ids_;
-		core::IDs dynamic_window_ids_;
+		core::ID central_window_id_;
+		core::IDs tracking_window_ids_;
 
 	public: // Methods
 		const core::IDs& getFixedWindows() const { return fixed_window_ids_; }
-		const core::IDs& getDynamicWindows() const { return dynamic_window_ids_; }
+		const core::ID& getCentralWindow() const { return central_window_id_; }
+		const core::IDs& getTrackingWindows() const { return tracking_window_ids_; }
 	};
 
 } // namespace flychams::bringup

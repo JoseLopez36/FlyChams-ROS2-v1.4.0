@@ -40,7 +40,7 @@ namespace flychams::core
         float sensor_width;
         float sensor_height;
         LensDistortion lens_distortion;
-        RandomNoise random_noise;
+        SensorNoise sensor_noise;
         float weight;
         float idle_power;
         float active_power;
@@ -215,6 +215,8 @@ namespace flychams::core
         // Internal config
         Autopilot autopilot;
         float clock_speed;
+        Vector3r scenario_view_position;
+        Vector3r scenario_view_orientation;
         bool record_metrics;
         bool draw_rviz_markers;
         bool draw_world_markers;

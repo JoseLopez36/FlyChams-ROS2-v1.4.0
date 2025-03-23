@@ -50,14 +50,16 @@ public: // Constructor/Destructor
         targets_ = target_registration_->getTargets();
         clusters_ = cluster_registration_->getClusters();
         fixed_windows_ = gui_registration_->getFixedWindows();
-        dynamic_windows_ = gui_registration_->getDynamicWindows();
+        central_window_ = gui_registration_->getCentralWindow();
+        tracking_windows_ = gui_registration_->getTrackingWindows();
 
         // Check if every element type is correctly registered
         if (agents_.empty() ||
             targets_.empty() ||
             clusters_.empty() ||
             fixed_windows_.empty() ||
-            dynamic_windows_.empty())
+            central_window_.empty() ||
+            tracking_windows_.empty())
         {
             RCLCPP_ERROR(node_->get_logger(), "One or more element types are not registered. Cannot setup the simulation");
             rclcpp::shutdown();
@@ -72,11 +74,18 @@ public: // Constructor/Destructor
         for (const auto& cluster_id : clusters_)
             registerElement(cluster_id, ElementType::Cluster);
 
-        // Wait 1 second to ensure external tools are initialized
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        // Wait 100 ms to ensure external tools are initialized
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        // Spawn targets
+        // Destroy existing targets and clusters
+        ext_tools_->removeAllTargets();
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        ext_tools_->removeAllClusters();
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        // Spawn targets and clusters
         target_registration_->spawnTargets();
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        cluster_registration_->spawnClusters();
     }
 
     void onShutdown() override
@@ -94,7 +103,8 @@ public: // Constructor/Destructor
         targets_.clear();
         clusters_.clear();
         fixed_windows_.clear();
-        dynamic_windows_.clear();
+        central_window_.clear();
+        tracking_windows_.clear();
 
         // Destroy registration instances
         agent_registration_.reset();
@@ -115,7 +125,8 @@ private: // Components
     IDs targets_;
     IDs clusters_;
     IDs fixed_windows_;
-    IDs dynamic_windows_;
+    ID central_window_;
+    IDs tracking_windows_;
 };
 
 int main(int argc, char** argv)

@@ -197,13 +197,31 @@ namespace flychams::core
 
 					simulation->clock_speed = getCellValueOrFail<float>(row.findCell(3));
 
-					simulation->record_metrics = getCellValueOrFail<bool>(row.findCell(4));
+					auto scenario_view_position_str = getCellValueOrFail<std::string>(row.findCell(4));
+					auto scenario_view_position_vec = parseStringToVector<float>(scenario_view_position_str, 3, ',');
+					if (scenario_view_position_vec.size() >= 3)
+					{
+						simulation->scenario_view_position(0) = scenario_view_position_vec[0];
+						simulation->scenario_view_position(1) = scenario_view_position_vec[1];
+						simulation->scenario_view_position(2) = scenario_view_position_vec[2];
+					}
 
-					simulation->draw_rviz_markers = getCellValueOrFail<bool>(row.findCell(5));
+					auto scenario_view_orientation_str = getCellValueOrFail<std::string>(row.findCell(5));
+					auto scenario_view_orientation_vec = parseStringToVector<float>(scenario_view_orientation_str, 3, ',');
+					if (scenario_view_orientation_vec.size() >= 3)
+					{
+						simulation->scenario_view_orientation(0) = MathUtils::degToRad(scenario_view_orientation_vec[2]);
+						simulation->scenario_view_orientation(1) = MathUtils::degToRad(scenario_view_orientation_vec[0]);
+						simulation->scenario_view_orientation(2) = MathUtils::degToRad(scenario_view_orientation_vec[1]);
+					}
 
-					simulation->draw_world_markers = getCellValueOrFail<bool>(row.findCell(6));
+					simulation->record_metrics = getCellValueOrFail<bool>(row.findCell(6));
 
-					simulation->enable_lumen = getCellValueOrFail<bool>(row.findCell(7));
+					simulation->draw_rviz_markers = getCellValueOrFail<bool>(row.findCell(7));
+
+					simulation->draw_world_markers = getCellValueOrFail<bool>(row.findCell(8));
+
+					simulation->enable_lumen = getCellValueOrFail<bool>(row.findCell(9));
 
 					// Only first found simulation is loaded
 					return simulation;
@@ -594,58 +612,58 @@ namespace flychams::core
 
 					drone->max_speed = getCellValueOrFail<float>(row.findCell(5));
 
-					auto barometer_params_str = getCellValueOrFail<std::string>(row.findCell(6));
-					auto barometer_params_vec_1 = parseStringToVector<bool>(barometer_params_str, 1, ',');
-					auto barometer_params_vec_2 = parseStringToVector<float>(barometer_params_str, 2, ',');
-					if (barometer_params_vec_1.size() >= 1 && barometer_params_vec_2.size() >= 2)
+					drone->barometer_params.enabled = getCellValueOrFail<bool>(row.findCell(6));
+
+					auto barometer_params_str = getCellValueOrFail<std::string>(row.findCell(7));
+					auto barometer_params_vec = parseStringToVector<float>(barometer_params_str, 2, ',');
+					if (barometer_params_vec.size() >= 2)
 					{
-						drone->barometer_params.enabled = barometer_params_vec_1[0];
-						drone->barometer_params.pressure_factor_sigma = barometer_params_vec_2[0];
-						drone->barometer_params.uncorrelated_noise_sigma = barometer_params_vec_2[1];
+						drone->barometer_params.pressure_factor_sigma = barometer_params_vec[0];
+						drone->barometer_params.uncorrelated_noise_sigma = barometer_params_vec[1];
 					}
 
-					auto imu_params_str = getCellValueOrFail<std::string>(row.findCell(7));
-					auto imu_params_vec_1 = parseStringToVector<bool>(imu_params_str, 1, ',');
-					auto imu_params_vec_2 = parseStringToVector<float>(imu_params_str, 2, ',');
-					if (imu_params_vec_1.size() >= 1 && imu_params_vec_2.size() >= 2)
+					drone->imu_params.enabled = getCellValueOrFail<bool>(row.findCell(8));
+
+					auto imu_params_str = getCellValueOrFail<std::string>(row.findCell(9));
+					auto imu_params_vec = parseStringToVector<float>(imu_params_str, 2, ',');
+					if (imu_params_vec.size() >= 2)
 					{
-						drone->imu_params.enabled = imu_params_vec_1[0];
-						drone->imu_params.gyro_noise = imu_params_vec_2[0];
-						drone->imu_params.accel_noise = imu_params_vec_2[1];
+						drone->imu_params.gyro_noise = imu_params_vec[0];
+						drone->imu_params.accel_noise = imu_params_vec[1];
 					}
 
-					auto gps_params_str = getCellValueOrFail<std::string>(row.findCell(8));
-					auto gps_params_vec_1 = parseStringToVector<bool>(gps_params_str, 1, ',');
-					auto gps_params_vec_2 = parseStringToVector<float>(gps_params_str, 4, ',');
-					if (gps_params_vec_1.size() >= 1 && gps_params_vec_2.size() >= 4)
+					drone->gps_params.enabled = getCellValueOrFail<bool>(row.findCell(10));
+
+					auto gps_params_str = getCellValueOrFail<std::string>(row.findCell(11));
+					auto gps_params_vec = parseStringToVector<float>(gps_params_str, 4, ',');
+					if (gps_params_vec.size() >= 4)
 					{
-						drone->gps_params.enabled = gps_params_vec_1[0];
-						drone->gps_params.eph_initial = gps_params_vec_2[0];
-						drone->gps_params.epv_initial = gps_params_vec_2[1];
-						drone->gps_params.eph_final = gps_params_vec_2[2];
-						drone->gps_params.epv_final = gps_params_vec_2[3];
+						drone->gps_params.eph_initial = gps_params_vec[0];
+						drone->gps_params.epv_initial = gps_params_vec[1];
+						drone->gps_params.eph_final = gps_params_vec[2];
+						drone->gps_params.epv_final = gps_params_vec[3];
 					}
 
-					auto magnetometer_params_str = getCellValueOrFail<std::string>(row.findCell(9));
-					auto magnetometer_params_vec_1 = parseStringToVector<bool>(magnetometer_params_str, 1, ',');
-					auto magnetometer_params_vec_2 = parseStringToVector<float>(magnetometer_params_str, 3, ',');
-					if (magnetometer_params_vec_1.size() >= 1 && magnetometer_params_vec_2.size() >= 3)
+					drone->magnetometer_params.enabled = getCellValueOrFail<bool>(row.findCell(12));
+
+					auto magnetometer_params_str = getCellValueOrFail<std::string>(row.findCell(13));
+					auto magnetometer_params_vec = parseStringToVector<float>(magnetometer_params_str, 3, ',');
+					if (magnetometer_params_vec.size() >= 3)
 					{
-						drone->magnetometer_params.enabled = magnetometer_params_vec_1[0];
-						drone->magnetometer_params.noise_sigma = magnetometer_params_vec_2[0];
-						drone->magnetometer_params.scale_factor = magnetometer_params_vec_2[1];
-						drone->magnetometer_params.noise_bias = magnetometer_params_vec_2[2];
+						drone->magnetometer_params.noise_sigma = magnetometer_params_vec[0];
+						drone->magnetometer_params.scale_factor = magnetometer_params_vec[1];
+						drone->magnetometer_params.noise_bias = magnetometer_params_vec[2];
 					}
 
-					drone->base_weight = getCellValueOrFail<float>(row.findCell(10));
+					drone->base_weight = getCellValueOrFail<float>(row.findCell(14));
 
-					drone->max_payload_weight = getCellValueOrFail<float>(row.findCell(11));
+					drone->max_payload_weight = getCellValueOrFail<float>(row.findCell(15));
 
-					drone->hover_power = getCellValueOrFail<float>(row.findCell(12));
+					drone->hover_power = getCellValueOrFail<float>(row.findCell(16));
 
-					drone->cruise_power = getCellValueOrFail<float>(row.findCell(13));
+					drone->cruise_power = getCellValueOrFail<float>(row.findCell(17));
 
-					drone->load_factor = getCellValueOrFail<float>(row.findCell(14));
+					drone->load_factor = getCellValueOrFail<float>(row.findCell(18));
 
 					// Only first found drone model is loaded
 					return drone;
@@ -823,33 +841,33 @@ namespace flychams::core
 
 					camera->sensor_height = getCellValueOrFail<float>(row.findCell(7)) / 1000.0f;
 
-					auto lens_distortion_str = getCellValueOrFail<std::string>(row.findCell(8));
-					auto lens_distortion_vec_1 = parseStringToVector<bool>(lens_distortion_str, 1, ',');
-					auto lens_distortion_vec_2 = parseStringToVector<float>(lens_distortion_str, 3, ',');
-					if (lens_distortion_vec_1.size() >= 1 && lens_distortion_vec_2.size() >= 3)
+					camera->lens_distortion.enabled = getCellValueOrFail<bool>(row.findCell(8));
+
+					auto lens_distortion_str = getCellValueOrFail<std::string>(row.findCell(9));
+					auto lens_distortion_vec = parseStringToVector<float>(lens_distortion_str, 3, ',');
+					if (lens_distortion_vec.size() >= 3)
 					{
-						camera->lens_distortion.enabled = lens_distortion_vec_1[0];
-						camera->lens_distortion.strength = lens_distortion_vec_2[0];
-						camera->lens_distortion.area_radius = lens_distortion_vec_2[1];
-						camera->lens_distortion.area_falloff = lens_distortion_vec_2[2];
+						camera->lens_distortion.strength = lens_distortion_vec[0];
+						camera->lens_distortion.area_radius = lens_distortion_vec[1];
+						camera->lens_distortion.area_falloff = lens_distortion_vec[2];
 					}
 
-					auto random_noise_str = getCellValueOrFail<std::string>(row.findCell(9));
-					auto random_noise_vec_1 = parseStringToVector<bool>(random_noise_str, 1, ',');
-					auto random_noise_vec_2 = parseStringToVector<float>(random_noise_str, 3, ',');
-					if (random_noise_vec_1.size() >= 1 && random_noise_vec_2.size() >= 3)
+					camera->sensor_noise.enabled = getCellValueOrFail<bool>(row.findCell(10));
+
+					auto sensor_noise_str = getCellValueOrFail<std::string>(row.findCell(11));
+					auto sensor_noise_vec = parseStringToVector<float>(sensor_noise_str, 3, ',');
+					if (sensor_noise_vec.size() >= 3)
 					{
-						camera->random_noise.enabled = random_noise_vec_1[0];
-						camera->random_noise.rand_contrib = random_noise_vec_2[0];
-						camera->random_noise.rand_size = random_noise_vec_2[1];
-						camera->random_noise.rand_speed = random_noise_vec_2[2];
+						camera->sensor_noise.rand_contrib = sensor_noise_vec[0];
+						camera->sensor_noise.rand_size = sensor_noise_vec[1];
+						camera->sensor_noise.rand_speed = sensor_noise_vec[2];
 					}
 
-					camera->weight = getCellValueOrFail<float>(row.findCell(10));
+					camera->weight = getCellValueOrFail<float>(row.findCell(12));
 
-					camera->idle_power = getCellValueOrFail<float>(row.findCell(11));
+					camera->idle_power = getCellValueOrFail<float>(row.findCell(13));
 
-					camera->active_power = getCellValueOrFail<float>(row.findCell(12));
+					camera->active_power = getCellValueOrFail<float>(row.findCell(14));
 
 					// Only first found camera model is loaded
 					return camera;
@@ -942,29 +960,6 @@ namespace flychams::core
 					{"LumenFinalQuality", 2},
 					{"LumenSceneDetail", 2},
 					{"LumenSceneLightningDetail", 2}
-				}
-			}},
-			{"NoiseSettings", {
-				{
-					{"Enabled", false},
-					{"ImageType", 0},
-					{"RandContrib", 0.01f},
-					{"RandSpeed", 50000.0f},
-					{"RandSize", 500.0f},
-					{"RandDensity", 2},
-					{"HorzWaveContrib", 0.003f},
-					{"HorzWaveStrength", 0.008f},
-					{"HorzWaveVertSize", 1.0f},
-					{"HorzWaveScreenSize", 1.0f},
-					{"HorzNoiseLinesContrib", 0.1f},
-					{"HorzNoiseLinesDensityY", 0.001f},
-					{"HorzNoiseLinesDensityXY", 0.05f},
-					{"HorzDistortionContrib", 0.1f},
-					{"HorzDistortionStrength", 0.002f},
-					{"LensDistortionEnable", false},
-					{"LensDistortionAreaFalloff", 0.02f},
-					{"LensDistortionAreaRadius", 2.0f},
-					{"LensDistortionInvert", false}
 				}
 			}}
 		};
@@ -1110,7 +1105,7 @@ namespace flychams::core
 			populateCameras(agent_id, config_ptr, agent_ptr->heads, vehicles[agent_id]["Cameras"]);
 
 			// Add external cameras
-			populateExternalCameras(agent_id, first_time, vehicles[agent_id]["Cameras"]);
+			populateExternalCameras(agent_id, first_time, config_ptr, vehicles[agent_id]["Cameras"]);
 			if (first_time)
 				first_time = false;
 
@@ -1141,11 +1136,11 @@ namespace flychams::core
 			float lens_distortion_strength = lens_distortion.strength;
 			float lens_distortion_area_radius = lens_distortion.area_radius;
 			float lens_distortion_area_falloff = lens_distortion.area_falloff;
-			const auto& random_noise = head_ptr->camera->random_noise;
-			bool random_noise_enabled = random_noise.enabled;
-			float random_noise_rand_contrib = random_noise.rand_contrib;
-			float random_noise_rand_size = random_noise.rand_size;
-			float random_noise_rand_speed = random_noise.rand_speed;
+			const auto& sensor_noise = head_ptr->camera->sensor_noise;
+			bool sensor_noise_enabled = sensor_noise.enabled;
+			float sensor_noise_rand_contrib = sensor_noise.rand_contrib;
+			float sensor_noise_rand_size = sensor_noise.rand_size;
+			float sensor_noise_rand_speed = sensor_noise.rand_speed;
 
 			// Get gimbal parameters
 			float yaw_min = 0.0f;
@@ -1224,20 +1219,20 @@ namespace flychams::core
 				}},
 				{"NoiseSettings", {
 					{
-						{"Enabled", random_noise_enabled},
+						{"Enabled", sensor_noise_enabled},
 						{"ImageType", 0},
-						{"RandContrib", random_noise_rand_contrib},
-						{"RandSpeed", random_noise_rand_speed},
-						{"RandSize", random_noise_rand_size},
+						{"RandContrib", sensor_noise_rand_contrib},
+						{"RandSpeed", sensor_noise_rand_speed},
+						{"RandSize", sensor_noise_rand_size},
 						{"RandDensity", 2},
-						{"HorzWaveContrib", 0.003f},
-						{"HorzWaveStrength", 0.008f},
+						{"HorzWaveContrib", 0.0004f},
+						{"HorzWaveStrength", 0.0007f},
 						{"HorzWaveVertSize", 1.0f},
 						{"HorzWaveScreenSize", 1.0f},
-						{"HorzNoiseLinesContrib", 0.1f},
-						{"HorzNoiseLinesDensityY", 0.001f},
-						{"HorzNoiseLinesDensityXY", 0.05f},
-						{"HorzDistortionContrib", 0.1f},
+						{"HorzNoiseLinesContrib", 0.0008f},
+						{"HorzNoiseLinesDensityY", 0.0001f},
+						{"HorzNoiseLinesDensityXY", 0.004f},
+						{"HorzDistortionContrib", 0.0008f},
 						{"HorzDistortionStrength", lens_distortion_strength},
 						{"LensDistortionEnable", lens_distortion_enabled},
 						{"LensDistortionAreaFalloff", lens_distortion_area_falloff},
@@ -1252,7 +1247,7 @@ namespace flychams::core
 		}
 	}
 
-	void ConfigParser::populateExternalCameras(const ID& agent_id, const bool& is_first_agent, nlohmann::ordered_json& cameras)
+	void ConfigParser::populateExternalCameras(const ID& agent_id, const bool& is_first_agent, const ConfigPtr& config_ptr, nlohmann::ordered_json& cameras)
 	{
 		// Get agent view 0 camera pose (ENU frame)
 		Vector3r agent_view_0_pos;
@@ -1275,9 +1270,9 @@ namespace flychams::core
 
 		// Get agent view 1 camera pose (ENU frame)
 		Vector3r agent_view_1_pos;
-		agent_view_1_pos.x() = -0.6f;
-		agent_view_1_pos.y() = -0.6f;
-		agent_view_1_pos.z() = -0.3f;
+		agent_view_1_pos.x() = -0.7f;
+		agent_view_1_pos.y() = -0.7f;
+		agent_view_1_pos.z() = -0.50f;
 		Vector3r agent_view_1_rot;
 		agent_view_1_rot.x() = 0.0f;
 		agent_view_1_rot.y() = 0.0f;
@@ -1295,23 +1290,17 @@ namespace flychams::core
 		if (!is_first_agent)
 			return; // Only first agent has scene view (avoids duplicating global cameras)
 
-		// Get scene view camera pose (ENU frame)
-		Vector3r scene_view_pos;
-		scene_view_pos.x() = -75.0f;
-		scene_view_pos.y() = -75.0f;
-		scene_view_pos.z() = 75.0f;
-		Vector3r scene_view_rot;
-		scene_view_rot.x() = 0.0f;
-		scene_view_rot.y() = 33.33f;
-		scene_view_rot.z() = 45.0f;
+		// Get scene view camera pose from config
+		const auto& scenario_view_position = config_ptr->simulation->scenario_view_position;
+		const auto& scenario_view_orientation = config_ptr->simulation->scenario_view_orientation;
 
 		cameras["CAM_SCENE"] = {
-			{"X", scene_view_pos.x()},
-			{"Y", -scene_view_pos.y()},
-			{"Z", -scene_view_pos.z()},
-			{"Roll", scene_view_rot.x()},
-			{"Pitch", -scene_view_rot.y()},
-			{"Yaw", -scene_view_rot.z()},
+			{"X", scenario_view_position.x()},
+			{"Y", -scenario_view_position.y()},
+			{"Z", -scenario_view_position.z()},
+			{"Roll", MathUtils::radToDeg(scenario_view_orientation.x())},
+			{"Pitch", MathUtils::radToDeg(-scenario_view_orientation.y())},
+			{"Yaw", MathUtils::radToDeg(-scenario_view_orientation.z())},
 			{"External", true} };
 	}
 
@@ -1322,7 +1311,7 @@ namespace flychams::core
 
 		// Scene view sub-window
 		settings["SubWindows"].push_back({ {"WindowID", idx++},
-										  {"CameraName", "CAM_SCENE"},
+										  {"CameraName", ""},
 										  {"ImageType", 0},
 										  {"VehicleName", ""},
 										  {"Visible", true} });

@@ -68,6 +68,8 @@ STRICT_MODE_ON
 
 // Window commands
 #include <airsim_interfaces/msg/window_image_cmd_group.hpp>
+#include <airsim_interfaces/msg/window_rectangle_cmd.hpp>
+#include <airsim_interfaces/msg/window_string_cmd.hpp>
 
 // Tracking commands
 #include <airsim_interfaces/srv/add_target_group.hpp>
@@ -182,6 +184,8 @@ namespace airsim_wrapper
         void gimbal_angle_cmd_cb(const std::string& vehicle_name, const airsim_interfaces::msg::GimbalAngleCmd::SharedPtr gimbal_angle_cmd_msg);
         void camera_fov_cmd_cb(const std::string& vehicle_name, const airsim_interfaces::msg::CameraFovCmd::SharedPtr camera_fov_cmd_msg);
         void window_image_cmd_group_cb(const airsim_interfaces::msg::WindowImageCmdGroup::SharedPtr window_image_cmd_group_msg);
+        void window_rectangle_cmd_cb(const airsim_interfaces::msg::WindowRectangleCmd::SharedPtr window_rectangle_cmd_msg);
+        void window_string_cmd_cb(const airsim_interfaces::msg::WindowStringCmd::SharedPtr window_string_cmd_msg);
         void update_target_cmd_group_cb(const airsim_interfaces::msg::UpdateTargetCmdGroup::SharedPtr update_target_cmd_group_msg);
         void update_cluster_cmd_group_cb(const airsim_interfaces::msg::UpdateClusterCmdGroup::SharedPtr update_cluster_cmd_group_msg);
 
@@ -250,7 +254,7 @@ namespace airsim_wrapper
 
         // Window methods
         void client_set_window_images(const std::vector<int>& window_indices, const std::vector<std::string>& vehicle_names, const std::vector<std::string>& camera_names, const std::vector<msr::airlib::Vector2r>& corners, const std::vector<msr::airlib::Vector2r>& sizes);
-        void client_set_window_rectangle(const int& window_index, const std::vector<msr::airlib::Vector2r>& corners, const std::vector<msr::airlib::Vector2r>& sizes, const std::vector<float>& color, const float& thickness);
+        void client_set_window_rectangles(const int& window_index, const std::vector<msr::airlib::Vector2r>& corners, const std::vector<msr::airlib::Vector2r>& sizes, const std::vector<float>& color, const float& thickness);
         void client_set_window_strings(const int& window_index, const std::vector<std::string>& strings, const std::vector<msr::airlib::Vector2r>& positions, const std::vector<float>& color, const float& scale);
 
         // Tracking methods
@@ -307,6 +311,8 @@ namespace airsim_wrapper
 
         // Window subscribers
         rclcpp::Subscription<airsim_interfaces::msg::WindowImageCmdGroup>::SharedPtr window_image_cmd_group_sub_;
+        rclcpp::Subscription<airsim_interfaces::msg::WindowRectangleCmd>::SharedPtr window_rectangle_cmd_sub_;
+        rclcpp::Subscription<airsim_interfaces::msg::WindowStringCmd>::SharedPtr window_string_cmd_sub_;
 
         // Tracking services
         rclcpp::Service<airsim_interfaces::srv::AddTargetGroup>::SharedPtr add_target_group_srvr_;

@@ -43,19 +43,14 @@ namespace flychams::dashboard
         core::ID agent_id_;
         // Window IDs
         core::IDs fixed_window_ids_;
-        core::IDs dynamic_window_ids_;
+        core::ID central_window_id_;
+        core::IDs tracking_window_ids_;
         int num_fixed_windows_;
-        int num_dynamic_windows_;
+        int num_tracking_windows_;
+        int num_windows_;
         // Camera IDs
         core::IDs fixed_camera_ids_;
         core::ID central_camera_id_;
-        // Fixed command vectors
-        core::IDs fixed_vehicle_id_cmds_;
-        core::IDs fixed_camera_id_cmds_;
-        std::vector<int> fixed_crop_x_cmds_;
-        std::vector<int> fixed_crop_y_cmds_;
-        std::vector<int> fixed_crop_w_cmds_;
-        std::vector<int> fixed_crop_h_cmds_;
 
     private: // Data
         // Agent tracking goal
@@ -63,13 +58,22 @@ namespace flychams::dashboard
         bool has_goal_;
         // Tracking goal mutex
         std::mutex mutex_;
-        // Dynamic command vectors
-        core::IDs dynamic_vehicle_id_cmds_;
-        core::IDs dynamic_camera_id_cmds_;
-        std::vector<int> dynamic_crop_x_cmds_;
-        std::vector<int> dynamic_crop_y_cmds_;
-        std::vector<int> dynamic_crop_w_cmds_;
-        std::vector<int> dynamic_crop_h_cmds_;
+        // Tracking command vectors
+        core::IDs tracking_vehicle_id_cmds_;
+        core::IDs tracking_camera_id_cmds_;
+        std::vector<int> tracking_crop_x_cmds_;
+        std::vector<int> tracking_crop_y_cmds_;
+        std::vector<int> tracking_crop_w_cmds_;
+        std::vector<int> tracking_crop_h_cmds_;
+        // Digital tracking draw data
+        std::vector<core::PointMsg> dig_rect_corners_;
+        std::vector<core::PointMsg> dig_rect_sizes_;
+        core::ColorMsg dig_rect_color_;
+        float dig_rect_thickness_;
+        std::vector<core::PointMsg> dig_string_pos_;
+        std::vector<std::string> dig_strings_;
+        core::ColorMsg dig_string_color_;
+        float dig_string_scale_;
 
     private: // Safe callbacks
         void trackingCallback(const core::TrackingGoalMsg::SharedPtr msg);
@@ -77,7 +81,9 @@ namespace flychams::dashboard
     public: // Public methods
         // Update
         void setFixedWindows();
+        void setCentralWindow();
         void setTrackingWindows();
+        void drawOnCentralWindow();
 
     private:
         // Subscribers

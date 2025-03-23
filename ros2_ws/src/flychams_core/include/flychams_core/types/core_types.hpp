@@ -586,7 +586,7 @@ namespace flychams::core
         float area_falloff;
     };
 
-    struct RandomNoise
+    struct SensorNoise
     {
         bool enabled;
         float rand_contrib;

@@ -24,6 +24,8 @@
 #include <airsim_interfaces/msg/camera_fov_cmd.hpp>
 // Window commands
 #include <airsim_interfaces/msg/window_image_cmd_group.hpp>
+#include <airsim_interfaces/msg/window_rectangle_cmd.hpp>
+#include <airsim_interfaces/msg/window_string_cmd.hpp>
 // Tracking commands
 #include <airsim_interfaces/srv/add_target_group.hpp>
 #include <airsim_interfaces/srv/add_cluster_group.hpp>
@@ -74,6 +76,8 @@ namespace flychams::core
         using GimbalAngleCmdMsg = airsim_interfaces::msg::GimbalAngleCmd;
         using CameraFovCmdMsg = airsim_interfaces::msg::CameraFovCmd;
         using WindowImageCmdGroupMsg = airsim_interfaces::msg::WindowImageCmdGroup;
+        using WindowRectangleCmdMsg = airsim_interfaces::msg::WindowRectangleCmd;
+        using WindowStringCmdMsg = airsim_interfaces::msg::WindowStringCmd;
         using AddTargetGroupSrv = airsim_interfaces::srv::AddTargetGroup;
         using AddClusterGroupSrv = airsim_interfaces::srv::AddClusterGroup;
         using RemoveAllTargetsSrv = airsim_interfaces::srv::RemoveAllTargets;
@@ -103,6 +107,8 @@ namespace flychams::core
 
     public: // Window control methods
         void setWindowImageGroup(const IDs& window_ids, const IDs& vehicle_ids, const IDs& camera_ids, const std::vector<int>& crop_x, const std::vector<int>& crop_y, const std::vector<int>& crop_w, const std::vector<int>& crop_h) override;
+        void setWindowRectangles(const ID& window_id, const std::vector<PointMsg>& corners, const std::vector<PointMsg>& sizes, const ColorMsg& color, const float& thickness) override;
+        void setWindowStrings(const ID& window_id, const std::vector<std::string>& strings, const std::vector<PointMsg>& positions, const ColorMsg& color, const float& scale) override;
 
     public: // Tracking control methods
         bool addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors, const RegionType& region) override;
@@ -172,6 +178,8 @@ namespace flychams::core
 
         // Window commands
         PublisherPtr<WindowImageCmdGroupMsg> window_image_cmd_group_pub_;
+        PublisherPtr<WindowRectangleCmdMsg> window_rectangle_cmd_pub_;
+        PublisherPtr<WindowStringCmdMsg> window_string_cmd_pub_;
 
         // Tracking commands
         ClientPtr<AddTargetGroupSrv> add_target_group_client_;

@@ -57,9 +57,12 @@ namespace flychams::control
 		float pos_timeout_;
 		float hover_altitude_;    // Altitude for hovering
 		float takeoff_altitude_;  // Target altitude for takeoff
-		float goal_reach_threshold_;
-		float max_velocity_;
-		float acceleration_limit_;
+		float min_speed_;
+		float max_speed_;
+		float min_distance_;
+		float max_distance_;
+		float max_acceleration_;
+		float speed_slope_;
 
 	private: // Data
 		// Current state
@@ -76,9 +79,9 @@ namespace flychams::control
 		// Goal position message
 		core::PointMsg goal_pos_;
 		bool has_goal_;
-		// Velocity controller parameters
-		core::Vector3r last_velocity_;
-		core::Time last_velocity_update_time_;
+		// Speed scheduling data
+		float last_speed_;
+		core::Time last_speed_update_time_;
 		// Mutex
 		std::mutex mutex_;
 
@@ -117,7 +120,7 @@ namespace flychams::control
 		// Update control
 		void update();
 		// Helper methods
-		float computeVelocity(const core::Vector3r& goal_pos, const core::Vector3r& curr_pos);
+		float computeSpeed(const core::Vector3r& goal_pos, const core::Vector3r& curr_pos);
 		bool checkGoalReached(const core::Vector3r& goal_pos, const core::Vector3r& curr_pos);
 
 	private:

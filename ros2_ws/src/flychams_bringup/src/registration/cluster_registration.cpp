@@ -48,17 +48,18 @@ namespace flychams::bringup
 		std::vector<float> radii;
 		bool draw_world_markers = config_tools_->getSimulation()->draw_world_markers;
 		std::vector<ColorMsg> highlight_colors;
+		int i = 0;
 		for (const auto& cluster_id : clusters_)
 		{
 			// Position
 			PointMsg center;
-			center.x = 500.0f; // Position away from origin
-			center.y = 500.0f;
+			center.x = -500.0f - 10.0f * i; // Position away from origin
+			center.y = -500.0f - 10.0f * i;
 			center.z = 10.0f;
 			centers.push_back(center);
 
 			// Radius
-			radii.push_back(0.0f);
+			radii.push_back(1.0f);
 
 			// Highlight color
 			ColorMsg highlight_color;
@@ -67,10 +68,13 @@ namespace flychams::bringup
 			highlight_color.b = 1.0f;
 			highlight_color.a = 0.005f;
 			highlight_colors.push_back(highlight_color);
+
+			i++;
 		}
 
 		// Add targets to simulation
-		ext_tools_->addClusterGroup(clusters_, centers, radii, draw_world_markers, highlight_colors);
+		if (draw_world_markers)
+			ext_tools_->addClusterGroup(clusters_, centers, radii, true, highlight_colors);
 	}
 
 } // namespace flychams::bringup

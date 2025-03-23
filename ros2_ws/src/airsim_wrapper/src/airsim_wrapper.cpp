@@ -50,20 +50,6 @@ namespace airsim_wrapper
         // Initialize ROS data and communications
         initialize_ros();
 
-        // Initialize state of the simulation
-        try
-        {
-            // Remove all targets and clusters from previous runs
-            client_remove_all_targets();
-            client_remove_all_clusters();
-        }
-        catch (rpc::rpc_error& e) {
-            std::string msg = e.get_error().as<std::string>();
-            RCLCPP_ERROR(nh_->get_logger(), "Exception raised by the API:\n%s", msg.c_str());
-            rclcpp::shutdown();
-            return;
-        }
-
         // Create timers
         nh_->get_parameter("update_airsim_state_every_n_sec", update_airsim_state_every_n_sec_);
         airsim_state_update_timer_ = nh_->create_wall_timer(std::chrono::duration<double>(update_airsim_state_every_n_sec_), std::bind(&AirsimWrapper::state_timer_cb, this), cb_state_);
@@ -268,6 +254,10 @@ namespace airsim_wrapper
         // Create window subscribers
         window_image_cmd_group_sub_ = nh_->create_subscription<airsim_interfaces::msg::WindowImageCmdGroup>(
             "windows/cmd/image", 10, std::bind(&AirsimWrapper::window_image_cmd_group_cb, this, _1), window_sub_options);
+        window_rectangle_cmd_sub_ = nh_->create_subscription<airsim_interfaces::msg::WindowRectangleCmd>(
+            "windows/cmd/rectangle", 10, std::bind(&AirsimWrapper::window_rectangle_cmd_cb, this, _1), window_sub_options);
+        window_string_cmd_sub_ = nh_->create_subscription<airsim_interfaces::msg::WindowStringCmd>(
+            "windows/cmd/string", 10, std::bind(&AirsimWrapper::window_string_cmd_cb, this, _1), window_sub_options);
         // Create tracking services
         add_target_group_srvr_ = nh_->create_service<airsim_interfaces::srv::AddTargetGroup>("targets/cmd/add", std::bind(&AirsimWrapper::add_target_group_cb, this, _1, _2));
         add_cluster_group_srvr_ = nh_->create_service<airsim_interfaces::srv::AddClusterGroup>("clusters/cmd/add", std::bind(&AirsimWrapper::add_cluster_group_cb, this, _1, _2));
@@ -508,6 +498,50 @@ namespace airsim_wrapper
         {
             // Send command to server
             client_set_window_images(window_indices, vehicle_names, camera_names, get_airlib_points_2d(corners), get_airlib_points_2d(sizes));
+        }
+        catch (rpc::rpc_error& e) {
+            std::string msg = e.get_error().as<std::string>();
+            RCLCPP_ERROR(nh_->get_logger(), "Exception raised by the API:\n%s", msg.c_str());
+            return; // Stop execution of this callback
+        }
+    }
+
+    void AirsimWrapper::window_rectangle_cmd_cb(const airsim_interfaces::msg::WindowRectangleCmd::SharedPtr window_rectangle_cmd_msg)
+    {
+        RCLCPP_INFO_THROTTLE(nh_->get_logger(), *nh_->get_clock(), 1000.0, "Received window rectangle command group");
+
+        // Extract request data
+        const auto& window_index = window_rectangle_cmd_msg->window_index;
+        const auto& corners = window_rectangle_cmd_msg->corners;
+        const auto& sizes = window_rectangle_cmd_msg->sizes;
+        const auto& color = window_rectangle_cmd_msg->color;
+        const auto& thickness = window_rectangle_cmd_msg->thickness;
+        try
+        {
+            // Send command to server
+            client_set_window_rectangles(window_index, get_airlib_points_2d(corners), get_airlib_points_2d(sizes), get_airlib_color(color), thickness);
+        }
+        catch (rpc::rpc_error& e) {
+            std::string msg = e.get_error().as<std::string>();
+            RCLCPP_ERROR(nh_->get_logger(), "Exception raised by the API:\n%s", msg.c_str());
+            return; // Stop execution of this callback
+        }
+    }
+
+    void AirsimWrapper::window_string_cmd_cb(const airsim_interfaces::msg::WindowStringCmd::SharedPtr window_string_cmd_msg)
+    {
+        RCLCPP_INFO_THROTTLE(nh_->get_logger(), *nh_->get_clock(), 1000.0, "Received window string command group");
+
+        // Extract request data
+        const auto& window_index = window_string_cmd_msg->window_index;
+        const auto& strings = window_string_cmd_msg->strings;
+        const auto& positions = window_string_cmd_msg->positions;
+        const auto& color = window_string_cmd_msg->color;
+        const auto& scale = window_string_cmd_msg->scale;
+        try
+        {
+            // Send command to server
+            client_set_window_strings(window_index, strings, get_airlib_points_2d(positions), get_airlib_color(color), scale);
         }
         catch (rpc::rpc_error& e) {
             std::string msg = e.get_error().as<std::string>();
@@ -1119,7 +1153,7 @@ namespace airsim_wrapper
         airsim_client_window_->simSetWindowImages(window_indices, vehicle_names, camera_names, corners, sizes);
     }
 
-    void AirsimWrapper::client_set_window_rectangle(const int& window_index, const std::vector<msr::airlib::Vector2r>& corners, const std::vector<msr::airlib::Vector2r>& sizes, const std::vector<float>& color, const float& thickness)
+    void AirsimWrapper::client_set_window_rectangles(const int& window_index, const std::vector<msr::airlib::Vector2r>& corners, const std::vector<msr::airlib::Vector2r>& sizes, const std::vector<float>& color, const float& thickness)
     {
         airsim_client_window_->simDrawRectangles(window_index, corners, sizes, color, thickness);
     }
