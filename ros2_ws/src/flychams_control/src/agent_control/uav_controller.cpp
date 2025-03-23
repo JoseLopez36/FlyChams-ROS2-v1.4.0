@@ -92,7 +92,10 @@ namespace flychams::control
 		has_goal_ = true;
 
 		// Transition to moving
-		requestMove();
+		if (state_ == State::HOVERING || state_ == State::MOVING || state_ == State::REACHED)
+		{
+			requestMove();
+		}
 	}
 
 	// ════════════════════════════════════════════════════════════════════════════

@@ -119,7 +119,6 @@ namespace flychams::core
         HeadRole head_role;
         Vector3r mount_position;
         Vector3r mount_orientation;
-        float initial_focal;
         float min_focal;
         float max_focal;
         float ref_focal;

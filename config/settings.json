@@ -139,7 +139,7 @@
                     },
                     "NoiseSettings": [
                         {
-                            "Enabled": true,
+                            "Enabled": false,
                             "ImageType": 0,
                             "RandContrib": 0.00800000037997961,
                             "RandSpeed": 50000.0,
@@ -154,7 +154,7 @@
                             "HorzNoiseLinesDensityXY": 0.004000000189989805,
                             "HorzDistortionContrib": 0.0007999999797903001,
                             "HorzDistortionStrength": 0.019999999552965164,
-                            "LensDistortionEnable": true,
+                            "LensDistortionEnable": false,
                             "LensDistortionAreaFalloff": 0.15000000596046448,
                             "LensDistortionAreaRadius": 1.7999999523162842,
                             "LensDistortionInvert": false

@@ -548,13 +548,11 @@ namespace flychams::core
 						head->mount_orientation(2) = MathUtils::degToRad(mount_orientation_vec[1]);
 					}
 
-					head->initial_focal = getCellValueOrFail<float>(row.findCell(9)) / 1000.0f;
+					head->min_focal = getCellValueOrFail<float>(row.findCell(9)) / 1000.0f;
 
-					head->min_focal = getCellValueOrFail<float>(row.findCell(10)) / 1000.0f;
+					head->max_focal = getCellValueOrFail<float>(row.findCell(10)) / 1000.0f;
 
-					head->max_focal = getCellValueOrFail<float>(row.findCell(11)) / 1000.0f;
-
-					head->ref_focal = getCellValueOrFail<float>(row.findCell(12)) / 1000.0f;
+					head->ref_focal = getCellValueOrFail<float>(row.findCell(11)) / 1000.0f;
 
 					// Resolve external ID references
 					head->gimbal = parseGimbalModel(book, head->gimbal_model_id);
@@ -1129,7 +1127,7 @@ namespace flychams::core
 			const auto& height = head_ptr->camera->resolution.y();
 			const auto& sensor_width = head_ptr->camera->sensor_width;
 			const auto& sensor_height = head_ptr->camera->sensor_height;
-			const auto& focal = head_ptr->initial_focal;
+			const auto& focal = head_ptr->ref_focal;
 			const auto& fov = MathUtils::radToDeg(CameraUtils::computeFov(focal, sensor_width));
 			const auto& lens_distortion = head_ptr->camera->lens_distortion;
 			bool lens_distortion_enabled = lens_distortion.enabled;
