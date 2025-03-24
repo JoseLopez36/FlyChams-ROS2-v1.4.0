@@ -21,7 +21,7 @@
     },
     "TimeOfDay": {
         "Enabled": true,
-        "StartDateTime": "2024-12-13 17:30:0",
+        "StartDateTime": "2024-12-13 16:30:0",
         "CelestialClockSpeed": 1,
         "StartDateTimeDst": false,
         "UpdateIntervalSecs": 1
@@ -141,9 +141,9 @@
                         {
                             "Enabled": true,
                             "ImageType": 0,
-                            "RandContrib": 0.00800000037997961,
+                            "RandContrib": 0.0010000000474974513,
                             "RandSpeed": 50000.0,
-                            "RandSize": 500.0,
+                            "RandSize": 100.0,
                             "RandDensity": 2,
                             "HorzWaveContrib": 0.00039999998989515007,
                             "HorzWaveStrength": 0.000699999975040555,

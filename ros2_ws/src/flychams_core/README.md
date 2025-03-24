@@ -1,69 +1,60 @@
-# flychams_infrastructure
+# Flychams Core: Foundation and Utilities for the Flying Chameleons Project
 
-ROS infrastructure for the Flying Chameleons (FlyChams) project, providing ROS-specific implementations of core interfaces.
+The core package for the Flying Chameleons (FlyChams) project, providing domain models, utilities, and interfaces used across the entire system architecture.
 
 ## Overview
 
-The `flychams_ros` package is the bridge between the pure domain models in `flychams_core` and the ROS ecosystem. It implements:
+The `flychams_core` package serves as the foundation for the FlyChams system. It contains:
 
-1. **Message converters** between domain models and ROS messages
-2. **Transformation management** using tf2
-3. **Topic management** for standardized topic naming and access (subscribers and publishers)
-4. **Element management** for agents, heads, targets and clusters
-5. **Parameter management** for configuration and settings
+1. **Core domain types and models** for representing agents, targets, and clusters (commonly named "elements" across the project)
+2. **Configuration parsing** for mission settings and simulation parameters
+3. **Utility functions** for mathematical operations, camera parameters, and more
+4. **Base classes** for ROS node implementations
+5. **Tools** for interfacing with the simulation framework (like AirSim)
+
+This package follows a domain-driven design approach, separating the core domain models from implementation details.
 
 ## Components
 
-### Managers
+### Base Module
 
-- `transform_manager.hpp` - Manages transformations between frames using tf2, handles frame naming patterns, and provides utilities for transforming messages between coordinate frames
-- `topic_manager.hpp` - Manages topic naming patterns and provides factory methods for creating publishers and subscribers with standardized topic names
-- `agent_manager.hpp` - Handles agent lifecycle and receives and publish its state
+- `base_module.hpp` - Base class for all modules (i.e. sub-nodes) in the system, providing common utilities
+- `base_discoverer_node.hpp` - Base class for node implementations that discover elements
+- `base_registrator_node.hpp` - Base class for node implementations that register elements
 
-### Message Converters
+### Types
 
-- `message_converters.hpp` - Converts between domain models and ROS messages
-- `ros_utils.hpp` - Utility functions for ROS operations, such ad parameter handling or timers creation
+- `core_types.hpp` - Core domain types including:
+  - Enumerations for various domain concepts (Framework, TrackingMode, HeadRole, etc.)
+  - Data structures for geometry (Pose, Twist, Odometry)
+  - Camera and tracking related structures (CameraParameters, WindowParameters, etc.)
+  - Metrics structures for performance monitoring
 
-### ROS Types
+- `ros_types.hpp` - ROS-specific type definitions, including custom message types
 
-- `ros_types.hpp` - Type definitions for ROS messages, publishers, subscribers, and other ROS components
-- Custom message definitions for all domain objects (Agent, Head, Target, Cluster)
+### Config
 
-## Usage
+- `config_parser.hpp` - Parses configuration files in Excel format ("Configuration.xlsx" found in project root, under config folder)
+- `config_types.hpp` - Data structures for configuration (MissionConfig, AgentConfig, etc.)
 
-To use this package in your project:
+### Tools
 
-1. Add a dependency in your `package.xml`:
-   ```xml
-   <depend>flychams_infrastructure</depend>
-   ```
+- `config_tools.hpp` - Tools for working with configuration objects
+- `external_tools.hpp` - Base class for tools that interface with external frameworks (e.g. AirSim)
+- `airsim_tools.hpp` - AirSim-specific utilities for interfacing with the AirSim simulator
+- `topic_tools.hpp` - Utilities for topic naming and management (e.g. topic names, subscriber/publisher creation, etc.)
+- `tf_tools.hpp` - Transformation utilities (e.g. frame names, coordinate transformations, etc.)
 
-2. Add a dependency in your `CMakeLists.txt`:
-   ```cmake
-   find_package(flychams_infrastructure REQUIRED)
-   target_link_libraries(your_target flychams_infrastructure::flychams_infrastructure)
-   ```
+### Utils
 
-3. Include the necessary headers in your code:
-   ```cpp
-   #include "flychams_infrastructure/ros/data_service_ros.hpp"
-   #include "flychams_infrastructure/ros/message_converters.hpp"
-   ```
+- `ros_utils.hpp` - ROS-specific utility functions
+- `msg_conversions.hpp` - Conversions between domain types and ROS messages
+- `camera_utils.hpp` - Camera-related utility functions (e.g. projection)
+- `math_utils.hpp` - Mathematical utility functions (e.g. vector operations)
 
-4. Create a data service instance:
-   ```cpp
-   auto node = std::make_shared<rclcpp::Node>("your_node");
-   auto data_service = std::make_shared<flychams::infrastructure::DataServiceROS>(node);
-   ```
+## External Dependencies
 
-## Architecture
-
-This package is part of the layered architecture:
-
-1. **Core Layer** (`flychams_core`) - Data models and interfaces
-2. **Infrastructure Layer** (`flychams_infrastructure`) - ROS-specific implementations
-3. **Domain-Specific Packages** - Domain logic implementation
-4. **Application Layer** - High-level nodes and launch files
-
-The infrastructure layer handles all ROS-specific concerns, allowing the domain logic to focus on business rules and algorithms. 
+- [OpenXLSX](https://github.com/troldal/OpenXLSX) - For Excel file parsing
+- [nlohmann/json](https://github.com/nlohmann/json) - For JSON file handling
+- Eigen - For mathematical operations
+- ROS2 - For minimal ROS-specific typedefs 

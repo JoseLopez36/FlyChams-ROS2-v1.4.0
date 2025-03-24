@@ -114,83 +114,83 @@ def generate_launch_description():
     # Declare launch arguments with default values
     ld.append(DeclareLaunchArgument(
         'ctrl',
-        default_value='False',
+        default_value='True',
         description='Flag to enable/disable the Agent Control node'))
     
     ld.append(DeclareLaunchArgument(
         'clus',
-        default_value='False',
+        default_value='True',
         description='Flag to enable/disable the Clustering node'))
     
     ld.append(DeclareLaunchArgument(
         'pos',
-        default_value='False',
+        default_value='True',
         description='Flag to enable/disable the Agent Positioning node'))
     
     ld.append(DeclareLaunchArgument(
         'assign',
-        default_value='False',
+        default_value='True',
         description='Flag to enable/disable the Agent Assignment node'))
     
     ld.append(DeclareLaunchArgument(
         'track',
-        default_value='False',
+        default_value='True',
         description='Flag to enable/disable the Agent Tracking node'))
     
     ld.append(DeclareLaunchArgument(
         'gui',
-        default_value='False',
+        default_value='True',
         description='Flag to enable/disable the GUI node'))
     
     ld.append(DeclareLaunchArgument(
         'viz',
-        default_value='False',
+        default_value='True',
         description='Flag to enable/disable the Visualization node'))
     
     ld.append(DeclareLaunchArgument(
         'tgt_ctrl',
-        default_value='False',
+        default_value='True',
         description='Flag to enable/disable the Target Control node'))
     
     # Declare log level arguments with default values
     ld.append(DeclareLaunchArgument(
         'log_ctrl',
-        default_value='error',
+        default_value='info',
         description='Log level for the Agent Control node'))
     
     ld.append(DeclareLaunchArgument(
         'log_clu',
-        default_value='error',
+        default_value='info',
         description='Log level for the Clustering node'))
     
     ld.append(DeclareLaunchArgument(
         'log_pos',
-        default_value='error',
+        default_value='info',
         description='Log level for the Agent Positioning node'))
     
     ld.append(DeclareLaunchArgument(
         'log_assign',
-        default_value='error',
+        default_value='info',
         description='Log level for the Agent Assignment node'))
     
     ld.append(DeclareLaunchArgument(
         'log_track',
-        default_value='error',
+        default_value='info',
         description='Log level for the Agent Tracking node'))
     
     ld.append(DeclareLaunchArgument(
         'log_gui',
-        default_value='error',
+        default_value='info',
         description='Log level for the GUI node'))
     
     ld.append(DeclareLaunchArgument(
         'log_viz',
-        default_value='error',
+        default_value='info',
         description='Log level for the Visualization node'))
     
     ld.append(DeclareLaunchArgument(
         'log_tgt_ctrl',
-        default_value='error',
+        default_value='info',
         description='Log level for the Target Control node'))
 
     # Launch command example: ros2 launch flychams_bringup run.launch.py ctrl:=True clus:=True pos:=True assign:=True track:=True gui:=True viz:=True tgt_ctrl:=True log_ctrl:=info log_clu:=info log_pos:=info log_assign:=info log_track:=info log_gui:=info log_viz:=info log_tgt_ctrl:=info
