@@ -20,8 +20,8 @@ namespace flychams::bringup
 	class GuiRegistration : public core::BaseModule
 	{
 	public: // Constructor/Destructor
-		GuiRegistration(core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::ExternalTools::SharedPtr ext_tools, core::TopicTools::SharedPtr topic_tools, core::TfTools::SharedPtr tf_tools)
-			: BaseModule(node, config_tools, ext_tools, topic_tools, tf_tools)
+		GuiRegistration(core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::FrameworkTools::SharedPtr framework_tools, core::TopicTools::SharedPtr topic_tools, core::TransformTools::SharedPtr transform_tools)
+			: BaseModule(node, config_tools, framework_tools, topic_tools, transform_tools)
 		{
 			init();
 		}
@@ -34,14 +34,10 @@ namespace flychams::bringup
 		using SharedPtr = std::shared_ptr<GuiRegistration>;
 
 	private: // Data
-		core::IDs fixed_window_ids_;
-		core::ID central_window_id_;
-		core::IDs tracking_window_ids_;
+		core::IDs windows_;
 
 	public: // Methods
-		const core::IDs& getFixedWindows() const { return fixed_window_ids_; }
-		const core::ID& getCentralWindow() const { return central_window_id_; }
-		const core::IDs& getTrackingWindows() const { return tracking_window_ids_; }
+		const core::IDs& getWindows() const { return windows_; }
 	};
 
 } // namespace flychams::bringup

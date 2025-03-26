@@ -46,22 +46,15 @@ The project leverages:
 
 ### Hardware Requirements
 
-- Medium to high-end CPU (e.g. Intel i7-12700K or AMD Ryzen 7 5800X)
-- Medium to high-end GPU with latest drivers (e.g. NVIDIA RTX 3070 or AMD RX 6800 XT)
-- 16 GB of RAM
-- 32 GB of RAM
-
-### Test setup
-
-- **Ubuntu 24.04**
-- **AMD RX 7800 XT**
-- **Intel i7-13700KF**
-- **32 GB of RAM**
+- **Recommended CPU**: Medium to high-end CPU (e.g. Intel i7-12700K or AMD Ryzen 7 5800X)
+- **Recommended GPU**: Medium to high-end GPU with latest drivers (e.g. NVIDIA RTX 3070 or AMD RX 6800 XT)
+- **Minimum RAM**: 16 GB
 
 ## Installation
 
-### 1. Clone the FlyChams environment repositories
+### 1. Clone the FlyChams repositories
 
+**Host Machine**
 ```bash
 git clone https://github.com/JoseLopez36/FlyChams-ROS2.git
 git clone https://github.com/JoseLopez36/FlyChams-Cosys-AirSim.git
@@ -72,56 +65,82 @@ git checkout 5.2.1
 
 ### 2. Setup the PX4-Autopilot repository
 
+**Host Machine**
 ```bash
 git clone --recursive https://github.com/PX4/PX4-Autopilot.git
 cd PX4-Autopilot/
 # We recommend using the 1.12.0 stable release
 git checkout v1.12.0
-# Build and run SITL in docker container
-Tools/docker_run.sh 'export PX4_SIM_HOSTNAME=172.17.0.1 && make px4_sitl_default none_iris'
+# Build SITL in docker container
+./Tools/docker_run.sh 'make px4_sitl_default none_iris'
 ```
 *Note: 172.17.0.1 is the IP address of the host machine from the docker container. Check this corresponds to the IP address of the host machine. If you are running PX4 directly on the host machine, you can use 127.0.0.1.*
 
-### 3. Setup environment variables
+### 3. Setup the UE5 project
 
-Add the following to your `/etc/bash.bashrc` file to setup permanent environment variables:
+You need to have an UE project with the FlyChams-Cosys-AirSim plugin installed. You can find exported projects in the `FlyChams-Sim-UE5` repository releases.
 
+### 4. Setup environment variables
+
+Configure the environment variables in the `docker/config.env` file. Edit these variables to match your local paths:
+
+**Host Machine**
 ```bash
-sudo nano /etc/bash.bashrc
-# Add the following to your /etc/bash.bashrc file
-export FLYCHAMS_ROS2_PATH="/path/to/FlyChams-ROS2"
-export FLYCHAMS_COSYS_AIRSIM_PATH="/path/to/FlyChams-Cosys-AirSim"
-export PX4_AUTOPILOT_PATH="/path/to/PX4-Autopilot"
+# Shared paths
+FLYCHAMS_ROS2_PATH=${HOME}/Documents/FlyChams-ROS2
+FLYCHAMS_AIRSIM_PATH=${HOME}/Documents/FlyChams-Cosys-AirSim
+FLYCHAMS_PX4_PATH=${HOME}/Documents/PX4-Autopilot
+FLYCHAMS_SIM_UE5_PATH=${HOME}/Documents/FlyChams-Sim-Coastal
 ```
 
-### 4. Build the docker image
+### 5. Build the docker image
 
+Run the following command to build the docker image:
+
+**Host Machine**
 ```bash
-cd $FLYCHAMS_ROS2_PATH/docker
-./build_image.sh
+./docker/build.sh
 ```
-*Note: This will build the docker image and tag it as flychams-docker. It may take a while to build the image.*
+*Note: This will build the docker image. It may take a while to build the image.*
 
-### 5. Run the docker container
+### 6. Run the docker container
 
+Run the following command to run the docker container:
+
+**Host Machine**
 ```bash
-./start_container.sh
+./docker/start.sh
 ```
-*Note: This will run the docker container. It will mount the current directory to the /home/flychams/FlyChams-ROS2 and FlyChams-Cosys-AirSim directories in the container. The current directory should contain the FlyChams-ROS2 and FlyChams-Cosys-AirSim repositories.*
+*Note: This will run the docker container. It will mount the directories specified in the environment.env file. You can customize the container name, ports and other parameters in the docker/config.env file.*
 
-### 6. Setup and build FlyChams-Cosys-AirSim
+To stop and remove the container, you can use the following command:
 
+**Host Machine**
 ```bash
-$FLYCHAMS_ROS2_PATH/tools/build_airsim_dep.sh
+./docker/kill.sh
+```
+
+### 7. Setup and build FlyChams-Cosys-AirSim
+
+Inside the docker container, run the following commands to setup and build the dependencies for FlyChams-Cosys-AirSim:
+
+**Docker**
+```bash
+$FLYCHAMS_ROS2_PATH/tools/airsim/clean_dependencies.sh
+$FLYCHAMS_ROS2_PATH/tools/airsim/setup_dependencies.sh
+$FLYCHAMS_ROS2_PATH/tools/airsim/build_dependencies.sh
 ```
 *Note: This will clean, setup and build the dependencies for FlyChams-Cosys-AirSim.*
 
-### 7. Build the ROS2 workspace
+### 8. Build the ROS2 workspace
 
+Inside the docker container, run the following command to build the ROS2 workspace:
+
+**Docker**
 ```bash
-PARALLEL=3 $FLYCHAMS_ROS2_PATH/tools/build_ros2_ws.sh
+$FLYCHAMS_ROS2_PATH/tools/build/build.sh -j 3
 ```
-*Note: This will build the ROS2 workspace in the ros2_ws directory. It will use 3 threads for parallel building. We don´t recommend using many more threads as the build may fail.*
+*Note: This will build the ROS2 workspace in the ros2_ws directory. It will use 3 threads for parallel building. We don´t recommend using more threads as the build may fail.*
 
 ## Usage
 
@@ -130,24 +149,28 @@ PARALLEL=3 $FLYCHAMS_ROS2_PATH/tools/build_ros2_ws.sh
 You only need to generate the AirSim settings once. After that, you can skip this step unless you make changes to the spreadsheet configuration file.
 
 For generating the AirSim settings, run the following command inside the docker container:
+
+**Docker**
 ```bash
-$FLYCHAMS_ROS2_PATH/tools/create_airsim_settings.sh
+$FLYCHAMS_ROS2_PATH/tools/airsim/create_settings.sh
 ```
 
 ### 2. (Optional) Run PX4 SITL
 
-If you want to run the PX4 SITL (must be configured in the `Configuration.xlsx` file), you can use the following command:
+If you want to run the PX4 SITL (must be configured first in the `Configuration.xlsx` file), you can use the following command in your host machine:
 
+**Host Machine**
 ```bash
-$PX4_AUTOPILOT_PATH/Tools/docker_run.sh 'export PX4_SIM_HOSTNAME=172.17.0.1 && make px4_sitl_default none_iris'
+./path/to/FlyChams-ROS2/docker/start_px4.sh
 ```
 
 ### 3. Launch the Unreal Engine Simulation
 
-For this step, you need to have an UE project with the FlyChams-Cosys-AirSim plugin installed. You can find exported projects in the `FlyChams-Sim-UE5` repository releases.
+Run the following command to launch the Unreal Engine simulation with the previously generated AirSim settings:
 
+**Host Machine**
 ```bash
-/path/to/FlyChamsSim.sh -settings="$FLYCHAMS_ROS2_PATH/config/settings.json"
+./path/to/FlyChams-ROS2/tools/airsim/run_ue5.sh
 ```
 
 ### 4. Launch ROS2 System
@@ -156,8 +179,9 @@ The ROS2 system is launched in two phases:
 
 #### Setup Phase
 
+**Docker**
 ```bash
-ros2 launch flychams_bringup setup.launch.py
+$FLYCHAMS_ROS2_PATH/tools/run/setup.sh
 ```
 
 This will:
@@ -167,14 +191,17 @@ This will:
 
 #### Runtime Phase
 
+**Docker**
 ```bash
-ros2 launch flychams_bringup run.launch.py
+$FLYCHAMS_ROS2_PATH/tools/run/run.sh
 ```
 
-This will start all the control, perception, coordination, target, and dashboard nodes. You can customize which nodes are launched by using the command as follows:
+This will start all the control, perception, coordination, target, and dashboard nodes. You can customize which nodes are launched by launching manually the nodes you need:
 
+**Docker**
 ```bash
 # Launch only tracking node with warning level logging
+source $FLYCHAMS_ROS2_PATH/install/setup.bash
 ros2 launch flychams_bringup run.launch.py track:=True log_track:=warn
 ```
 
@@ -182,18 +209,21 @@ ros2 launch flychams_bringup run.launch.py track:=True log_track:=warn
 
 To view the system in RViz:
 
+**Docker**
 ```bash
 $FLYCHAMS_ROS2_PATH/tools/run_rviz.sh
 ```
 
 To plot simulation data on runtime, we recommend using `PlotJuggler` (already installed in the docker container). To run it, use the following command:
 
+**Docker**
 ```bash
-$FLYCHAMS_ROS2_PATH/tools/run_plotjuggler.sh
+$FLYCHAMS_ROS2_PATH/tools/run/run_plotjuggler.sh
 ```
 
 You can also plot previous rosbag data by importing them into the PlotJuggler window. More info [here](https://plotjuggler.io/). To record rosbags you must configure it in the `Configuration.xlsx` file and use the following command:
 
+**Docker**
 ```bash
 ros2 launch flychams_bringup rosbag.launch.py
 ```

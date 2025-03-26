@@ -125,11 +125,11 @@ namespace flychams::control
 		}
 
 		// Enable OFFBOARD mode
-		bool result = ext_tools_->enableControl(agent_id_, true);
+		bool result = framework_tools_->enableControl(agent_id_, true);
 
 		// Request arming
 		RCLCPP_INFO(node_->get_logger(), "UAV controller: Arming...");
-		result = result && ext_tools_->armDisarm(agent_id_, true);
+		result = result && framework_tools_->armDisarm(agent_id_, true);
 
 		if (result)
 		{
@@ -154,11 +154,11 @@ namespace flychams::control
 		}
 
 		// Enable OFFBOARD mode
-		bool result = ext_tools_->enableControl(agent_id_, true);
+		bool result = framework_tools_->enableControl(agent_id_, true);
 
 		// Request takeoff
 		RCLCPP_INFO(node_->get_logger(), "UAV controller: Taking off...");
-		result = result && ext_tools_->takeoff(agent_id_);
+		result = result && framework_tools_->takeoff(agent_id_);
 
 		if (result)
 		{
@@ -183,11 +183,11 @@ namespace flychams::control
 		}
 
 		// Enable OFFBOARD mode
-		bool result = ext_tools_->enableControl(agent_id_, true);
+		bool result = framework_tools_->enableControl(agent_id_, true);
 
 		// Request hovering
 		RCLCPP_INFO(node_->get_logger(), "UAV controller: Hovering...");
-		result = result && ext_tools_->hover(agent_id_);
+		result = result && framework_tools_->hover(agent_id_);
 
 		if (result)
 		{
@@ -212,7 +212,7 @@ namespace flychams::control
 		}
 
 		// Enable OFFBOARD mode
-		bool result = ext_tools_->enableControl(agent_id_, true);
+		bool result = framework_tools_->enableControl(agent_id_, true);
 
 		if (result)
 		{
@@ -237,11 +237,11 @@ namespace flychams::control
 		}
 
 		// Enable OFFBOARD mode
-		bool result = ext_tools_->enableControl(agent_id_, true);
+		bool result = framework_tools_->enableControl(agent_id_, true);
 
 		// Request landing
 		RCLCPP_INFO(node_->get_logger(), "UAV controller: Landing...");
-		result = result && ext_tools_->land(agent_id_);
+		result = result && framework_tools_->land(agent_id_);
 
 		if (result)
 		{
@@ -266,11 +266,11 @@ namespace flychams::control
 		}
 
 		// Enable OFFBOARD mode
-		bool result = ext_tools_->enableControl(agent_id_, true);
+		bool result = framework_tools_->enableControl(agent_id_, true);
 
 		// Request disarming
 		RCLCPP_INFO(node_->get_logger(), "UAV controller: Disarming...");
-		result = result && ext_tools_->armDisarm(agent_id_, false);
+		result = result && framework_tools_->armDisarm(agent_id_, false);
 
 		if (result)
 		{
@@ -293,17 +293,17 @@ namespace flychams::control
 			// If we're in flight, try to land
 			if (state_ == State::HOVERING || state_ == State::MOVING || state_ == State::REACHED)
 			{
-				ext_tools_->enableControl(agent_id_, true);
-				ext_tools_->land(agent_id_);
+				framework_tools_->enableControl(agent_id_, true);
+				framework_tools_->land(agent_id_);
 			}
 
 			// Wait a bit for landing
 			rclcpp::sleep_for(std::chrono::seconds(2));
 
 			// Disarm
-			ext_tools_->enableControl(agent_id_, true);
-			ext_tools_->armDisarm(agent_id_, false);
-			ext_tools_->enableControl(agent_id_, false);
+			framework_tools_->enableControl(agent_id_, true);
+			framework_tools_->armDisarm(agent_id_, false);
+			framework_tools_->enableControl(agent_id_, false);
 		}
 
 		// Reset state
@@ -529,7 +529,7 @@ namespace flychams::control
 		// Send position command to external tools
 		RCLCPP_INFO_THROTTLE(node_->get_logger(), *node_->get_clock(), 1000.0, "UAV controller: Moving to goal (%.2f, %.2f, %.2f) with speed %.2f m/s...",
 			goal_pos_.x, goal_pos_.y, goal_pos_.z, speed);
-		ext_tools_->setPosition(agent_id_, goal_pos_.x, goal_pos_.y, goal_pos_.z, speed, pos_timeout_);
+		framework_tools_->setPosition(agent_id_, goal_pos_.x, goal_pos_.y, goal_pos_.z, speed, pos_timeout_);
 	}
 
 	void UAVController::handleReachedState()
@@ -553,7 +553,7 @@ namespace flychams::control
 		{
 			RCLCPP_INFO(node_->get_logger(), "UAV controller: Landing complete");
 			// Disarm after landing
-			ext_tools_->armDisarm(agent_id_, false);
+			framework_tools_->armDisarm(agent_id_, false);
 			setState(State::DISARMED);
 		}
 	}
@@ -564,7 +564,7 @@ namespace flychams::control
 		// For safety, try to land if we're not already on the ground
 		if (has_odom_ && curr_pos_.z > 0.5f)
 		{
-			ext_tools_->land(agent_id_);
+			framework_tools_->land(agent_id_);
 		}
 	}
 

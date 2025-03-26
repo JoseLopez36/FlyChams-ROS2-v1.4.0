@@ -2,36 +2,37 @@
   ros__parameters:
     # Simulation settings
     simulation:
+      framework: AirSim
       clock_speed: 1.0                              # Clock speed multiplier (1.0 = real-time)
       draw_rviz: true                               # Draw RViz markers
       record_metrics: false                         # Record metrics to rosbag
     # Path settings
     path:
-      config_source_file: "/home/testuser/FlyChams-ROS2/config/Configuration.xlsx"
-      airsim_settings_destination_file: "/home/testuser/FlyChams-ROS2/config/settings.json"
+      config_spreadsheet_path: "/home/testuser/FlyChams-ROS2/config/Configuration.xlsx"
+      airsim_settings_path: "/home/testuser/FlyChams-ROS2/config/settings.json"
     # GUI settings
     gui:
       # Scenario view settings
       scenario_view_id: "SCENARIOVIEW"
-      scenario_camera_id: "SCENARIOCAMERA"
-      scenario_camera_position: [0.0, 0.0, 0.0]       # [x, y, z]
-      scenario_camera_orientation: [25.0, 45.0, 0.0]  # [pitch, yaw, roll]
+      scenario_camera_id: "SCENARIOCAM"
+      scenario_camera_position: [-150.0, -150.0, 150.0]       # [x, y, z]
+      scenario_camera_orientation: [0.0, 25.0, 45.0]  # [roll, pitch, yaw]
       # Agent view settings
       agent_view_id: "AGENTVIEW"
-      agent_camera_id: "AGENTCAMERA"
-      agent_camera_position: [0.0, 0.0, 0.0]        # [x, y, z]
-      agent_camera_orientation: [25.0, 45.0, 0.0]   # [pitch, yaw, roll]
+      agent_camera_id: "AGENTCAM"
+      agent_camera_position: [-1.5, -1.5, 1.0]        # [x, y, z]
+      agent_camera_orientation: [0.0, 33.33, 45.0]   # [roll, pitch, yaw]
       # Payload view settings
       payload_view_id: "PAYLOADVIEW"
-      payload_camera_id: "PAYLOADCAMERA"
-      payload_camera_position: [0.0, 0.0, 0.0]        # [x, y, z]
-      payload_camera_orientation: [25.0, 45.0, 0.0]   # [pitch, yaw, roll]
+      payload_camera_id: "PAYLOADCAM"
+      payload_camera_position: [-0.7, -0.7, -0.5]        # [x, y, z]
+      payload_camera_orientation: [0.0, 0.0, 45.0]   # [roll, pitch, yaw]
       # Map view settings
       map_view_id: "MAPVIEW"
       map_camera_id: ""
       map_camera_position: [0.0, 0.0, 0.0]        # [x, y, z]
-      map_camera_orientation: [0.0, 0.0, 0.0]   # [pitch, yaw, roll]
-      # Central window settings
-      central_window_id: "CENTRALVIEW"
-      # Tracking window settings
-      tracking_window_ids: ["TRACKINGVIEW00", "TRACKINGVIEW01", "TRACKINGVIEW02", "TRACKINGVIEW03"]
+      map_camera_orientation: [0.0, 0.0, 0.0]   # [roll, pitch, yaw]
+      # Central view settings
+      central_view_id: "CENTRALVIEW"
+      # Tracking view settings
+      tracking_view_ids: ["TRACKINGVIEW00", "TRACKINGVIEW01", "TRACKINGVIEW02", "TRACKINGVIEW03"]

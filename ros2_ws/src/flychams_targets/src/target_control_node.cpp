@@ -67,7 +67,7 @@ private: // Element management
         std::lock_guard<std::mutex> lock(mutex_);
 
         // Create target controller
-        auto controller = std::make_shared<TargetController>(target_id, node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
+        auto controller = std::make_shared<TargetController>(target_id, node_, config_tools_, framework_tools_, topic_tools_, transform_tools_);
 
         // Add target data to vectors
         target_ids_.push_back(target_id);
@@ -120,7 +120,7 @@ private: // Update methods
         }
 
         // Update targets in simulation
-        ext_tools_->updateTargetGroup(target_ids_, target_positions_);
+        framework_tools_->updateTargetGroup(target_ids_, target_positions_);
     }
 
 private: // Components

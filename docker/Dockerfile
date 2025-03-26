@@ -30,18 +30,20 @@ RUN     apt-get update && \
         && rm -rf /var/lib/apt/lists/* && \
         apt-get clean
 
-# Create a non-root user (testuser) with sudo access
-ARG     UNAME=testuser
-RUN     adduser --disabled-password --gecos '' $UNAME \
-        && adduser $UNAME sudo \
+# Create a non-root user with sudo access
+ARG USER_NAME=testuser
+ENV USER_NAME=${USER_NAME}
+RUN     adduser --disabled-password --gecos '' $USER_NAME \
+        && adduser $USER_NAME sudo \
         && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 # Ensure the user owns their home directory
-RUN     chown -R $UNAME:$UNAME /home/$UNAME
+RUN     chown -R $USER_NAME:$USER_NAME /home/$USER_NAME
 
 # Switch to the non-root user
-USER    $UNAME
-WORKDIR /home/${UNAME}       
+USER    $USER_NAME
+WORKDIR /home/${USER_NAME}       
 RUN     echo "source /opt/ros/iron/setup.bash" >> ~/.bashrc
-RUN     echo "export FLYCHAMS_ROS2_PATH=/home/${UNAME}/FlyChams-ROS2" >> ~/.bashrc
-RUN     echo "export FLYCHAMS_COSYS_AIRSIM_PATH=/home/${UNAME}/FlyChams-Cosys-AirSim" >> ~/.bashrc
+RUN     echo "export FLYCHAMS_ROS2_PATH=/home/${USER_NAME}/FlyChams-ROS2" >> ~/.bashrc
+RUN     echo "export FLYCHAMS_COSYS_AIRSIM_PATH=/home/${USER_NAME}/FlyChams-Cosys-AirSim" >> ~/.bashrc
+RUN     echo "export FLYCHAMS_PX4_PATH=/home/${USER_NAME}/PX4-Autopilot" >> ~/.bashrc

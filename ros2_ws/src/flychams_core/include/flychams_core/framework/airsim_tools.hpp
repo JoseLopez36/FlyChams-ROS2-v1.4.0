@@ -1,11 +1,7 @@
 #pragma once
 
-// Standard includes
-#include <vector>
-#include <atomic>
-
 // External tools include
-#include "flychams_core/tools/external_tools.hpp"
+#include "flychams_core/framework/framework_tools.hpp"
 
 // AirSim interfaces includes
 // Global commands
@@ -43,10 +39,10 @@ namespace flychams::core
 {
     /**
      * ════════════════════════════════════════════════════════════════
-     * @brief AirSim-specific implementation of the external tools utility
+     * @brief AirSim-specific implementation of the framework tools utility
      *
      * @details
-     * This class implements the external tools interface for the AirSim
+     * This class implements the framework tools interface for the AirSim
      * framework, providing specific implementations for vehicle control,
      * target management, and GUI operations.
      *
@@ -55,10 +51,10 @@ namespace flychams::core
      * @date 2025-02-14
      * ════════════════════════════════════════════════════════════════
      */
-    class AirsimTools : public ExternalTools
+    class AirsimTools : public FrameworkTools
     {
     public: // Constructors/Destructors
-        AirsimTools(NodePtr node);
+        AirsimTools(NodePtr node, const ConfigTools::SharedPtr& config_tools);
         ~AirsimTools() override;
         void shutdown() override;
 
@@ -111,7 +107,7 @@ namespace flychams::core
         void setWindowStrings(const ID& window_id, const std::vector<std::string>& strings, const std::vector<PointMsg>& positions, const ColorMsg& color, const float& scale) override;
 
     public: // Tracking control methods
-        bool addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors, const RegionType& region) override;
+        bool addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors) override;
         bool addClusterGroup(const IDs& cluster_ids, const std::vector<PointMsg>& centers, const std::vector<float>& radii, const bool& highlight, const std::vector<ColorMsg>& highlight_colors) override;
         bool removeAllTargets() override;
         bool removeAllClusters() override;
@@ -121,23 +117,26 @@ namespace flychams::core
     private: // Utility methods
         int getWindowIndex(const ID& window_id) const
         {
-            if (window_id == "SCENE")
+            // Get system config
+            const auto& system_config = config_tools_->getSystem();
+
+            if (window_id == system_config.scenario_view_id)
                 return 0;
-            else if (window_id == "AGENT00")
+            else if (window_id == system_config.agent_view_id)
                 return 1;
-            else if (window_id == "MAP")
+            else if (window_id == system_config.map_view_id)
                 return 2;
-            else if (window_id == "AGENT01")
+            else if (window_id == system_config.payload_view_id)
                 return 3;
-            else if (window_id == "CENTRAL")
+            else if (window_id == system_config.central_view_id)
                 return 4;
-            else if (window_id == "TRACKING00")
+            else if (window_id == system_config.tracking_view_ids.at(0))
                 return 5;
-            else if (window_id == "TRACKING01")
+            else if (window_id == system_config.tracking_view_ids.at(1))
                 return 6;
-            else if (window_id == "TRACKING02")
+            else if (window_id == system_config.tracking_view_ids.at(2))
                 return 7;
-            else if (window_id == "TRACKING03")
+            else if (window_id == system_config.tracking_view_ids.at(3))
                 return 8;
             else
             {
@@ -157,9 +156,6 @@ namespace flychams::core
         }
 
     private: // ROS components
-        // Node pointer
-        NodePtr node_;
-
         // Global commands
         ClientPtr<ResetSrv> reset_client_;
         ClientPtr<RunSrv> run_client_;

@@ -39,9 +39,9 @@ add_executable(registrator_node src/registrator_node.cpp)
 target_link_libraries(registrator_node ${PROJECT_NAME})
 ament_target_dependencies(registrator_node rclcpp flychams_core)
 
-# Create executable for airsim settings parser
-add_executable(airsim_settings_parser src/airsim_settings_parser.cpp)
-ament_target_dependencies(airsim_settings_parser rclcpp flychams_core)
+# Create executable for airsim settings node
+add_executable(airsim_settings_node src/airsim_settings_node.cpp)
+ament_target_dependencies(airsim_settings_node rclcpp flychams_core)
 
 # Install targets and headers
 install(TARGETS ${PROJECT_NAME}
@@ -52,7 +52,7 @@ install(TARGETS ${PROJECT_NAME}
   INCLUDES DESTINATION include
 )
 
-install(TARGETS registrator_node airsim_settings_parser
+install(TARGETS registrator_node airsim_settings_node
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 

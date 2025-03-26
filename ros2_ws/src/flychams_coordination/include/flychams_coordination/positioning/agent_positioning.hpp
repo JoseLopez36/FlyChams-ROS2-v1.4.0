@@ -28,8 +28,8 @@ namespace flychams::coordination
     class AgentPositioning : public core::BaseModule
     {
     public: // Constructor/Destructor
-        AgentPositioning(const core::ID& agent_id, core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::ExternalTools::SharedPtr ext_tools, core::TopicTools::SharedPtr topic_tools, core::TfTools::SharedPtr tf_tools)
-            : BaseModule(node, config_tools, ext_tools, topic_tools, tf_tools), agent_id_(agent_id)
+        AgentPositioning(const core::ID& agent_id, core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::FrameworkTools::SharedPtr framework_tools, core::TopicTools::SharedPtr topic_tools, core::TransformTools::SharedPtr transform_tools)
+            : BaseModule(node, config_tools, framework_tools, topic_tools, transform_tools), agent_id_(agent_id)
         {
             init();
         }

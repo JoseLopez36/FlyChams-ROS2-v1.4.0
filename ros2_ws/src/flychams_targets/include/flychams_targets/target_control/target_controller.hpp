@@ -27,8 +27,8 @@ namespace flychams::targets
     class TargetController : public core::BaseModule
     {
     public: // Constructor/Destructor
-        TargetController(const core::ID& target_id, core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::ExternalTools::SharedPtr ext_tools, core::TopicTools::SharedPtr topic_tools, core::TfTools::SharedPtr tf_tools)
-            : BaseModule(node, config_tools, ext_tools, topic_tools, tf_tools), target_id_(target_id)
+        TargetController(const core::ID& target_id, core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::FrameworkTools::SharedPtr framework_tools, core::TopicTools::SharedPtr topic_tools, core::TransformTools::SharedPtr transform_tools)
+            : BaseModule(node, config_tools, framework_tools, topic_tools, transform_tools), target_id_(target_id)
         {
             init();
         }

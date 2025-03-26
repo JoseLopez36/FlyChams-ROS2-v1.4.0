@@ -82,13 +82,9 @@ namespace flychams::coordination
 
     void AgentAssignment::agentOdomCallback(const core::ID& agent_id, const core::OdometryMsg::SharedPtr msg)
     {
-        // Transform to world frame
-        const std::string& source_frame = msg->header.frame_id;
-        const std::string& target_frame = tf_tools_->getGlobalFrame();
-        const PointMsg& curr_pos_msg = tf_tools_->transformPointMsg(msg->pose.pose.position, source_frame, target_frame);
-        // Convert to Eigen
+        // Get agent position
         std::lock_guard<std::mutex> lock(mutex_);
-        agents_[agent_id].pos = MsgConversions::fromMsg(curr_pos_msg);
+        agents_[agent_id].pos = MsgConversions::fromMsg(msg->pose.pose.position);
         agents_[agent_id].valid = true;
     }
 
@@ -185,7 +181,7 @@ namespace flychams::coordination
             }
 
             // Publish agent info
-            info.header = RosUtils::createHeader(node_, tf_tools_->getGlobalFrame());
+            info.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
             agent_info_pubs_[agent_id]->publish(info);
         }
     }

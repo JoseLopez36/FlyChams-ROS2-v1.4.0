@@ -1,10 +1,19 @@
 #!/bin/bash
 
-# Get number of threads
+# Check for -j flag to specify thread count
 N_THREADS=$(nproc)
-if [ -n "$PARALLEL" ]; then
-    N_THREADS=$PARALLEL
-fi
+while getopts "j:" opt; do
+  case $opt in
+    j)
+      N_THREADS=$OPTARG
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+  esac
+done
+shift $((OPTIND-1))
 
 # Verify directory
 WORKSPACE_DIR=$FLYCHAMS_ROS2_PATH/ros2_ws

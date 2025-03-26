@@ -1,23 +1,20 @@
 #pragma once
 
 // Tools includes
-#include "flychams_core/tools/config_tools.hpp"
-#include "flychams_core/tools/external_tools.hpp"
-#include "flychams_core/tools/topic_tools.hpp"
-#include "flychams_core/tools/tf_tools.hpp"
-
-// Utils includes
-#include "flychams_core/utils/msg_conversions.hpp"
+#include "flychams_core/config/config_tools.hpp"
+#include "flychams_core/framework/framework_tools.hpp"
+#include "flychams_core/ros/topic_tools.hpp"
+#include "flychams_core/ros/transform_tools.hpp"
 
 namespace flychams::core
 {
     /**
      * ════════════════════════════════════════════════════════════════
-     * @brief Base module for all modules in the core
+     * @brief Base module for all sub-nodes in the system
      *
      * @details
-     * This class is the base class for all modules present in the
-     * packages. It provides a common interface for all modules and a
+     * This class is the base class for all sub-nodes present in the
+     * system. It provides a common interface for all sub-nodes and a
      * set of utilities for the modules to use.
      *
      * ════════════════════════════════════════════════════════════════
@@ -28,8 +25,8 @@ namespace flychams::core
     class BaseModule
     {
     public: // Constructor/Destructor
-        BaseModule(core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::ExternalTools::SharedPtr ext_tools, core::TopicTools::SharedPtr topic_tools, core::TfTools::SharedPtr tf_tools)
-            : node_(node), config_tools_(config_tools), ext_tools_(ext_tools), topic_tools_(topic_tools), tf_tools_(tf_tools)
+        BaseModule(NodePtr node, ConfigTools::SharedPtr config_tools, FrameworkTools::SharedPtr framework_tools, TopicTools::SharedPtr topic_tools, TransformTools::SharedPtr transform_tools)
+            : node_(node), config_tools_(config_tools), framework_tools_(framework_tools), topic_tools_(topic_tools), transform_tools_(transform_tools)
         {
             // Nothing to do
         }
@@ -48,9 +45,9 @@ namespace flychams::core
             onShutdown();
             // Destroy tools
             config_tools_.reset();
-            ext_tools_.reset();
+            framework_tools_.reset();
             topic_tools_.reset();
-            tf_tools_.reset();
+            transform_tools_.reset();
             // Destroy node
             node_.reset();
         }
@@ -59,17 +56,17 @@ namespace flychams::core
         using SharedPtr = std::shared_ptr<BaseModule>;
 
     protected: // Overridable methods
-        virtual void onInit() {};
-        virtual void onShutdown() {};
+        virtual void onInit() = 0;
+        virtual void onShutdown() = 0;
 
     protected: // Components
         // Node
-        core::NodePtr node_;
+        NodePtr node_;
         // Tools
-        core::ConfigTools::SharedPtr config_tools_;
-        core::ExternalTools::SharedPtr ext_tools_;
-        core::TopicTools::SharedPtr topic_tools_;
-        core::TfTools::SharedPtr tf_tools_;
+        ConfigTools::SharedPtr config_tools_;
+        FrameworkTools::SharedPtr framework_tools_;
+        TopicTools::SharedPtr topic_tools_;
+        TransformTools::SharedPtr transform_tools_;
     };
 
 } // namespace flychams::core

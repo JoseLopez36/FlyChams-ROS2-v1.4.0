@@ -40,28 +40,39 @@ public: // Constructor/Destructor
     void onInit() override
     {
         // Create registration instances for each element type
-        agent_registration_ = std::make_shared<AgentRegistration>(node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
-        target_registration_ = std::make_shared<TargetRegistration>(node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
-        cluster_registration_ = std::make_shared<ClusterRegistration>(node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
-        gui_registration_ = std::make_shared<GuiRegistration>(node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
+        agent_registration_ = std::make_shared<AgentRegistration>(node_, config_tools_, framework_tools_, topic_tools_, transform_tools_);
+        target_registration_ = std::make_shared<TargetRegistration>(node_, config_tools_, framework_tools_, topic_tools_, transform_tools_);
+        cluster_registration_ = std::make_shared<ClusterRegistration>(node_, config_tools_, framework_tools_, topic_tools_, transform_tools_);
+        gui_registration_ = std::make_shared<GuiRegistration>(node_, config_tools_, framework_tools_, topic_tools_, transform_tools_);
 
         // Get all elements
         agents_ = agent_registration_->getAgents();
         targets_ = target_registration_->getTargets();
         clusters_ = cluster_registration_->getClusters();
-        fixed_windows_ = gui_registration_->getFixedWindows();
-        central_window_ = gui_registration_->getCentralWindow();
-        tracking_windows_ = gui_registration_->getTrackingWindows();
+        windows_ = gui_registration_->getWindows();
 
         // Check if every element type is correctly registered
-        if (agents_.empty() ||
-            targets_.empty() ||
-            clusters_.empty() ||
-            fixed_windows_.empty() ||
-            central_window_.empty() ||
-            tracking_windows_.empty())
+        if (agents_.empty())
         {
-            RCLCPP_ERROR(node_->get_logger(), "One or more element types are not registered. Cannot setup the simulation");
+            RCLCPP_ERROR(node_->get_logger(), "No agents registered. Cannot setup the simulation");
+            rclcpp::shutdown();
+            return;
+        }
+        if (targets_.empty())
+        {
+            RCLCPP_ERROR(node_->get_logger(), "No targets registered. Cannot setup the simulation");
+            rclcpp::shutdown();
+            return;
+        }
+        if (clusters_.empty())
+        {
+            RCLCPP_ERROR(node_->get_logger(), "No clusters registered. Cannot setup the simulation");
+            rclcpp::shutdown();
+            return;
+        }
+        if (windows_.empty())
+        {
+            RCLCPP_ERROR(node_->get_logger(), "No windows registered. Cannot setup the simulation");
             rclcpp::shutdown();
             return;
         }
@@ -78,9 +89,9 @@ public: // Constructor/Destructor
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         // Destroy existing targets and clusters
-        ext_tools_->removeAllTargets();
+        framework_tools_->removeAllTargets();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        ext_tools_->removeAllClusters();
+        framework_tools_->removeAllClusters();
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
         // Spawn targets and clusters
         target_registration_->spawnTargets();
@@ -102,9 +113,7 @@ public: // Constructor/Destructor
         agents_.clear();
         targets_.clear();
         clusters_.clear();
-        fixed_windows_.clear();
-        central_window_.clear();
-        tracking_windows_.clear();
+        windows_.clear();
 
         // Destroy registration instances
         agent_registration_.reset();
@@ -124,9 +133,7 @@ private: // Components
     IDs agents_;
     IDs targets_;
     IDs clusters_;
-    IDs fixed_windows_;
-    ID central_window_;
-    IDs tracking_windows_;
+    IDs windows_;
 };
 
 int main(int argc, char** argv)

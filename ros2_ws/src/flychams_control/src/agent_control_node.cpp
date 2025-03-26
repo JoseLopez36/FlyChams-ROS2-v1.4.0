@@ -53,12 +53,12 @@ private: // Element management
     void onAddAgent(const ID& agent_id) override
     {
         // Create UAV controller
-        auto uav_controller = std::make_shared<UAVController>(agent_id, node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
+        auto uav_controller = std::make_shared<UAVController>(agent_id, node_, config_tools_, framework_tools_, topic_tools_, transform_tools_);
         uav_controllers_.insert(std::make_pair(agent_id, uav_controller));
         RCLCPP_INFO(node_->get_logger(), "UAV controller created for agent %s", agent_id.c_str());
 
         // Create head controller
-        auto head_controller = std::make_shared<HeadController>(agent_id, node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
+        auto head_controller = std::make_shared<HeadController>(agent_id, node_, config_tools_, framework_tools_, topic_tools_, transform_tools_);
         head_controllers_.insert(std::make_pair(agent_id, head_controller));
         RCLCPP_INFO(node_->get_logger(), "Head controller created for agent %s", agent_id.c_str());
     }

@@ -35,7 +35,7 @@ public: // Constructor/Destructor
     void onInit() override
     {
         // Initialize visualization factory
-        visualization_factory_ = std::make_shared<VisualizationFactory>(node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
+        visualization_factory_ = std::make_shared<VisualizationFactory>(node_, config_tools_, framework_tools_, topic_tools_, transform_tools_);
     }
 
     void onShutdown() override

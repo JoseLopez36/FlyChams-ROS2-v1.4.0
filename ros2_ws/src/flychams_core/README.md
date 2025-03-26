@@ -9,8 +9,8 @@ The `flychams_core` package serves as the foundation for the FlyChams system. It
 1. **Core domain types and models** for representing agents, targets, and clusters (commonly named "elements" across the project)
 2. **Configuration parsing** for mission settings and simulation parameters
 3. **Utility functions** for mathematical operations, camera parameters, and more
-4. **Base classes** for ROS node implementations
-5. **Tools** for interfacing with the simulation framework (like AirSim)
+4. **Tools** for interaction with utilities and external frameworks (e.g. AirSim)
+5. **Base classes** for ROS node implementations
 
 This package follows a domain-driven design approach, separating the core domain models from implementation details.
 
@@ -43,7 +43,7 @@ This package follows a domain-driven design approach, separating the core domain
 - `external_tools.hpp` - Base class for tools that interface with external frameworks (e.g. AirSim)
 - `airsim_tools.hpp` - AirSim-specific utilities for interfacing with the AirSim simulator
 - `topic_tools.hpp` - Utilities for topic naming and management (e.g. topic names, subscriber/publisher creation, etc.)
-- `tf_tools.hpp` - Transformation utilities (e.g. frame names, coordinate transformations, etc.)
+- `transform_tools.hpp` - Transformation utilities (e.g. frame names, coordinate transformations, etc.)
 
 ### Utils
 

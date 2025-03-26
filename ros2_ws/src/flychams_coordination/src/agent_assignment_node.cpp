@@ -37,7 +37,7 @@ public: // Constructor/Destructor
     void onInit() override
     {
         // Initialize agent assignment system
-        agent_assignment_ = std::make_shared<AgentAssignment>(node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
+        agent_assignment_ = std::make_shared<AgentAssignment>(node_, config_tools_, framework_tools_, topic_tools_, transform_tools_);
     }
 
     void onShutdown() override

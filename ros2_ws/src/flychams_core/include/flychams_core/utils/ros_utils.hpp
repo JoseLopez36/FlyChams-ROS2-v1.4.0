@@ -23,27 +23,15 @@ namespace flychams::core
     {
     public:
         // ════════════════════════════════════════════════════════════════════════════
-        // TIMER: Timer utilities
+        // TIMERS: Timer utilities
         // ════════════════════════════════════════════════════════════════════════════
 
-        static Time getTimeNow(NodePtr node)
+        static Time now(NodePtr node)
         {
             return node->get_clock()->now();
         }
 
-        static TimerPtr createTimer(NodePtr node, const std::function<void()>& callback, const std::chrono::milliseconds& period, CallbackGroupPtr callback_group = nullptr)
-        {
-            if (callback_group == nullptr)
-            {
-                return node->create_timer(period, callback);
-            }
-            else
-            {
-                return node->create_timer(period, callback, callback_group);
-            }
-        }
-
-        static TimerPtr createTimerByRate(NodePtr node, float rate, const std::function<void()>& callback, CallbackGroupPtr callback_group = nullptr)
+        static TimerPtr createTimer(NodePtr node, float rate, const std::function<void()>& callback, CallbackGroupPtr callback_group = nullptr)
         {
             if (callback_group == nullptr)
             {
@@ -55,19 +43,7 @@ namespace flychams::core
             }
         }
 
-        static TimerPtr createWallTimer(NodePtr node, const std::function<void()>& callback, const std::chrono::milliseconds& period, CallbackGroupPtr callback_group = nullptr)
-        {
-            if (callback_group == nullptr)
-            {
-                return node->create_wall_timer(period, callback);
-            }
-            else
-            {
-                return node->create_wall_timer(period, callback, callback_group);
-            }
-        }
-
-        static TimerPtr createWallTimerByRate(NodePtr node, float rate, const std::function<void()>& callback, CallbackGroupPtr callback_group = nullptr)
+        static TimerPtr createWallTimer(NodePtr node, float rate, const std::function<void()>& callback, CallbackGroupPtr callback_group = nullptr)
         {
             if (callback_group == nullptr)
             {
@@ -80,7 +56,7 @@ namespace flychams::core
         }
 
         // ════════════════════════════════════════════════════════════════════════════
-        // PARAMETER: Parameter utilities
+        // PARAMETERS: Parameter utilities
         // ════════════════════════════════════════════════════════════════════════════
 
         template <typename T>
@@ -102,11 +78,11 @@ namespace flychams::core
         }
 
         // ════════════════════════════════════════════════════════════════════════════
-        // SERVICE: Service utilities
+        // SERVICES: Service utilities
         // ════════════════════════════════════════════════════════════════════════════
 
         template<typename T>
-        static bool sendRequestSync(NodePtr node, ClientPtr<T> client, typename T::Request::SharedPtr request, int wait_time_ms = 1000)
+        static bool sendRequest(NodePtr node, ClientPtr<T> client, typename T::Request::SharedPtr request, int wait_time_ms = 1000)
         {
             // First, wait for service to be available
             if (!client->wait_for_service(std::chrono::milliseconds(wait_time_ms)))
@@ -121,10 +97,132 @@ namespace flychams::core
         }
 
         // ════════════════════════════════════════════════════════════════════════════
+        // MESSAGES: Message utilities
+        // ════════════════════════════════════════════════════════════════════════════
+
+        static Vector3r fromMsg(const PointMsg& point)
+        {
+            return Vector3r{ static_cast<float>(point.x), static_cast<float>(point.y), static_cast<float>(point.z) };
+        }
+
+        static Vector3r fromMsg(const Vector3Msg& vector)
+        {
+            return Vector3r{ static_cast<float>(vector.x), static_cast<float>(vector.y), static_cast<float>(vector.z) };
+        }
+
+        static Quaternionr fromMsg(const QuaternionMsg& quat)
+        {
+            return Quaternionr{ static_cast<float>(quat.x), static_cast<float>(quat.y), static_cast<float>(quat.z), static_cast<float>(quat.w) };
+        }
+
+        static std::pair<Matrix3Xr, RowVectorXr> fromMsg(const TrackingInfoMsg& info)
+        {
+            // Get the number of clusters
+            size_t n_clusters = info.centers.size();
+
+            // Create matrices to store cluster centers and radii
+            Matrix3Xr centers(3, n_clusters);
+            RowVectorXr radii(n_clusters);
+
+            // Fill the matrices with data from the message
+            for (size_t i = 0; i < n_clusters; i++)
+            {
+                // Extract center coordinates
+                centers.col(i) = fromMsg(info.centers[i]);
+
+                // Extract radius
+                radii(i) = info.radii[i];
+            }
+
+            return std::make_pair(centers, radii);
+        }
+
+        static void toMsg(const Vector3r& vector, PointMsg& point)
+        {
+            point.x = static_cast<double>(vector.x());
+            point.y = static_cast<double>(vector.y());
+            point.z = static_cast<double>(vector.z());
+        }
+
+        static void toMsg(const Vector3r& vector, Vector3Msg& vec)
+        {
+            vec.x = static_cast<double>(vector.x());
+            vec.y = static_cast<double>(vector.y());
+            vec.z = static_cast<double>(vector.z());
+        }
+
+        static void toMsg(const Quaternionr& orientation, QuaternionMsg& quat)
+        {
+            quat.x = static_cast<double>(orientation.x());
+            quat.y = static_cast<double>(orientation.y());
+            quat.z = static_cast<double>(orientation.z());
+            quat.w = static_cast<double>(orientation.w());
+        }
+
+        static void toMsg(const AgentMetrics& metrics, AgentMetricsMsg& ros_metrics)
+        {
+            // Agent data
+            ros_metrics.curr_x = metrics.curr_x;
+            ros_metrics.curr_y = metrics.curr_y;
+            ros_metrics.curr_z = metrics.curr_z;
+            ros_metrics.curr_yaw = metrics.curr_yaw;
+            ros_metrics.vel_x = metrics.vel_x;
+            ros_metrics.vel_y = metrics.vel_y;
+            ros_metrics.vel_z = metrics.vel_z;
+            ros_metrics.vel_yaw = metrics.vel_yaw;
+            ros_metrics.goal_x = metrics.goal_x;
+            ros_metrics.goal_y = metrics.goal_y;
+            ros_metrics.goal_z = metrics.goal_z;
+            ros_metrics.goal_yaw = metrics.goal_yaw;
+
+            // Position and movement metrics
+            ros_metrics.total_distance_traveled = metrics.total_distance_traveled;
+            ros_metrics.current_speed = metrics.current_speed;
+
+            // Goal-related metrics
+            ros_metrics.distance_to_goal = metrics.distance_to_goal;
+
+            // Mission metrics
+            ros_metrics.time_elapsed = metrics.time_elapsed;
+
+            // Performance metrics
+            ros_metrics.average_speed = metrics.average_speed;
+        }
+
+        static void toMsg(const TargetMetrics& metrics, TargetMetricsMsg& ros_metrics)
+        {
+            // Target data
+            ros_metrics.curr_x = metrics.curr_x;
+            ros_metrics.curr_y = metrics.curr_y;
+            ros_metrics.curr_z = metrics.curr_z;
+
+            // Position and movement metrics
+            ros_metrics.total_distance_traveled = metrics.total_distance_traveled;
+        }
+
+        static void toMsg(const ClusterMetrics& metrics, ClusterMetricsMsg& ros_metrics)
+        {
+            // Cluster data
+            ros_metrics.curr_center_x = metrics.curr_center_x;
+            ros_metrics.curr_center_y = metrics.curr_center_y;
+            ros_metrics.curr_center_z = metrics.curr_center_z;
+            ros_metrics.curr_radius = metrics.curr_radius;
+
+            // Position and movement metrics
+            ros_metrics.total_distance_traveled = metrics.total_distance_traveled;
+        }
+
+        static void toMsg(const GlobalMetrics& metrics, GlobalMetricsMsg& ros_metrics)
+        {
+            // Mission metrics
+            ros_metrics.mission_time = metrics.mission_time;
+        }
+
+        // ════════════════════════════════════════════════════════════════════════════
         // OTHER: Other utilities
         // ════════════════════════════════════════════════════════════════════════════
 
-        static std::string replacePlaceholder(const std::string& topic_name, const std::string& placeholder, const std::string& value)
+        static std::string replace(const std::string& topic_name, const std::string& placeholder, const std::string& value)
         {
             return std::regex_replace(topic_name, std::regex(placeholder), value);
         }
@@ -133,7 +231,7 @@ namespace flychams::core
         {
             HeaderMsg header;
             header.frame_id = frame_id;
-            header.stamp = getTimeNow(node);
+            header.stamp = now(node);
             return header;
         }
 

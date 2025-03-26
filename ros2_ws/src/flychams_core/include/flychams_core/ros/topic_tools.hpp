@@ -1,9 +1,7 @@
 #pragma once
 
-// Core includes
-#include "flychams_core/types/core_types.hpp"
-#include "flychams_core/types/ros_types.hpp"
-#include "flychams_core/utils/ros_utils.hpp"
+// Tools includes
+#include "flychams_core/config/config_tools.hpp"
 
 namespace flychams::core
 {
@@ -20,6 +18,49 @@ namespace flychams::core
      */
     class TopicTools
     {
+    public: // Constructor/Destructor
+        TopicTools(NodePtr node, const ConfigTools::SharedPtr& config_tools)
+            : node_(node), config_tools_(config_tools)
+        {
+            // Get topic config
+            const auto& topic_config = config_tools_->getTopics();
+
+            // Get global topics
+            global_topics_.registration = topic_config.registration;
+            global_topics_.metrics = topic_config.global_metrics;
+
+            // Get agent topics
+            agent_topics_.global_odom_pattern = topic_config.agent_global_odom;
+            agent_topics_.position_goal_pattern = topic_config.agent_position_goal;
+            agent_topics_.tracking_info_pattern = topic_config.agent_tracking_info;
+            agent_topics_.tracking_goal_pattern = topic_config.agent_tracking_goal;
+            agent_topics_.metrics_pattern = topic_config.agent_metrics;
+            agent_topics_.markers_pattern = topic_config.agent_markers;
+
+            // Get target topics
+            target_topics_.info_pattern = topic_config.target_info;
+            target_topics_.metrics_pattern = topic_config.target_metrics;
+            target_topics_.markers_pattern = topic_config.target_markers;
+
+            // Get cluster topics
+            cluster_topics_.info_pattern = topic_config.cluster_info;
+            cluster_topics_.metrics_pattern = topic_config.cluster_metrics;
+            cluster_topics_.markers_pattern = topic_config.cluster_markers;
+        }
+
+        ~TopicTools()
+        {
+            shutdown();
+        }
+
+        void shutdown()
+        {
+            // Destroy config tools
+            config_tools_.reset();
+            // Destroy node
+            node_.reset();
+        }
+
     public: // Types
         using SharedPtr = std::shared_ptr<TopicTools>;
         // Global topics
@@ -63,43 +104,8 @@ namespace flychams::core
         // ROS components
         NodePtr node_;
 
-    public: // Constructor/Destructor
-        TopicTools(NodePtr node)
-            : node_(node)
-        {
-            // Get global topics
-            global_topics_.registration = RosUtils::getParameter<std::string>(node_, "global_topics.registration");
-            global_topics_.metrics = RosUtils::getParameter<std::string>(node_, "global_topics.metrics");
-
-            // Get agent topics
-            agent_topics_.global_odom_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.global_odom");
-            agent_topics_.position_goal_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.position_goal");
-            agent_topics_.tracking_info_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.tracking_info");
-            agent_topics_.tracking_goal_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.tracking_goal");
-            agent_topics_.metrics_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.metrics");
-            agent_topics_.markers_pattern = RosUtils::getParameter<std::string>(node_, "agent_topics.markers");
-
-            // Get target topics
-            target_topics_.info_pattern = RosUtils::getParameter<std::string>(node_, "target_topics.info");
-            target_topics_.metrics_pattern = RosUtils::getParameter<std::string>(node_, "target_topics.metrics");
-            target_topics_.markers_pattern = RosUtils::getParameter<std::string>(node_, "target_topics.markers");
-
-            // Get cluster topics
-            cluster_topics_.info_pattern = RosUtils::getParameter<std::string>(node_, "cluster_topics.info");
-            cluster_topics_.metrics_pattern = RosUtils::getParameter<std::string>(node_, "cluster_topics.metrics");
-            cluster_topics_.markers_pattern = RosUtils::getParameter<std::string>(node_, "cluster_topics.markers");
-        }
-
-        ~TopicTools()
-        {
-            shutdown();
-        }
-
-        void shutdown()
-        {
-            // Destroy node
-            node_.reset();
-        }
+        // Config tools
+        ConfigTools::SharedPtr config_tools_;
 
     public: // Topic getters
         // Global topics
@@ -114,53 +120,53 @@ namespace flychams::core
         // Agent topics
         std::string getAgentOdomTopic(const ID& agent_id)
         {
-            return RosUtils::replacePlaceholder(agent_topics_.global_odom_pattern, "AGENTID", agent_id);
+            return RosUtils::replace(agent_topics_.global_odom_pattern, "AGENTID", agent_id);
         }
         std::string getAgentPositionGoalTopic(const ID& agent_id)
         {
-            return RosUtils::replacePlaceholder(agent_topics_.position_goal_pattern, "AGENTID", agent_id);
+            return RosUtils::replace(agent_topics_.position_goal_pattern, "AGENTID", agent_id);
         }
         std::string getAgentTrackingInfoTopic(const ID& agent_id)
         {
-            return RosUtils::replacePlaceholder(agent_topics_.tracking_info_pattern, "AGENTID", agent_id);
+            return RosUtils::replace(agent_topics_.tracking_info_pattern, "AGENTID", agent_id);
         }
         std::string getAgentTrackingGoalTopic(const ID& agent_id)
         {
-            return RosUtils::replacePlaceholder(agent_topics_.tracking_goal_pattern, "AGENTID", agent_id);
+            return RosUtils::replace(agent_topics_.tracking_goal_pattern, "AGENTID", agent_id);
         }
         std::string getAgentMetricsTopic(const ID& agent_id)
         {
-            return RosUtils::replacePlaceholder(agent_topics_.metrics_pattern, "AGENTID", agent_id);
+            return RosUtils::replace(agent_topics_.metrics_pattern, "AGENTID", agent_id);
         }
         std::string getAgentMarkersTopic(const ID& agent_id)
         {
-            return RosUtils::replacePlaceholder(agent_topics_.markers_pattern, "AGENTID", agent_id);
+            return RosUtils::replace(agent_topics_.markers_pattern, "AGENTID", agent_id);
         }
         // Target topics
         std::string getTargetInfoTopic(const ID& target_id)
         {
-            return RosUtils::replacePlaceholder(target_topics_.info_pattern, "TARGETID", target_id);
+            return RosUtils::replace(target_topics_.info_pattern, "TARGETID", target_id);
         }
         std::string getTargetMetricsTopic(const ID& target_id)
         {
-            return RosUtils::replacePlaceholder(target_topics_.metrics_pattern, "TARGETID", target_id);
+            return RosUtils::replace(target_topics_.metrics_pattern, "TARGETID", target_id);
         }
         std::string getTargetMarkersTopic(const ID& target_id)
         {
-            return RosUtils::replacePlaceholder(target_topics_.markers_pattern, "TARGETID", target_id);
+            return RosUtils::replace(target_topics_.markers_pattern, "TARGETID", target_id);
         }
         // Cluster topics
         std::string getClusterInfoTopic(const ID& cluster_id)
         {
-            return RosUtils::replacePlaceholder(cluster_topics_.info_pattern, "CLUSTERID", cluster_id);
+            return RosUtils::replace(cluster_topics_.info_pattern, "CLUSTERID", cluster_id);
         }
         std::string getClusterMetricsTopic(const ID& cluster_id)
         {
-            return RosUtils::replacePlaceholder(cluster_topics_.metrics_pattern, "CLUSTERID", cluster_id);
+            return RosUtils::replace(cluster_topics_.metrics_pattern, "CLUSTERID", cluster_id);
         }
         std::string getClusterMarkersTopic(const ID& cluster_id)
         {
-            return RosUtils::replacePlaceholder(cluster_topics_.markers_pattern, "CLUSTERID", cluster_id);
+            return RosUtils::replace(cluster_topics_.markers_pattern, "CLUSTERID", cluster_id);
         }
 
     public: // Topic creation utilities

@@ -50,7 +50,7 @@ private: // Element management
     {
         // Create agent positioning system
         agent_positionings_.insert({ agent_id,
-        std::make_shared<AgentPositioning>(agent_id, node_, config_tools_, ext_tools_, topic_tools_, tf_tools_) });
+        std::make_shared<AgentPositioning>(agent_id, node_, config_tools_, framework_tools_, topic_tools_, transform_tools_) });
     }
 
     void onRemoveAgent(const ID& agent_id) override

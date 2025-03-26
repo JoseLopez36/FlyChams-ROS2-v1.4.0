@@ -72,8 +72,8 @@ namespace flychams::control
 		std::lock_guard<std::mutex> lock(mutex_);
 
 		// Set central camera goals
-		ext_tools_->setGimbalOrientations(agent_id_, { central_head_id_ }, { central_head_orientation_ });
-		ext_tools_->setCameraFovs(agent_id_, { central_head_id_ }, { central_head_fov_ });
+		framework_tools_->setGimbalOrientations(agent_id_, { central_head_id_ }, { central_head_orientation_ });
+		framework_tools_->setCameraFovs(agent_id_, { central_head_id_ }, { central_head_fov_ });
 
 		// Check if tracking goal is set
 		if (!has_goal_)
@@ -82,8 +82,8 @@ namespace flychams::control
 		// Command tracking heads to move to given angles and fovs
 		if (goal_.head_ids.size() >= 1)
 		{
-			ext_tools_->setGimbalOrientations(agent_id_, goal_.head_ids, goal_.orientations);
-			ext_tools_->setCameraFovs(agent_id_, goal_.head_ids, goal_.fovs);
+			framework_tools_->setGimbalOrientations(agent_id_, goal_.head_ids, goal_.orientations);
+			framework_tools_->setCameraFovs(agent_id_, goal_.head_ids, goal_.fovs);
 		}
 	}
 

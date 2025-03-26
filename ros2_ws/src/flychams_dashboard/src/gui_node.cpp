@@ -73,7 +73,7 @@ private: // Agent management
     {
         std::lock_guard<std::mutex> lock(mutex_);
         // Create and add GUI controller
-        auto controller = std::make_shared<GuiController>(agent_id, node_, config_tools_, ext_tools_, topic_tools_, tf_tools_);
+        auto controller = std::make_shared<GuiController>(agent_id, node_, config_tools_, framework_tools_, topic_tools_, transform_tools_);
         gui_controllers_.insert({ agent_id, controller });
         // Select agent if no agent is selected
         if (selected_agent_id_ == "NONE")

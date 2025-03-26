@@ -33,11 +33,8 @@ include_directories(
 
 # Declare the library
 add_library(${PROJECT_NAME}
-  src/config/config_parser.cpp
-  src/tools/external_tools.cpp
-  src/tools/airsim_tools.cpp
-  src/base/base_registrator_node.cpp
-  src/base/base_discoverer_node.cpp
+  src/framework/framework_tools.cpp
+  src/framework/airsim_tools.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC

@@ -28,8 +28,8 @@
     },
     "Wind": {
         "X": 5.0,
-        "Y": 3.5,
-        "Z": 0.800000011920929
+        "Y": -3.5,
+        "Z": -0.800000011920929
     },
     "CameraDefaults": {
         "CaptureSettings": [
@@ -47,9 +47,15 @@
         ]
     },
     "Vehicles": {
-        "AGENT05": {
-            "VehicleType": "PX4Multirotor",
+        "AGENT02": {
             "PawnPath": "FlyChamsHexacopter",
+            "X": 0.0,
+            "Y": -0.0,
+            "Z": -0.0,
+            "Roll": 0.0,
+            "Pitch": -0.0,
+            "Yaw": -0.0,
+            "VehicleType": "PX4Multirotor",
             "Model": "FlyChamsHexacopter",
             "UseSerial": false,
             "LockStep": true,
@@ -59,12 +65,6 @@
             "ControlPortLocal": 14540,
             "ControlPortRemote": 14580,
             "LocalHostIp": "172.17.0.1",
-            "X": 0.0,
-            "Y": -0.0,
-            "Z": -0.0,
-            "Roll": 0.0,
-            "Pitch": -0.0,
-            "Yaw": -0.0,
             "Parameters": {
                 "NAV_RCL_ACT": 0,
                 "NAV_DLL_ACT": 0,
@@ -103,7 +103,7 @@
                 }
             },
             "Cameras": {
-                "HEAD13": {
+                "HEAD06": {
                     "CaptureSettings": [
                         {
                             "ImageType": 0,
@@ -124,15 +124,9 @@
                         "YawMax": 320.0,
                         "PitchMax": 130.0,
                         "RollMax": 20.0,
-                        "YawSpeed": 0.08224670588970184,
-                        "PitchSpeed": 0.054831139743328094,
-                        "RollSpeed": 0.054831139743328094,
-                        "YawRiseTime": 0.05999999865889549,
-                        "PitchRiseTime": 0.05000000074505806,
-                        "RollRiseTime": 0.10000000149011612,
-                        "YawDamping": 0.949999988079071,
-                        "PitchDamping": 0.9900000095367432,
-                        "RollDamping": 0.9700000286102295,
+                        "YawSpeed": 270.0,
+                        "PitchSpeed": 180.0,
+                        "RollSpeed": 180.0,
                         "Roll": 0.0,
                         "Pitch": 0.0,
                         "Yaw": -90.0
@@ -162,30 +156,14 @@
                     ],
                     "X": 0.0,
                     "Y": -0.0,
-                    "Z": 0.05000000074505806,
+                    "Z": 0.15000000596046448,
                     "Roll": 0.0,
                     "Pitch": -90.0,
                     "Yaw": 0.0,
                     "EnableGimbal": true,
                     "CameraVisible": true
                 },
-                "CAM_AGENT05_00": {
-                    "X": -1.5,
-                    "Y": 1.5,
-                    "Z": -1.0,
-                    "Roll": 0.0,
-                    "Pitch": -33.33000183105469,
-                    "Yaw": -45.0
-                },
-                "CAM_AGENT05_01": {
-                    "X": -0.699999988079071,
-                    "Y": 0.699999988079071,
-                    "Z": 0.5,
-                    "Roll": 0.0,
-                    "Pitch": -0.0,
-                    "Yaw": -45.0
-                },
-                "CAM_SCENE": {
+                "SCENARIOCAM": {
                     "X": -150.0,
                     "Y": 150.0,
                     "Z": -150.0,
@@ -193,6 +171,22 @@
                     "Pitch": -25.0,
                     "Yaw": -45.0,
                     "External": true
+                },
+                "AGENTCAM": {
+                    "X": -1.5,
+                    "Y": -1.5,
+                    "Z": -1.0,
+                    "Roll": 0.0,
+                    "Pitch": -33.33000183105469,
+                    "Yaw": -45.0
+                },
+                "PAYLOADCAM": {
+                    "X": -0.699999988079071,
+                    "Y": 0.699999988079071,
+                    "Z": 0.5,
+                    "Roll": 0.0,
+                    "Pitch": -0.0,
+                    "Yaw": -45.0
                 }
             }
         }

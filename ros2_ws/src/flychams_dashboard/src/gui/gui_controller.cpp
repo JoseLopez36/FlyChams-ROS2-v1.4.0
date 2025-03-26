@@ -26,7 +26,7 @@ namespace flychams::dashboard
 
         // Replace fixed camera placeholders with agent ID
         for (auto& camera_id : fixed_camera_ids_)
-            camera_id = RosUtils::replacePlaceholder(camera_id, "AGENTID", agent_id_);
+            camera_id = RosUtils::replace(camera_id, "AGENTID", agent_id_);
 
         // Get central camera ID
         central_camera_id_ = config_tools_->getAgent(agent_id_)->central_head_id;
@@ -127,13 +127,13 @@ namespace flychams::dashboard
             fixed_crop_w_cmds[i] = 0;
             fixed_crop_h_cmds[i] = 0;
         }
-        ext_tools_->setWindowImageGroup(fixed_window_ids_, fixed_vehicle_id_cmds, fixed_camera_id_cmds, fixed_crop_x_cmds, fixed_crop_y_cmds, fixed_crop_w_cmds, fixed_crop_h_cmds);
+        framework_tools_->setWindowImageGroup(fixed_window_ids_, fixed_vehicle_id_cmds, fixed_camera_id_cmds, fixed_crop_x_cmds, fixed_crop_y_cmds, fixed_crop_w_cmds, fixed_crop_h_cmds);
     }
 
     void GuiController::setCentralWindow()
     {
         // Set central window parameters
-        ext_tools_->setWindowImageGroup({ central_window_id_ }, { agent_id_ }, { central_camera_id_ }, { 0 }, { 0 }, { 0 }, { 0 });
+        framework_tools_->setWindowImageGroup({ central_window_id_ }, { agent_id_ }, { central_camera_id_ }, { 0 }, { 0 }, { 0 }, { 0 });
     }
 
     void GuiController::setTrackingWindows()
@@ -211,16 +211,16 @@ namespace flychams::dashboard
         }
 
         // Set tracking view windows
-        ext_tools_->setWindowImageGroup(tracking_window_ids_, tracking_vehicle_id_cmds_, tracking_camera_id_cmds_, tracking_crop_x_cmds_, tracking_crop_y_cmds_, tracking_crop_w_cmds_, tracking_crop_h_cmds_);
+        framework_tools_->setWindowImageGroup(tracking_window_ids_, tracking_vehicle_id_cmds_, tracking_camera_id_cmds_, tracking_crop_x_cmds_, tracking_crop_y_cmds_, tracking_crop_w_cmds_, tracking_crop_h_cmds_);
     }
 
     void GuiController::drawOnCentralWindow()
     {
         // Draw rectangles on central window
-        ext_tools_->setWindowRectangles(central_window_id_, dig_rect_corners_, dig_rect_sizes_, dig_rect_color_, dig_rect_thickness_);
+        framework_tools_->setWindowRectangles(central_window_id_, dig_rect_corners_, dig_rect_sizes_, dig_rect_color_, dig_rect_thickness_);
 
         // Draw strings on central window
-        ext_tools_->setWindowStrings(central_window_id_, dig_strings_, dig_string_pos_, dig_string_color_, dig_string_scale_);
+        framework_tools_->setWindowStrings(central_window_id_, dig_strings_, dig_string_pos_, dig_string_color_, dig_string_scale_);
     }
 
 } // namespace flychams::dashboard

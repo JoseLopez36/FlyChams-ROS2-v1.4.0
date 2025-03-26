@@ -12,21 +12,45 @@ namespace flychams::bringup
 	{
 		// Iterate over all agents in the configuration
 		clusters_.clear();
-		for (const auto& agent : config_tools_->getAgents())
+		int cluster_index = 0;
+		for (const auto& [agent_id, agent_ptr] : config_tools_->getAgentTeam())
 		{
-			// Extract maximum number of assignments per agent
-			const int max_assign = agent.second->max_assignments;
+			// Get tracking config
+			const auto& tracking_config = config_tools_->getTracking(agent_id);
+			const auto& mode = tracking_config.mode;
+
+			// Get maximum number of assignments per agent based on tracking mode
+			int max_assign = 0;
+			switch (mode)
+			{
+			case TrackingMode::MultiCameraTracking:
+				max_assign = static_cast<int>(config_tools_->getTrackingHeads(agent_id).size());
+				break;
+
+			case TrackingMode::MultiWindowTracking:
+				max_assign = tracking_config.num_windows;
+				break;
+			}
+
+			if (max_assign == 0)
+			{
+				RCLCPP_ERROR(node_->get_logger(), "No assignments found for agent %s. Skipping cluster registration.", agent_id.c_str());
+				continue;
+			}
 
 			// Iterate over all assignments and register clusters
 			for (int i = 0; i < max_assign; i++)
 			{
 				// Generate cluster ID
 				std::stringstream ss;
-				ss << "CLUSTER" << std::setw(2) << std::setfill('0') << i;
+				ss << "CLUSTER" << std::setw(2) << std::setfill('0') << cluster_index;
 				const ID cluster_id = ss.str();
 
 				// Add clusters to list
 				clusters_.push_back(cluster_id);
+
+				// Increment cluster index
+				cluster_index++;
 			}
 		}
 	}
@@ -46,15 +70,14 @@ namespace flychams::bringup
 		// Get spawn parameters
 		std::vector<PointMsg> centers;
 		std::vector<float> radii;
-		bool draw_world_markers = config_tools_->getSimulation()->draw_world_markers;
 		std::vector<ColorMsg> highlight_colors;
-		int i = 0;
+		int cluster_index = 0;
 		for (const auto& cluster_id : clusters_)
 		{
 			// Position
 			PointMsg center;
-			center.x = -500.0f - 10.0f * i; // Position away from origin
-			center.y = -500.0f - 10.0f * i;
+			center.x = -500.0f - 10.0f * cluster_index; // Position away from origin
+			center.y = -500.0f - 10.0f * cluster_index;
 			center.z = 10.0f;
 			centers.push_back(center);
 
@@ -69,12 +92,12 @@ namespace flychams::bringup
 			highlight_color.a = 0.005f;
 			highlight_colors.push_back(highlight_color);
 
-			i++;
+			// Increment cluster index
+			cluster_index++;
 		}
 
 		// Add targets to simulation
-		if (draw_world_markers)
-			ext_tools_->addClusterGroup(clusters_, centers, radii, true, highlight_colors);
+		framework_tools_->addClusterGroup(clusters_, centers, radii, true, highlight_colors);
 	}
 
 } // namespace flychams::bringup

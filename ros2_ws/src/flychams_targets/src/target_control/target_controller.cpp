@@ -27,7 +27,7 @@ namespace flychams::targets
         reverse_ = false;
 
         // Initialize target info
-        info_.header = RosUtils::createHeader(node_, tf_tools_->getGlobalFrame());
+        info_.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
         info_.position.x = trajectory_[0].x;
         info_.position.y = trajectory_[0].y;
         info_.position.z = trajectory_[0].z;

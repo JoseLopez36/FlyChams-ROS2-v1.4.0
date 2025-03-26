@@ -1,16 +1,14 @@
 #pragma once
 
-// Core includes
-#include "flychams_core/types/core_types.hpp"
-#include "flychams_core/types/ros_types.hpp"
-#include "flychams_core/utils/ros_utils.hpp"
+// Tools includes
+#include "flychams_core/config/config_tools.hpp"
 
 namespace flychams::core
 {
     /**
      * ════════════════════════════════════════════════════════════════
-     * @brief External Communication Manager for handling communication
-     * with the external framework
+     * @brief Framework interface for handling communication
+     * with external simulation frameworks (e.g. AirSim)
      *
      * @details
      * This class provides utilities for managing the communication
@@ -20,14 +18,19 @@ namespace flychams::core
      * @date 2025-02-28
      * ════════════════════════════════════════════════════════════════
      */
-    class ExternalTools
+    class FrameworkTools
     {
     public: // Constructors/Destructors
-        virtual ~ExternalTools() = default;
+        FrameworkTools(NodePtr node, const ConfigTools::SharedPtr& config_tools)
+            : node_(node), config_tools_(config_tools)
+        {
+            // Nothing to do
+        }
+        virtual ~FrameworkTools() = default;
         virtual void shutdown() = 0;
 
     public: // Types
-        using SharedPtr = std::shared_ptr<ExternalTools>;
+        using SharedPtr = std::shared_ptr<FrameworkTools>;
 
     public: // Vehicle adders (override)
         virtual void addVehicle(const ID& vehicle_id) = 0;
@@ -55,14 +58,21 @@ namespace flychams::core
         virtual void setWindowStrings(const ID& window_id, const std::vector<std::string>& strings, const std::vector<PointMsg>& positions, const ColorMsg& color, const float& scale) = 0;
 
     public: // Tracking control methods (override)
-        virtual bool addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors, const RegionType& region) = 0;
+        virtual bool addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors) = 0;
         virtual bool addClusterGroup(const IDs& cluster_ids, const std::vector<PointMsg>& centers, const std::vector<float>& radii, const bool& highlight, const std::vector<ColorMsg>& highlight_colors) = 0;
         virtual bool removeAllTargets() = 0;
         virtual bool removeAllClusters() = 0;
         virtual void updateTargetGroup(const IDs& target_ids, const std::vector<PointMsg>& positions) = 0;
         virtual void updateClusterGroup(const IDs& cluster_ids, const std::vector<PointMsg>& centers, const std::vector<float>& radii) = 0;
+
+    protected: // Data
+        // ROS components
+        NodePtr node_;
+
+        // Config tools
+        ConfigTools::SharedPtr config_tools_;
     };
 
-    ExternalTools::SharedPtr externalToolsFactory(NodePtr node, const Framework& framework);
+    FrameworkTools::SharedPtr createFrameworkTools(NodePtr node, const ConfigTools::SharedPtr& config_tools);
 
 } // namespace flychams::core

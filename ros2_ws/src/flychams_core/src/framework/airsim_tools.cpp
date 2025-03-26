@@ -1,7 +1,5 @@
-#include "flychams_core/tools/airsim_tools.hpp"
+#include "flychams_core/framework/airsim_tools.hpp"
 
-using namespace std::chrono_literals;
-using namespace std::placeholders;
 using namespace airsim_interfaces::msg;
 using namespace airsim_interfaces::srv;
 
@@ -11,8 +9,8 @@ namespace flychams::core
     // CONSTRUCTOR: Constructor and destructor
     // ════════════════════════════════════════════════════════════════════════════
 
-    AirsimTools::AirsimTools(NodePtr node)
-        : node_(node)
+    AirsimTools::AirsimTools(NodePtr node, const ConfigTools::SharedPtr& config_tools)
+        : FrameworkTools(node, config_tools)
     {
         // Initialize ROS components
         // Global commands
@@ -74,7 +72,9 @@ namespace flychams::core
         window_string_cmd_pub_.reset();
         update_target_cmd_group_pub_.reset();
         update_cluster_cmd_group_pub_.reset();
-        // Destroy node
+        // Destroy config tools
+        config_tools_.reset();
+        // Destroy node pointer
         node_.reset();
     }
 
@@ -110,7 +110,7 @@ namespace flychams::core
         auto request = std::make_shared<Reset::Request>();
 
         // Send request and wait for response
-        return RosUtils::sendRequestSync<Reset>(node_, reset_client_, request, 1000);
+        return RosUtils::sendRequest<Reset>(node_, reset_client_, request, 1000);
     }
 
     bool AirsimTools::runSimulation()
@@ -119,7 +119,7 @@ namespace flychams::core
         auto request = std::make_shared<Run::Request>();
 
         // Send request and wait for response
-        return RosUtils::sendRequestSync<Run>(node_, run_client_, request, 1000);
+        return RosUtils::sendRequest<Run>(node_, run_client_, request, 1000);
     }
 
     bool AirsimTools::pauseSimulation()
@@ -128,7 +128,7 @@ namespace flychams::core
         auto request = std::make_shared<Pause::Request>();
 
         // Send request and wait for response
-        return RosUtils::sendRequestSync<Pause>(node_, pause_client_, request, 1000);
+        return RosUtils::sendRequest<Pause>(node_, pause_client_, request, 1000);
     }
 
     // ════════════════════════════════════════════════════════════════════════════
@@ -143,7 +143,7 @@ namespace flychams::core
         request->enable = enable;
 
         // Send request and wait for response
-        return RosUtils::sendRequestSync<EnableControl>(node_, enable_control_client_, request, 1000);
+        return RosUtils::sendRequest<EnableControl>(node_, enable_control_client_, request, 1000);
     }
 
     bool AirsimTools::armDisarm(const ID& vehicle_id, const bool& arm)
@@ -154,7 +154,7 @@ namespace flychams::core
         request->arm = arm;
 
         // Send request and wait for response
-        return RosUtils::sendRequestSync<ArmDisarm>(node_, arm_disarm_client_, request, 1000);
+        return RosUtils::sendRequest<ArmDisarm>(node_, arm_disarm_client_, request, 1000);
     }
 
     bool AirsimTools::takeoff(const ID& vehicle_id)
@@ -164,7 +164,7 @@ namespace flychams::core
         request->vehicle_name = vehicle_id;
 
         // Send request and wait for response
-        return RosUtils::sendRequestSync<Takeoff>(node_, takeoff_client_, request, 1000);
+        return RosUtils::sendRequest<Takeoff>(node_, takeoff_client_, request, 1000);
     }
 
     bool AirsimTools::land(const ID& vehicle_id)
@@ -174,7 +174,7 @@ namespace flychams::core
         request->vehicle_name = vehicle_id;
 
         // Send request and wait for response
-        return RosUtils::sendRequestSync<Land>(node_, land_client_, request, 1000);
+        return RosUtils::sendRequest<Land>(node_, land_client_, request, 1000);
     }
 
     bool AirsimTools::hover(const ID& vehicle_id)
@@ -184,7 +184,7 @@ namespace flychams::core
         request->vehicle_name = vehicle_id;
 
         // Send request and wait for response
-        return RosUtils::sendRequestSync<Hover>(node_, hover_client_, request, 1000);
+        return RosUtils::sendRequest<Hover>(node_, hover_client_, request, 1000);
     }
 
     // ════════════════════════════════════════════════════════════════════════════
@@ -328,7 +328,7 @@ namespace flychams::core
     // TRACKING CONTROL: Service-based control methods
     // ════════════════════════════════════════════════════════════════════════════
 
-    bool AirsimTools::addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors, const RegionType& region)
+    bool AirsimTools::addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors)
     {
         // Create request
         auto request = std::make_shared<AddTargetGroup::Request>();
@@ -359,7 +359,7 @@ namespace flychams::core
         }
 
         // Send request and wait for response
-        return RosUtils::sendRequestSync<AddTargetGroup>(node_, add_target_group_client_, request, 100000);
+        return RosUtils::sendRequest<AddTargetGroup>(node_, add_target_group_client_, request, 100000);
     }
 
     bool AirsimTools::addClusterGroup(const IDs& cluster_ids, const std::vector<PointMsg>& centers, const std::vector<float>& radii, const bool& highlight, const std::vector<ColorMsg>& highlight_colors)
@@ -373,7 +373,7 @@ namespace flychams::core
         request->highlight_color_rgba = highlight_colors;
 
         // Send request and wait for response
-        return RosUtils::sendRequestSync<AddClusterGroup>(node_, add_cluster_group_client_, request, 100000);
+        return RosUtils::sendRequest<AddClusterGroup>(node_, add_cluster_group_client_, request, 100000);
     }
 
     bool AirsimTools::removeAllTargets()
@@ -382,7 +382,7 @@ namespace flychams::core
         auto request = std::make_shared<RemoveAllTargets::Request>();
 
         // Send request and wait for response
-        return RosUtils::sendRequestSync<RemoveAllTargets>(node_, remove_all_targets_client_, request, 100000);
+        return RosUtils::sendRequest<RemoveAllTargets>(node_, remove_all_targets_client_, request, 100000);
     }
 
     bool AirsimTools::removeAllClusters()
@@ -391,7 +391,7 @@ namespace flychams::core
         auto request = std::make_shared<RemoveAllClusters::Request>();
 
         // Send request and wait for response
-        return RosUtils::sendRequestSync<RemoveAllClusters>(node_, remove_all_clusters_client_, request, 100000);
+        return RosUtils::sendRequest<RemoveAllClusters>(node_, remove_all_clusters_client_, request, 100000);
     }
 
     // ════════════════════════════════════════════════════════════════════════════

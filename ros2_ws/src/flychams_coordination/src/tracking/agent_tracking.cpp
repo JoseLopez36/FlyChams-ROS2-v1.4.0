@@ -31,7 +31,7 @@ namespace flychams::coordination
 
         // Prepare tracking goal message
         int n = tracking_params_.n;
-        goal_.header = RosUtils::createHeader(node_, tf_tools_->getGlobalFrame());
+        goal_.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
         switch (tracking_params_.mode)
         {
         case TrackingMode::MultiCameraTracking:
@@ -101,14 +101,9 @@ namespace flychams::coordination
 
     void AgentTracking::odomCallback(const core::OdometryMsg::SharedPtr msg)
     {
-        // Transform to world frame
-        const std::string& source_frame = msg->header.frame_id;
-        const std::string& child_frame = msg->child_frame_id;
-        const std::string& target_frame = tf_tools_->getGlobalFrame();
-        const PointMsg& curr_pos_msg = tf_tools_->transformPointMsg(msg->pose.pose.position, source_frame, target_frame);
-        // Convert to Eigen
+        // Get agent position
         std::lock_guard<std::mutex> lock(mutex_);
-        curr_pos_ = MsgConversions::fromMsg(curr_pos_msg);
+        curr_pos_ = MsgConversions::fromMsg(msg->pose.pose.position);
         has_odom_ = true;
     }
 
@@ -174,7 +169,7 @@ namespace flychams::coordination
             const auto& r = tab_r(i);
 
             // First, get the transform between world and optical frame
-            const TransformMsg& wTc = tf_tools_->getTransformBetweenFrames(tf_tools_->getGlobalFrame(), tf_tools_->getCameraOpticalFrame(agent_id_, camera_params.id));
+            const TransformMsg& wTc = transform_tools_->getTransformBetweenFrames(transform_tools_->getGlobalFrame(), transform_tools_->getCameraOpticalFrame(agent_id_, camera_params.id));
             const Vector3r& wPc = MsgConversions::fromMsg(wTc.translation);
             const Matrix3r& wRc = MathUtils::quaternionToRotationMatrix(MsgConversions::fromMsg(wTc.rotation));
 
@@ -205,9 +200,9 @@ namespace flychams::coordination
         const auto& camera_params = tracking_params_.window_params[0].camera_params;
 
         // Get the transform between world and optical frame
-        const std::string& world_frame = tf_tools_->getGlobalFrame();
-        const std::string& optical_frame = tf_tools_->getCameraOpticalFrame(agent_id_, central_head_id_);
-        const TransformMsg& world_to_optical = tf_tools_->getTransformBetweenFrames(world_frame, optical_frame);
+        const std::string& world_frame = transform_tools_->getGlobalFrame();
+        const std::string& optical_frame = transform_tools_->getCameraOpticalFrame(agent_id_, central_head_id_);
+        const TransformMsg& world_to_optical = transform_tools_->getTransform(world_frame, optical_frame);
         const Matrix4r& wTc = MsgConversions::fromMsg(world_to_optical);
         const Vector3r& wPc = wTc.block<3, 1>(0, 3);
 

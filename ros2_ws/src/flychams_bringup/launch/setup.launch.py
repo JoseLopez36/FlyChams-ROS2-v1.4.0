@@ -34,8 +34,7 @@ def generate_launch_description():
     # Generate launch description
     ld = []
 
-    # ============= AIRSIM WRAPPER NODES =============
-    # Conditionally add AirSim node
+    # Add AirSim Wrapper node
     ld.append(
         Node(
             package='airsim_wrapper',
@@ -57,8 +56,7 @@ def generate_launch_description():
         )
     )
 
-    # ============= REGISTRATOR NODES =============
-    # Conditionally add Registrator node
+    # Add Registrator node
     ld.append(
         Node(
             package='flychams_bringup',

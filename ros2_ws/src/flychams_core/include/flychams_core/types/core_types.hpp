@@ -64,9 +64,9 @@ namespace flychams::core
     };
     inline TrackingMode trackingModeFromString(const std::string& tracking_mode)
     {
-        if (tracking_mode == "MultiCameraTracking") return TrackingMode::MultiCameraTracking;
-        if (tracking_mode == "MultiWindowTracking") return TrackingMode::MultiWindowTracking;
-        if (tracking_mode == "PriorityHybridTracking") return TrackingMode::PriorityHybridTracking;
+        if (tracking_mode == "MultiCamera") return TrackingMode::MultiCameraTracking;
+        if (tracking_mode == "MultiWindow") return TrackingMode::MultiWindowTracking;
+        if (tracking_mode == "PriorityHybrid") return TrackingMode::PriorityHybridTracking;
         return TrackingMode::None;
     }
 
@@ -304,61 +304,6 @@ namespace flychams::core
     using Quaternionr = Eigen::Quaternionf;
 
     // ════════════════════════════════════════════════════════════════
-    // GEOMETRY TYPES: Geometry-related configuration types
-    // ════════════════════════════════════════════════════════════════
-
-    /**
-     * Generic pose (position + orientation)
-     */
-    struct Pose
-    {
-        Vector3r position;
-        Quaternionr orientation;
-
-        /**
-         * @brief Validate the pose
-         * @return true if the pose is valid, false otherwise
-         */
-        bool isValid() const
-        {
-            return position.allFinite();
-        }
-    };
-
-    /**
-     * Generic twist (linear + angular)
-     */
-    struct Twist
-    {
-        Vector3r linear;     // Linear velocity (vx, vy, vz)
-        Vector3r angular;    // Angular velocity (wx, wy, wz)
-
-        /**
-         * @brief Validate the twist
-         * @return true if the twist is valid, false otherwise
-         */
-        bool isValid() const
-        {
-            return linear.allFinite() && angular.allFinite();
-        }
-    };
-
-    /**
-     * Generic odometry (position + orientation + linear velocity + angular velocity)
-     */
-    struct Odometry
-    {
-        Pose pose;
-        Twist twist;
-
-        /**
-         * @brief Validate the odometry
-         * @return true if the odometry is valid, false otherwise
-         */
-        bool isValid() const { return pose.isValid() && twist.isValid(); }
-    };
-
-    // ════════════════════════════════════════════════════════════════
     // TRACKING TYPES: Tracking-related types used throughout the project
     // ════════════════════════════════════════════════════════════════
 
@@ -402,9 +347,9 @@ namespace flychams::core
         // Scene resolution (pix)
         int scene_width;
         int scene_height;
-        // View resolution (pix)
-        int view_width;
-        int view_height;
+        // Tracking resolution (pix)
+        int tracking_width;
+        int tracking_height;
     };
 
     /**
@@ -566,6 +511,10 @@ namespace flychams::core
         uint32_t year;
         uint32_t month;
         uint32_t day;
+    };
+
+    struct HourTime
+    {
         uint32_t hours;
         uint32_t minutes;
         uint32_t seconds;
@@ -578,9 +527,42 @@ namespace flychams::core
         double altitude;
     };
 
+    struct Barometer
+    {
+        float pressure_factor_sigma;    // Pressure factor sigma
+        float uncorrelated_noise_sigma; // Uncorrelated noise sigma
+    };
+
+    struct Imu
+    {
+        float gyro_noise;        // Angular random walk
+        float accel_noise;       // Velocity random walk
+    };
+
+    struct Gps
+    {
+        float eph_initial;       // Initial horizontal position accuracy
+        float epv_initial;       // Initial vertical position accuracy
+        float eph_final;         // Final horizontal position accuracy
+        float epv_final;         // Final vertical position accuracy
+    };
+
+    struct Magnetometer
+    {
+        float noise_sigma;       // Sensor noise sigma
+        float scale_factor;      // Scale factor for readings
+        float noise_bias;        // Noise bias
+    };
+
+    struct Link
+    {
+        float min_angle;
+        float max_angle;
+        float max_speed;
+    };
+
     struct LensDistortion
     {
-        bool enabled;
         float strength;
         float area_radius;
         float area_falloff;
@@ -588,41 +570,9 @@ namespace flychams::core
 
     struct SensorNoise
     {
-        bool enabled;
         float rand_contrib;
         float rand_size;
         float rand_speed;
-    };
-
-    struct BarometerParams
-    {
-        bool enabled;
-        float pressure_factor_sigma;    // Pressure factor sigma
-        float uncorrelated_noise_sigma; // Uncorrelated noise sigma
-    };
-
-    struct ImuParams
-    {
-        bool enabled;
-        float gyro_noise;        // Angular random walk
-        float accel_noise;       // Velocity random walk
-    };
-
-    struct GpsParams
-    {
-        bool enabled;
-        float eph_initial;       // Initial horizontal position accuracy
-        float epv_initial;       // Initial vertical position accuracy
-        float eph_final;         // Final horizontal position accuracy
-        float epv_final;         // Final vertical position accuracy
-    };
-
-    struct MagnetometerParams
-    {
-        bool enabled;
-        float noise_sigma;       // Sensor noise sigma
-        float scale_factor;      // Scale factor for readings
-        float noise_bias;        // Noise bias
     };
 
 } // namespace flychams::core 

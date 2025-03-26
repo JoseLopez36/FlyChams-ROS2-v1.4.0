@@ -77,14 +77,9 @@ namespace flychams::coordination
 
     void AgentPositioning::odomCallback(const core::OdometryMsg::SharedPtr msg)
     {
-        // Transform to world frame
-        const std::string& source_frame = msg->header.frame_id;
-        const std::string& child_frame = msg->child_frame_id;
-        const std::string& target_frame = tf_tools_->getGlobalFrame();
-        const PointMsg& curr_pos_msg = tf_tools_->transformPointMsg(msg->pose.pose.position, source_frame, target_frame);
-        // Convert to Eigen
+        // Get agent position
         std::lock_guard<std::mutex> lock(mutex_);
-        curr_pos_ = MsgConversions::fromMsg(curr_pos_msg);
+        curr_pos_ = MsgConversions::fromMsg(msg->pose.pose.position);
         has_odom_ = true;
     }
 
@@ -116,7 +111,7 @@ namespace flychams::coordination
 
         // Publish the goal
         PositionGoalMsg goal_msg;
-        goal_msg.header = RosUtils::createHeader(node_, tf_tools_->getGlobalFrame());
+        goal_msg.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
         MsgConversions::toMsg(optimal_pos, goal_msg);
         goal_pub_->publish(goal_msg);
 

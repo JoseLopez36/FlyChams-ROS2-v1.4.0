@@ -4,8 +4,6 @@ cd $FLYCHAMS_COSYS_AIRSIM_PATH || { echo "Directory $FLYCHAMS_COSYS_AIRSIM_PATH 
 
 echo "Building AirSim dependencies..."
 
-./clean.sh
-./setup.sh
 ./build.sh
 
 echo "AirSim dependencies built successfully"

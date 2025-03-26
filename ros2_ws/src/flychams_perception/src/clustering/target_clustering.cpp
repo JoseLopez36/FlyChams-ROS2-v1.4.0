@@ -241,7 +241,7 @@ namespace flychams::perception
 
 			// Create cluster info message
 			ClusterInfoMsg cluster_info;
-			cluster_info.header = RosUtils::createHeader(node_, tf_tools_->getGlobalFrame());
+			cluster_info.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
 			cluster_info.center.x = circle.C.x;
 			cluster_info.center.y = circle.C.y;
 			cluster_info.center.z = 0.0f;
@@ -257,7 +257,7 @@ namespace flychams::perception
 		}
 
 		// Update clusters in simulation
-		ext_tools_->updateClusterGroup(cluster_ids, cluster_centers, cluster_radii);
+		framework_tools_->updateClusterGroup(cluster_ids, cluster_centers, cluster_radii);
 	}
 
 } // namespace flychams::perception
