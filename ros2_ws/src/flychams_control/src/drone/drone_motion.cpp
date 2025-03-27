@@ -26,16 +26,16 @@ namespace flychams::control
 		cmd_timeout_ = (1.0f / update_rate_) * 1.25f;
 
 		// Initialize agent state
-		curr_state_ = AgentState::IDLE;
-		has_state_ = false;
+		curr_status_ = AgentStatus::IDLE;
+		has_status_ = false;
 
 		// Initialize agent position
 		curr_position_ = PointMsg();
 		has_position_ = false;
 
-		// Initialize goal position
-		goal_position_ = PointMsg();
-		has_goal_ = false;
+		// Initialize setpoint position
+		setpoint_position_ = PointMsg();
+		has_setpoint_ = false;
 
 		// Set speed planner parameters
 		speed_planner_.setParameters(min_speed, max_speed, min_distance, max_distance, max_acceleration);
@@ -45,13 +45,13 @@ namespace flychams::control
 		auto sub_options = rclcpp::SubscriptionOptions();
 		sub_options.callback_group = callback_group_;
 
-		// Subscribe to state, odom and goal topics
-		state_sub_ = topic_tools_->createAgentStateSubscriber(agent_id_,
-			std::bind(&DroneMotion::stateCallback, this, std::placeholders::_1), sub_options);
-		odom_sub_ = topic_tools_->createAgentOdomSubscriber(agent_id_,
-			std::bind(&DroneMotion::odomCallback, this, std::placeholders::_1), sub_options);
-		goal_sub_ = topic_tools_->createAgentPositionGoalSubscriber(agent_id_,
-			std::bind(&DroneMotion::goalCallback, this, std::placeholders::_1), sub_options);
+		// Subscribe to status, position and setpoint topics
+		status_sub_ = topic_tools_->createAgentStatusSubscriber(agent_id_,
+			std::bind(&DroneMotion::statusCallback, this, std::placeholders::_1), sub_options);
+		position_sub_ = topic_tools_->createAgentPositionSubscriber(agent_id_,
+			std::bind(&DroneMotion::positionCallback, this, std::placeholders::_1), sub_options);
+		setpoint_position_sub_ = topic_tools_->createAgentPositionSetpointSubscriber(agent_id_,
+			std::bind(&DroneMotion::setpointPositionCallback, this, std::placeholders::_1), sub_options);
 
 		// Set update timer
 		last_update_time_ = RosUtils::now(node_);
@@ -62,9 +62,9 @@ namespace flychams::control
 	void DroneMotion::onShutdown()
 	{
 		// Destroy subscribers
-		state_sub_.reset();
-		odom_sub_.reset();
-		goal_sub_.reset();
+		status_sub_.reset();
+		position_sub_.reset();
+		setpoint_position_sub_.reset();
 		// Destroy update timer
 		update_timer_.reset();
 	}
@@ -73,25 +73,25 @@ namespace flychams::control
 	// CALLBACKS: Callback functions
 	// ════════════════════════════════════════════════════════════════════════════
 
-	void DroneMotion::stateCallback(const core::AgentStateMsg::SharedPtr msg)
+	void DroneMotion::statusCallback(const core::AgentStatusMsg::SharedPtr msg)
 	{
-		// Update current state
-		curr_state_ = static_cast<AgentState>(msg->state);
-		has_state_ = true;
+		// Update current status
+		curr_status_ = static_cast<AgentStatus>(msg->status);
+		has_status_ = true;
 	}
 
-	void DroneMotion::odomCallback(const core::OdometryMsg::SharedPtr msg)
+	void DroneMotion::positionCallback(const core::PointStampedMsg::SharedPtr msg)
 	{
 		// Update current position
-		curr_position_ = msg->pose.pose.position;
+		curr_position_ = msg->point;
 		has_position_ = true;
 	}
 
-	void DroneMotion::goalCallback(const core::PositionGoalMsg::SharedPtr msg)
+	void DroneMotion::setpointPositionCallback(const core::PointStampedMsg::SharedPtr msg)
 	{
-		// Update goal position
-		goal_position_ = msg->position;
-		has_goal_ = true;
+		// Update setpoint position
+		setpoint_position_ = msg->point;
+		has_setpoint_ = true;
 	}
 
 	// ════════════════════════════════════════════════════════════════════════════
@@ -100,16 +100,16 @@ namespace flychams::control
 
 	void DroneMotion::update()
 	{
-		// Check if we have a valid state, position and goal
-		if (!has_state_ || !has_position_ || !has_goal_)
+		// Check if we have a valid status, position and setpoint
+		if (!has_status_ || !has_position_ || !has_setpoint_)
 		{
-			RCLCPP_WARN(node_->get_logger(), "Drone motion: No state, position or goal data received for agent %s",
+			RCLCPP_WARN(node_->get_logger(), "Drone motion: No status, position or setpoint data received for agent %s",
 				agent_id_.c_str());
 			return;
 		}
 
 		// Check if we are in the correct state to move
-		if (curr_state_ != AgentState::TRACKING)
+		if (curr_status_ != AgentStatus::TRACKING)
 		{
 			RCLCPP_WARN(node_->get_logger(), "Drone motion: Agent %s is not in the correct state to move",
 				agent_id_.c_str());
@@ -144,10 +144,10 @@ namespace flychams::control
 	void DroneMotion::handlePositionMotion(const float& dt)
 	{
 		// Plan speed based on distance to goal and other criteria
-		float target_speed = speed_planner_.planSpeed(curr_position_.x, curr_position_.y, curr_position_.z, goal_position_.x, goal_position_.y, goal_position_.z, dt);
+		float target_speed = speed_planner_.planSpeed(curr_position_.x, curr_position_.y, curr_position_.z, setpoint_position_.x, setpoint_position_.y, setpoint_position_.z, dt);
 
 		// Send command to move to goal position
-		framework_tools_->setPosition(agent_id_, goal_position_.x, goal_position_.y, goal_position_.z, target_speed, dt);
+		framework_tools_->setPosition(agent_id_, setpoint_position_.x, setpoint_position_.y, setpoint_position_.z, target_speed, dt);
 	}
 
 	void DroneMotion::handleVelocityMotion(const float& dt)

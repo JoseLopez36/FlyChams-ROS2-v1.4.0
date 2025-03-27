@@ -1,7 +1,7 @@
 #pragma once
 
-// K-Means modified include
-#include "flychams_perception/clustering/k_means_mod.hpp"
+// Perception includes
+#include "flychams_perception/analysis/welzls_circle.hpp"
 
 // Base module include
 #include "flychams_core/base/base_module.hpp"
@@ -10,22 +10,22 @@ namespace flychams::perception
 {
 	/**
 	 * ════════════════════════════════════════════════════════════════
-	 * @brief Clustering of targets
+	 * @brief Cluster analysis implementation
 	 *
 	 * @details
-	 * This class is responsible for clustering targets using K-Means
-	 * modified algorithm. It also performs cluster analysis to determine
-	 * the minimal enclosing circle and other characteristics.
+	 * This class implements a cluster analysis.
+	 * It provides methods for calculating cluster data (such as
+	 * centroid or enclosing circle).
 	 *
 	 * ════════════════════════════════════════════════════════════════
 	 * @author Jose Francisco Lopez Ruiz
 	 * @date 2025-02-26
 	 * ════════════════════════════════════════════════════════════════
 	 */
-	class TargetClustering : public core::BaseModule
+	class ClusterAnalysis : public core::BaseModule
 	{
 	public: // Constructor/Destructor
-		TargetClustering(core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::FrameworkTools::SharedPtr framework_tools, core::TopicTools::SharedPtr topic_tools, core::TransformTools::SharedPtr transform_tools)
+		ClusterAnalysis(core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::FrameworkTools::SharedPtr framework_tools, core::TopicTools::SharedPtr topic_tools, core::TransformTools::SharedPtr transform_tools)
 			: BaseModule(node, config_tools, framework_tools, topic_tools, transform_tools)
 		{
 			init();
@@ -36,39 +36,47 @@ namespace flychams::perception
 		void onShutdown() override;
 
 	public: // Types
-		using SharedPtr = std::shared_ptr<TargetClustering>;
+		using SharedPtr = std::shared_ptr<ClusterAnalysis>;
 		struct Target
 		{
 			// Assignment data
 			core::ID assigned_id;
+			bool has_assignment;
 			// Position data
 			core::PointMsg position;
 			bool has_position;
-			// Subscriber
+			// Subscribers
+			core::SubscriberPtr<core::StringMsg> assignment_sub;
 			core::SubscriberPtr<core::PointStampedMsg> position_sub;
-			// Publisher
-			core::PublisherPtr<core::StringMsg> assignment_pub;
 			// Constructor
 			Target()
-				: assigned_id(), position(), has_position(false), position_sub(), assignment_pub()
+				: assigned_id(), has_assignment(false), position(), has_position(false), assignment_sub(), position_sub()
+			{
+			}
+		};
+		struct Cluster
+		{
+			// Geometry data
+			core::ClusterGeometryMsg geometry;
+			// Publisher
+			core::PublisherPtr<core::ClusterGeometryMsg> geometry_pub;
+			// Constructor
+			Cluster()
+				: geometry(), geometry_pub()
 			{
 			}
 		};
 
 	private: // Parameters
 		float update_rate_;
-		// Command timeout
-		float cmd_timeout_;
+		float min_circle_radius_;
+		float margin_circle_radius_;
 
 	private: // Data
 		// Targets
 		std::unordered_map<core::ID, Target> targets_;
 		// Clusters
-		std::unordered_set<core::ID> clusters_;
-		// K-Means clustering
-		KMeansMod k_means_;
-		// Time step
-		core::Time last_update_time_;
+		std::unordered_map<core::ID, Cluster> clusters_;
 
 	public: // Public methods
 		void addCluster(const core::ID& cluster_id);
@@ -77,10 +85,15 @@ namespace flychams::perception
 		void removeTarget(const core::ID& target_id);
 
 	private: // Callbacks
+		void targetAssignmentCallback(const core::ID& target_id, const core::StringMsg::SharedPtr msg);
 		void targetPositionCallback(const core::ID& target_id, const core::PointStampedMsg::SharedPtr msg);
 
-	private: // Clustering management
+	private: // Analysis management
 		void update();
+
+	private: // Analysis methods
+		std::vector<core::PointMsg> assignCluster(const core::ID& cluster_id, const std::unordered_map<core::ID, Target>& targets);
+		std::pair<core::Vector2r, float> calculateEnclosingCircle(const std::vector<core::PointMsg>& points, const float& min_radius, const float& margin_radius);
 
 	private: // ROS components
 		// Callback group

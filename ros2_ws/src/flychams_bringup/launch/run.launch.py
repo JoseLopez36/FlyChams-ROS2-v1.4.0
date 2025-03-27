@@ -23,6 +23,7 @@ def generate_launch_description():
         'gui': 'info',
         'visualization': 'info',
         # Targets nodes
+        'target_state': 'info',
         'target_control': 'info'
     }
 
@@ -35,6 +36,7 @@ def generate_launch_description():
     launch_agent_tracking = LaunchConfiguration('agent_tracking')
     launch_gui = LaunchConfiguration('gui')
     launch_visualization = LaunchConfiguration('visualization')
+    launch_target_state = LaunchConfiguration('target_state')
     launch_target_control = LaunchConfiguration('target_control')
 
     # Define log level arguments for each node
@@ -46,6 +48,7 @@ def generate_launch_description():
     log_level_agent_tracking = LaunchConfiguration('log_agent_tracking')
     log_level_gui = LaunchConfiguration('log_gui')
     log_level_visualization = LaunchConfiguration('log_visualization')
+    log_level_target_state = LaunchConfiguration('log_target_state')
     log_level_target_control = LaunchConfiguration('log_target_control')
 
     # Get paths to config files
@@ -145,6 +148,11 @@ def generate_launch_description():
         description='Flag to enable/disable the Visualization node'))
     
     ld.append(DeclareLaunchArgument(
+        'target_state',
+        default_value='True',
+        description='Flag to enable/disable the Target State node'))
+    
+    ld.append(DeclareLaunchArgument(
         'target_control',
         default_value='True',
         description='Flag to enable/disable the Target Control node'))
@@ -186,11 +194,14 @@ def generate_launch_description():
         description='Log level for the Visualization node'))
     
     ld.append(DeclareLaunchArgument(
+        'log_target_state',
+        default_value='info',
+        description='Log level for the Target State node'))
+    
+    ld.append(DeclareLaunchArgument(
         'log_target_control',
         default_value='info',
         description='Log level for the Target Control node'))
-
-    # Launch command example: ros2 launch flychams_bringup run.launch.py ctrl:=True clus:=True pos:=True assign:=True track:=True gui:=True viz:=True tgt_ctrl:=True log_ctrl:=info log_clu:=info log_pos:=info log_assign:=info log_track:=info log_gui:=info log_viz:=info log_tgt_ctrl:=info
 
     # ============= CONTROL NODES =============
     # Conditionally add Drone Controller node
@@ -357,6 +368,26 @@ def generate_launch_description():
     )
 
     # ============= TARGETS NODES =============
+    # Conditionally add Target State node
+    ld.append(
+        Node(
+            package='flychams_targets',
+            executable='target_state_node',
+            name='target_state_node',
+            output='screen',
+            namespace='flychams',
+            condition=IfCondition(launch_target_state),
+            arguments=['--ros-args', '--log-level', log_level_target_state],
+            parameters=[
+                system_path, 
+                topics_path, 
+                frames_path, 
+                targets_path,
+                {'use_sim_time': True}
+            ]
+        )
+    )
+
     # Conditionally add Target Control node
     ld.append(
         Node(

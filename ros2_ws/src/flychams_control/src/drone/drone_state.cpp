@@ -26,40 +26,48 @@ namespace flychams::control
         // Compute command timeout
         cmd_timeout_ = (1.0f / update_rate_) * 1.25f;
 
-        // Set initial state as disarmed. Arming request will be necessary for further transitions
-        curr_state_ = AgentState::DISARMED;
+        // Set initial status as disarmed. Arming request will be necessary for further transitions
+        curr_status_ = AgentStatus::DISARMED;
 
         // Initialize drone position
         curr_position_ = PointMsg();
         has_position_ = false;
+
+        // Initialize messages
+        status_msg_ = AgentStatusMsg();
+        status_msg_.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
+        position_msg_ = PointStampedMsg();
+        position_msg_.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
 
         // Create callback group
         callback_group_ = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
         auto sub_options = rclcpp::SubscriptionOptions();
         sub_options.callback_group = callback_group_;
 
-        // Subscribe to agent odom topic
-        odom_sub_ = topic_tools_->createAgentOdomSubscriber(agent_id_,
+        // Subscribe to agent odom topic from framework tools
+        odom_sub_ = framework_tools_->createOdometrySubscriber(agent_id_,
             std::bind(&DroneState::odomCallback, this, std::placeholders::_1), sub_options);
 
-        // Create publisher for agent state
-        state_pub_ = topic_tools_->createAgentStatePublisher(agent_id_);
+        // Create publisher for agent status and position
+        status_pub_ = topic_tools_->createAgentStatusPublisher(agent_id_);
+        position_pub_ = topic_tools_->createAgentPositionPublisher(agent_id_);
 
         // Set update timer
         last_update_time_ = RosUtils::now(node_);
-        state_duration_ = 0.0f;
+        status_duration_ = 0.0f;
         update_timer_ = RosUtils::createTimer(node_, update_rate_,
             std::bind(&DroneState::update, this), callback_group_);
     }
 
     void DroneState::onShutdown()
     {
-        // Set state to idle
-        curr_state_ = AgentState::IDLE;
+        // Set status to idle
+        curr_status_ = AgentStatus::IDLE;
         // Destroy subscriber
         odom_sub_.reset();
         // Destroy publisher
-        state_pub_.reset();
+        status_pub_.reset();
+        position_pub_.reset();
         // Destroy update timer
         update_timer_.reset();
     }
@@ -71,9 +79,9 @@ namespace flychams::control
     bool DroneState::requestDisarm()
     {
         // Check if we're in ARMED or LANDING state
-        if (curr_state_ != AgentState::ARMED && curr_state_ != AgentState::LANDING)
+        if (curr_status_ != AgentStatus::ARMED && curr_status_ != AgentStatus::LANDING)
         {
-            RCLCPP_ERROR(node_->get_logger(), "Drone state: Cannot disarm agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_state_));
+            RCLCPP_ERROR(node_->get_logger(), "Drone state: Cannot disarm agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_status_));
             return false;
         }
 
@@ -95,16 +103,16 @@ namespace flychams::control
         }
 
         // Transition to DISARMED state
-        setState(AgentState::DISARMED);
+        setStatus(AgentStatus::DISARMED);
         return true;
     }
 
     bool DroneState::requestArm()
     {
         // Check if we're in DISARMED state
-        if (curr_state_ != AgentState::DISARMED)
+        if (curr_status_ != AgentStatus::DISARMED)
         {
-            RCLCPP_ERROR(node_->get_logger(), "Drone state: Cannot arm agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_state_));
+            RCLCPP_ERROR(node_->get_logger(), "Drone state: Cannot arm agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_status_));
             return false;
         }
 
@@ -126,16 +134,16 @@ namespace flychams::control
         }
 
         // Transition to ARMED state
-        setState(AgentState::ARMED);
+        setStatus(AgentStatus::ARMED);
         return true;
     }
 
     bool DroneState::requestTakeoff()
     {
         // Check if we're in ARMED state
-        if (curr_state_ != AgentState::ARMED)
+        if (curr_status_ != AgentStatus::ARMED)
         {
-            RCLCPP_ERROR(node_->get_logger(), "Drone state: Cannot takeoff agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_state_));
+            RCLCPP_ERROR(node_->get_logger(), "Drone state: Cannot takeoff agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_status_));
             return false;
         }
 
@@ -157,16 +165,16 @@ namespace flychams::control
         }
 
         // Transition to TAKING_OFF state
-        setState(AgentState::TAKING_OFF);
+        setStatus(AgentStatus::TAKING_OFF);
         return true;
     }
 
     bool DroneState::requestHover()
     {
         // Check if we're in TAKEN_OFF or TRACKING state
-        if (curr_state_ != AgentState::TAKEN_OFF && curr_state_ != AgentState::TRACKING)
+        if (curr_status_ != AgentStatus::TAKEN_OFF && curr_status_ != AgentStatus::TRACKING)
         {
-            RCLCPP_ERROR(node_->get_logger(), "Drone state: Cannot hover agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_state_));
+            RCLCPP_ERROR(node_->get_logger(), "Drone state: Cannot hover agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_status_));
             return false;
         }
 
@@ -188,16 +196,16 @@ namespace flychams::control
         }
 
         // Transition to HOVERING state
-        setState(AgentState::HOVERING);
+        setStatus(AgentStatus::HOVERING);
         return true;
     }
 
     bool DroneState::requestTracking()
     {
         // Check if we're in HOVERED state
-        if (curr_state_ != AgentState::HOVERED)
+        if (curr_status_ != AgentStatus::HOVERED)
         {
-            RCLCPP_ERROR(node_->get_logger(), "Drone state: Cannot move agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_state_));
+            RCLCPP_ERROR(node_->get_logger(), "Drone state: Cannot move agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_status_));
             return false;
         }
 
@@ -213,16 +221,16 @@ namespace flychams::control
         RCLCPP_INFO(node_->get_logger(), "Drone state: Agent %s moving to goal...", agent_id_.c_str());
 
         // Transition to TRACKING state
-        setState(AgentState::TRACKING);
+        setStatus(AgentStatus::TRACKING);
         return true;
     }
 
     bool DroneState::requestLand()
     {
         // Check if we're in HOVERING, HOVERED or TRACKING state
-        if (curr_state_ != AgentState::HOVERING && curr_state_ != AgentState::HOVERED && curr_state_ != AgentState::TRACKING)
+        if (curr_status_ != AgentStatus::HOVERING && curr_status_ != AgentStatus::HOVERED && curr_status_ != AgentStatus::TRACKING)
         {
-            RCLCPP_ERROR(node_->get_logger(), "Drone state: Cannot land agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_state_));
+            RCLCPP_ERROR(node_->get_logger(), "Drone state: Cannot land agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_status_));
             return false;
         }
 
@@ -244,7 +252,7 @@ namespace flychams::control
         }
 
         // Transition to LANDING state
-        setState(AgentState::LANDING);
+        setStatus(AgentStatus::LANDING);
         return true;
     }
 
@@ -257,6 +265,11 @@ namespace flychams::control
         // Update current position
         curr_position_ = msg->pose.pose.position;
         has_position_ = true;
+
+        // Publish agent position
+        position_msg_.header.stamp = RosUtils::now(node_);
+        position_msg_.point = curr_position_;
+        position_pub_->publish(position_msg_);
     }
 
     // ════════════════════════════════════════════════════════════════════════════
@@ -281,125 +294,124 @@ namespace flychams::control
         dt = std::min(dt, cmd_timeout_);
 
         // Update state duration
-        state_duration_ += dt;
+        status_duration_ += dt;
 
         // Handle state based on current state
-        switch (curr_state_)
+        switch (curr_status_)
         {
-        case AgentState::IDLE:
+        case AgentStatus::IDLE:
             handleIdle();
             break;
 
-        case AgentState::DISARMED:
+        case AgentStatus::DISARMED:
             handleDisarmed();
             break;
 
-        case AgentState::ARMED:
+        case AgentStatus::ARMED:
             handleArmed();
             break;
 
-        case AgentState::TAKING_OFF:
+        case AgentStatus::TAKING_OFF:
             handleTakingOff();
             break;
 
-        case AgentState::HOVERING:
+        case AgentStatus::HOVERING:
             handleHovering();
             break;
 
-        case AgentState::TRACKING:
+        case AgentStatus::TRACKING:
             handleTracking();
             break;
 
-        case AgentState::LANDING:
+        case AgentStatus::LANDING:
             handleLanding();
             break;
 
-        case AgentState::ERROR:
+        case AgentStatus::ERROR:
             handleError();
             break;
 
         default:
-            RCLCPP_ERROR(node_->get_logger(), "Drone state: Unknown state for agent %s: %d", agent_id_.c_str(), static_cast<int>(curr_state_));
+            RCLCPP_ERROR(node_->get_logger(), "Drone state: Unknown state for agent %s: %d", agent_id_.c_str(), static_cast<int>(curr_status_));
             break;
         }
 
-        // Publish agent state
-        AgentStateMsg state_msg;
-        state_msg.header.stamp = RosUtils::now(node_);
-        state_msg.state = static_cast<uint8_t>(curr_state_);
-        state_pub_->publish(state_msg);
+        // Publish agent status
+        status_msg_.header.stamp = RosUtils::now(node_);
+        status_msg_.status = static_cast<uint8_t>(curr_status_);
+        status_pub_->publish(status_msg_);
     }
 
-    void DroneState::setState(const AgentState& new_state)
+    void DroneState::setStatus(const AgentStatus& new_status)
     {
         // Check if this is a valid transition
-        if (!isValid(curr_state_, new_state))
+        if (!isValid(curr_status_, new_status))
         {
             RCLCPP_ERROR(node_->get_logger(), "Drone state: Invalid state transition from %d to %d for agent %s",
-                static_cast<int>(curr_state_), static_cast<int>(new_state), agent_id_.c_str());
+                static_cast<int>(curr_status_), static_cast<int>(new_status), agent_id_.c_str());
             return;
         }
 
         // Set new state
-        AgentState old_state = curr_state_;
-        curr_state_ = new_state;
+        AgentStatus old_status = curr_status_;
+        curr_status_ = new_status;
 
         // Update state duration
-        state_duration_ = 0.0f;
+        status_duration_ = 0.0f;
 
         // Log state transition
-        RCLCPP_INFO(node_->get_logger(), "Drone state: AgentState transition from %d to %d for agent %s",
-            static_cast<int>(old_state), static_cast<int>(new_state), agent_id_.c_str());
+        RCLCPP_INFO(node_->get_logger(), "Drone state: AgentStatus transition from %d to %d for agent %s",
+            static_cast<int>(old_status), static_cast<int>(new_status), agent_id_.c_str());
     }
 
-    bool DroneState::isValid(const AgentState& from, const AgentState& to) const
+    bool DroneState::isValid(const AgentStatus& from, const AgentStatus& to) const
     {
         // Check state transitions
         switch (from)
         {
-        case AgentState::IDLE:
+        case AgentStatus::IDLE:
             // From IDLE, we can only go to DISARMED
-            return to == AgentState::DISARMED;
+            return to == AgentStatus::DISARMED;
 
-        case AgentState::DISARMED:
+        case AgentStatus::DISARMED:
             // From DISARMED, we can go to ARMED, IDLE, or ERROR
-            return to == AgentState::ARMED || to == AgentState::IDLE || to == AgentState::ERROR;
+            return to == AgentStatus::ARMED || to == AgentStatus::IDLE || to == AgentStatus::ERROR;
 
-        case AgentState::ARMED:
+        case AgentStatus::ARMED:
             // From ARMED, we can go to DISARMED, TAKING_OFF, or ERROR
-            return to == AgentState::DISARMED || to == AgentState::TAKING_OFF || to == AgentState::ERROR;
+            return to == AgentStatus::DISARMED || to == AgentStatus::TAKING_OFF || to == AgentStatus::ERROR;
 
-        case AgentState::TAKING_OFF:
+        case AgentStatus::TAKING_OFF:
             // From TAKING_OFF, we can go to TAKEN_OFF, LANDING, or ERROR
-            return to == AgentState::TAKEN_OFF || to == AgentState::LANDING || to == AgentState::ERROR;
+            return to == AgentStatus::TAKEN_OFF || to == AgentStatus::LANDING || to == AgentStatus::ERROR;
 
-        case AgentState::TAKEN_OFF:
+        case AgentStatus::TAKEN_OFF:
             // From TAKEN_OFF, we can go to HOVERING, LANDING, or ERROR
-            return to == AgentState::HOVERING || to == AgentState::LANDING || to == AgentState::ERROR;
+            return to == AgentStatus::HOVERING || to == AgentStatus::LANDING || to == AgentStatus::ERROR;
 
-        case AgentState::HOVERING:
+        case AgentStatus::HOVERING:
             // From HOVERING, we can go to HOVERED, LANDING, or ERROR
-            return to == AgentState::HOVERED || to == AgentState::LANDING || to == AgentState::ERROR;
+            return to == AgentStatus::HOVERED || to == AgentStatus::LANDING || to == AgentStatus::ERROR;
 
-        case AgentState::HOVERED:
+        case AgentStatus::HOVERED:
             // From HOVERED, we can go to TRACKING, LANDING, or ERROR
-            return to == AgentState::TRACKING || to == AgentState::LANDING || to == AgentState::ERROR;
+            return to == AgentStatus::TRACKING || to == AgentStatus::LANDING || to == AgentStatus::ERROR;
 
-        case AgentState::TRACKING:
+        case AgentStatus::TRACKING:
             // From TRACKING, we can go to HOVERING, LANDING, or ERROR
-            return to == AgentState::HOVERING || to == AgentState::LANDING || to == AgentState::ERROR;
+            return to == AgentStatus::HOVERING || to == AgentStatus::LANDING || to == AgentStatus::ERROR;
 
-        case AgentState::LANDING:
+        case AgentStatus::LANDING:
             // From LANDING, we can go to LANDED, or ERROR
-            return to == AgentState::LANDED || to == AgentState::ERROR;
+            return to == AgentStatus::LANDED || to == AgentStatus::ERROR;
 
-        case AgentState::LANDED:
+        case AgentStatus::LANDED:
             // From LANDED, we can go to DISARMED, or ERROR
-            return to == AgentState::DISARMED || to == AgentState::ERROR;
+            return to == AgentStatus::DISARMED || to == AgentStatus::ERROR;
 
-        case AgentState::ERROR:
+        case AgentStatus::ERROR:
             // From ERROR, we can only go to IDLE (reset)
-            return to == AgentState::IDLE;
+            return to == AgentStatus::IDLE;
 
         default:
             // Unknown state, reject transition
@@ -430,7 +442,7 @@ namespace flychams::control
     void DroneState::handleTakingOff()
     {
         // Check if takeoff has timed out
-        if (state_duration_ > takeoff_timeout_)
+        if (status_duration_ > takeoff_timeout_)
         {
             RCLCPP_ERROR(node_->get_logger(), "Drone state: Takeoff timeout for agent %s, trying again...", agent_id_.c_str());
             requestTakeoff();
@@ -441,7 +453,7 @@ namespace flychams::control
         if (curr_position_.z >= takeoff_altitude_)
         {
             RCLCPP_INFO(node_->get_logger(), "Drone state: Takeoff complete for agent %s", agent_id_.c_str());
-            setState(AgentState::TAKEN_OFF);
+            setStatus(AgentStatus::TAKEN_OFF);
         }
     }
 
@@ -453,7 +465,7 @@ namespace flychams::control
     void DroneState::handleHovering()
     {
         // Check if hover has timed out
-        if (state_duration_ > hover_timeout_)
+        if (status_duration_ > hover_timeout_)
         {
             RCLCPP_ERROR(node_->get_logger(), "Drone state: Hover timeout for agent %s, trying again...", agent_id_.c_str());
             requestHover();
@@ -464,7 +476,7 @@ namespace flychams::control
         if (curr_position_.z >= hover_altitude_)
         {
             RCLCPP_INFO(node_->get_logger(), "Drone state: Hover complete for agent %s", agent_id_.c_str());
-            setState(AgentState::HOVERED);
+            setStatus(AgentStatus::HOVERED);
         }
     }
 
@@ -481,7 +493,7 @@ namespace flychams::control
     void DroneState::handleLanding()
     {
         // Check if landing has timed out
-        if (state_duration_ > landing_timeout_)
+        if (status_duration_ > landing_timeout_)
         {
             RCLCPP_ERROR(node_->get_logger(), "Drone state: Landing timeout for agent %s, trying again...", agent_id_.c_str());
             requestLand();
@@ -492,7 +504,7 @@ namespace flychams::control
         if (curr_position_.z <= landing_altitude_)
         {
             RCLCPP_INFO(node_->get_logger(), "Drone state: Landing complete for agent %s", agent_id_.c_str());
-            setState(AgentState::LANDED);
+            setStatus(AgentStatus::LANDED);
         }
     }
 

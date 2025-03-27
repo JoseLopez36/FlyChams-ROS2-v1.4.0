@@ -15,12 +15,12 @@ namespace flychams::control
 		update_rate_ = RosUtils::getParameterOr<float>(node_, "head_control.control_update_rate", 20.0f);
 
 		// Initialize agent state
-		curr_state_ = AgentState::IDLE;
-		has_state_ = false;
+		curr_status_ = AgentStatus::IDLE;
+		has_status_ = false;
 
-		// Initialize tracking goal
-		goal_ = TrackingGoalMsg();
-		has_goal_ = false;
+		// Initialize head setpoints
+		head_setpoints_ = AgentHeadSetpointsMsg();
+		has_head_setpoints_ = false;
 
 		// Compute central head command
 		const auto& central_head_ptr = config_tools_->getCentralHead(agent_id_);
@@ -34,11 +34,11 @@ namespace flychams::control
 		auto sub_options = rclcpp::SubscriptionOptions();
 		sub_options.callback_group = callback_group_;
 
-		// Subscribe to state, odom and goal topics
-		state_sub_ = topic_tools_->createAgentStateSubscriber(agent_id_,
-			std::bind(&HeadControl::stateCallback, this, std::placeholders::_1), sub_options);
-		goal_sub_ = topic_tools_->createAgentTrackingGoalSubscriber(agent_id_,
-			std::bind(&HeadControl::goalCallback, this, std::placeholders::_1), sub_options);
+		// Subscribe to status and head setpoints topics
+		status_sub_ = topic_tools_->createAgentStatusSubscriber(agent_id_,
+			std::bind(&HeadControl::statusCallback, this, std::placeholders::_1), sub_options);
+		head_setpoints_sub_ = topic_tools_->createAgentHeadSetpointsSubscriber(agent_id_,
+			std::bind(&HeadControl::headSetpointsCallback, this, std::placeholders::_1), sub_options);
 
 		// Set update timer
 		update_timer_ = RosUtils::createTimer(node_, update_rate_,
@@ -48,8 +48,8 @@ namespace flychams::control
 	void HeadControl::onShutdown()
 	{
 		// Destroy subscribers
-		state_sub_.reset();
-		goal_sub_.reset();
+		status_sub_.reset();
+		head_setpoints_sub_.reset();
 		// Destroy update timer
 		update_timer_.reset();
 	}
@@ -58,18 +58,18 @@ namespace flychams::control
 	// CALLBACKS: Callback functions
 	// ════════════════════════════════════════════════════════════════════════════
 
-	void HeadControl::stateCallback(const core::AgentStateMsg::SharedPtr msg)
+	void HeadControl::statusCallback(const core::AgentStatusMsg::SharedPtr msg)
 	{
-		// Update current state
-		curr_state_ = static_cast<AgentState>(msg->state);
-		has_state_ = true;
+		// Update current status
+		curr_status_ = static_cast<AgentStatus>(msg->status);
+		has_status_ = true;
 	}
 
-	void HeadControl::goalCallback(const core::TrackingGoalMsg::SharedPtr msg)
+	void HeadControl::headSetpointsCallback(const core::AgentHeadSetpointsMsg::SharedPtr msg)
 	{
-		// Update tracking goal
-		goal_ = *msg;
-		has_goal_ = true;
+		// Update head setpoints
+		head_setpoints_ = *msg;
+		has_head_setpoints_ = true;
 	}
 
 	// ════════════════════════════════════════════════════════════════════════════
@@ -78,16 +78,16 @@ namespace flychams::control
 
 	void HeadControl::update()
 	{
-		// Check if we have a valid state
-		if (!has_state_)
+		// Check if we have a valid status
+		if (!has_status_)
 		{
-			RCLCPP_WARN(node_->get_logger(), "Head control: No state data received for agent %s",
+			RCLCPP_WARN(node_->get_logger(), "Head control: No status data received for agent %s",
 				agent_id_.c_str());
 			return;
 		}
 
 		// Check if we are in the correct state to move
-		if (curr_state_ != AgentState::TRACKING)
+		if (curr_status_ != AgentStatus::TRACKING)
 		{
 			RCLCPP_WARN(node_->get_logger(), "Head control: Agent %s is not in the correct state to control heads",
 				agent_id_.c_str());
@@ -99,16 +99,16 @@ namespace flychams::control
 		std::vector<QuaternionMsg> head_orientations = { central_cmd_.ori };
 		std::vector<float> head_fovs = { central_cmd_.fov };
 
-		// Check if tracking goal is set
-		if (has_goal_)
+		// Check if head setpoints are set
+		if (has_head_setpoints_)
 		{
-			int n = static_cast<int>(goal_.head_ids.size());
+			int n = static_cast<int>(head_setpoints_.head_ids.size());
 			for (int i = 0; i < n; i++)
 			{
-				// Add tracking command to vectors
-				head_ids.push_back(goal_.head_ids[i]);
-				head_orientations.push_back(goal_.orientations[i]);
-				head_fovs.push_back(goal_.fovs[i]);
+				// Add head setpoints to vectors
+				head_ids.push_back(head_setpoints_.head_ids[i]);
+				head_orientations.push_back(head_setpoints_.quat_setpoints[i]);
+				head_fovs.push_back(head_setpoints_.fov_setpoints[i]);
 			}
 		}
 

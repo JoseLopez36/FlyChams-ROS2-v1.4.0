@@ -1,7 +1,7 @@
 #include "rclcpp/rclcpp.hpp"
 
 // Target includes
-#include "flychams_targets/control/target_motion.hpp"
+#include "flychams_targets/state/target_state.hpp"
 
 // Core includes
 #include "flychams_core/base/base_discoverer_node.hpp"
@@ -11,24 +11,23 @@ using namespace flychams::targets;
 
 /**
  * ════════════════════════════════════════════════════════════════
- * @brief Target node for controlling the different targets in the
- * mission
+ * @brief Target node for state management of the targets
  *
  * @details
- * This class implements the target node for controlling the different
- * targets in the mission. It uses the discoverer node to discover the
- * different targets and then creates controllers for each target
- * discovered.
+ * This class implements the target node for state management of the
+ * targets. It is a debugging node that allows to know the state of the
+ * targets. In a real scenario, this node would be replaced by a node
+ * that uses images to detect the state of the targets.
  *
  * ════════════════════════════════════════════════════════════════
  * @author Jose Francisco Lopez Ruiz
- * @date 2025-03-16
+ * @date 2025-03-27
  * ════════════════════════════════════════════════════════════════
  */
-class TargetControlNode : public BaseDiscovererNode
+class TargetStateNode : public BaseDiscovererNode
 {
 public: // Constructor/Destructor
-    TargetControlNode(const std::string& node_name, const rclcpp::NodeOptions& options)
+    TargetStateNode(const std::string& node_name, const rclcpp::NodeOptions& options)
         : BaseDiscovererNode(node_name, options)
     {
         // Nothing to do
@@ -36,35 +35,35 @@ public: // Constructor/Destructor
 
     void onInit() override
     {
-        // Initialize target controllers
-        target_motion_.clear();
+        // Initialize target states
+        target_state_.clear();
     }
 
     void onShutdown() override
     {
-        // Destroy target controllers
-        target_motion_.clear();
+        // Destroy target states
+        target_state_.clear();
     }
 
 private: // Element management
     void onAddTarget(const ID& target_id) override
     {
         // Create target controllers
-        auto target_motion = std::make_shared<TargetMotion>(target_id, node_, config_tools_, framework_tools_, topic_tools_, transform_tools_);
-        target_motion_.insert(std::make_pair(target_id, target_motion));
-        RCLCPP_INFO(node_->get_logger(), "Target controllers created for target %s", target_id.c_str());
+        auto target_state = std::make_shared<TargetState>(target_id, node_, config_tools_, framework_tools_, topic_tools_, transform_tools_);
+        target_state_.insert(std::make_pair(target_id, target_state));
+        RCLCPP_INFO(node_->get_logger(), "Target state created for target %s", target_id.c_str());
     }
 
     void onRemoveTarget(const ID& target_id) override
     {
         // Destroy target controllers
-        target_motion_.erase(target_id);
-        RCLCPP_INFO(node_->get_logger(), "Target controllers destroyed for target %s", target_id.c_str());
+        target_state_.erase(target_id);
+        RCLCPP_INFO(node_->get_logger(), "Target state destroyed for target %s", target_id.c_str());
     }
 
 private: // Components
-    // Target controllers
-    std::unordered_map<ID, TargetMotion::SharedPtr> target_motion_;
+    // Target states
+    std::unordered_map<ID, TargetState::SharedPtr> target_state_;
 };
 
 int main(int argc, char** argv)
@@ -76,7 +75,7 @@ int main(int argc, char** argv)
     options.allow_undeclared_parameters(true);
     options.automatically_declare_parameters_from_overrides(true);
     // Create and initialize node
-    auto node = std::make_shared<TargetControlNode>("target_control_node", options);
+    auto node = std::make_shared<TargetStateNode>("target_state_node", options);
     node->init();
     // Create executor and add node
     rclcpp::executors::MultiThreadedExecutor executor;

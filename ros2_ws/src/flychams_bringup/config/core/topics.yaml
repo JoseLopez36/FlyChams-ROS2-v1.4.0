@@ -2,24 +2,28 @@
   ros__parameters:
     # Global topics
     global_topics:
-      registration: "global/registration"
-      metrics: "global/metrics"
+      registration: "bringup/registration"              # Registration.msg (custom)
+      metrics: "dashboard/global/metrics"               # GlobalMetrics.msg (custom)
     # Agent topics
     agent_topics:
-      state: "agents/AGENTID/state"
-      global_odom: "/airsim/AGENTID/global/state/odom"
-      position_goal: "agents/AGENTID/position/goal"
-      tracking_info: "agents/AGENTID/tracking/info"
-      tracking_goal: "agents/AGENTID/tracking/goal"
-      metrics: "agents/AGENTID/visual/metrics"
-      markers: "agents/AGENTID/visual/markers"
+      status: "control/AGENTID/state/status"                  # AgentStatus.msg (custom)
+      position: "control/AGENTID/state/position"              # PointStamped.msg
+      clusters: "planning/AGENTID/state/clusters"             # AgentClusters.msg (custom)
+      position_setpoint: "planning/AGENTID/setpoint/position" # PointStamped.msg
+      head_setpoints: "planning/AGENTID/setpoint/head"        # AgentHeadSetpoints.msg (custom)
+      window_setpoints: "planning/AGENTID/setpoint/window"    # AgentWindowSetpoints.msg (custom)
+      metrics: "dashboard/AGENTID/metrics"                    # AgentMetrics.msg (custom)
+      markers: "dashboard/AGENTID/markers"                    # MarkerArray.msg
     # Target topics
     target_topics:
-      info: "targets/TARGETID/info"
-      metrics: "targets/TARGETID/visual/metrics"
-      markers: "targets/TARGETID/visual/markers"
+      true_position: "targets/TARGETID/true_position"   # PointStamped.msg
+      est_position: "perception/TARGETID/est_position"  # PointStamped.msg
+      assignment: "perception/TARGETID/assignment"      # String.msg
+      metrics: "dashboard/TARGETID/metrics"             # TargetMetrics.msg (custom)
+      markers: "dashboard/TARGETID/markers"             # MarkerArray.msg
     # Cluster topics
     cluster_topics:
-      info: "clusters/CLUSTERID/info"
-      metrics: "clusters/CLUSTERID/visual/metrics"
-      markers: "clusters/CLUSTERID/visual/markers"
+      geometry: "perception/CLUSTERID/geometry"         # ClusterGeometry.msg (custom)
+      assignment: "planning/CLUSTERID/assignment"       # String.msg
+      metrics: "dashboard/CLUSTERID/metrics"            # ClusterMetrics.msg (custom)
+      markers: "dashboard/CLUSTERID/markers"            # MarkerArray.msg

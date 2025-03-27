@@ -101,6 +101,16 @@ namespace flychams::core
     }
 
     // ════════════════════════════════════════════════════════════════════════════
+    // VEHICLE STATE: Subscriber-based state methods
+    // ════════════════════════════════════════════════════════════════════════════
+
+    SubscriberPtr<OdometryMsg> AirsimTools::createOdometrySubscriber(const ID& vehicle_id, const std::function<void(const OdometryMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options)
+    {
+        // Create subscriber
+        return node_->create_subscription<OdometryMsg>("/airsim/" + vehicle_id + "/global/state/odom", 10, callback, options);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════════
     // GLOBAL CONTROL: Service-based control methods
     // ════════════════════════════════════════════════════════════════════════════
 

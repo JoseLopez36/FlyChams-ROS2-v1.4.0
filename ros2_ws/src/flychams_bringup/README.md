@@ -27,18 +27,21 @@ The `flychams_bringup` package serves as the entry point for running the FlyCham
   - Target nodes
   - Dashboard nodes
 
-- `rviz.launch.py` - Launches RViz2 with appropriate configuration
+- `rviz.launch.py` - Convenience launch for launching RViz2 with appropriate configuration
+
 - `rosbag.launch.py` - Convenience launch for recording system data to a rosbag file
+
+- `airsim_settings.launch.py` - Convenience launch for creating AirSim settings JSON file
 
 ### Setup Nodes
 
 Setup nodes are responsible for initializing the system and preparing it for runtime operation:
 
-1. **RegistratorNode** - The main registration node that manages other registration modules:
+1. **Registrator** - The main registration node that manages other registration modules:
    - Registers agents, targets, and clusters based on configuration
    - Initializes external tools (e.g. AirSim)
 
-2. **AirSim Settings Parser** - Utility for parsing mission configurations:
+2. **AirSim Settings** - Utility for parsing mission configurations:
    - Generates AirSim settings JSON file based on the parsed configuration
 
 ### Runtime Nodes
@@ -46,7 +49,8 @@ Setup nodes are responsible for initializing the system and preparing it for run
 Runtime nodes are launched by the `run.launch.py` file and perform the core functionality of the system:
 
 1. **Control Nodes** (from flychams_control package):
-   - `agent_control:` Controls the movement of aerial agents
+   - `drone_control:` Controls the movement of aerial agents
+   - `head_control:` Controls the heads of the agents
 
 2. **Perception Nodes** (from flychams_perception package):
    - `clustering:` Processes sensor data to identify and cluster targets
@@ -56,7 +60,8 @@ Runtime nodes are launched by the `run.launch.py` file and perform the core func
    - `agent_assignment:` Assigns agents to clusters
    - `agent_tracking:` Manages tracking of clusters by agents
 
-4. **Target Nodes** (from flychams_target package):
+4. **Target Nodes** (from flychams_targets package):
+   - `target_state:` Manages target state (for debugging)
    - `target_control:` Manages target movement and behavior
 
 5. **Dashboard Nodes** (from flychams_dashboard package):
@@ -93,13 +98,13 @@ This will start all the control, perception, coordination, target and dashboard 
 You can customize which nodes are launched using launch arguments:
 
 ```bash
-# Launch target control and clustering nodes
-ros2 launch flychams_bringup run.launch.py ctrl:=False clus:=True pos:=False assign:=False track:=False gui:=False viz:=False tgt_ctrl:=True
+# Launch drone control node with warning level logging
+ros2 launch flychams_bringup run.launch.py log_drone_control:=warn
 ```
 
 ```bash
-# Launch only tracking node with warning level logging
-ros2 launch flychams_bringup run.launch.py track:=True log_track:=warn
+# Don´t launch agent tracking node
+ros2 launch flychams_bringup run.launch.py agent_tracking:=False
 ```
 
 ## Configuration

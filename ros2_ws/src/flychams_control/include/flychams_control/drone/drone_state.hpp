@@ -50,19 +50,22 @@ namespace flychams::control
         float cmd_timeout_;
 
     private: // Data
-        // Current state
-        core::AgentState curr_state_;
-        float state_duration_;
+        // Current status
+        core::AgentStatus curr_status_;
+        float status_duration_;
         // Current position
         core::PointMsg curr_position_;
         bool has_position_;
+        // Messages
+        core::AgentStatusMsg status_msg_;
+        core::PointStampedMsg position_msg_;
         // Time step
         core::Time last_update_time_;
 
     public: // Public methods
-        // State getter
-        const core::AgentState getState() const { return curr_state_; }
-        // State transition requests
+        // Status getter
+        const core::AgentStatus getStatus() const { return curr_status_; }
+        // Status transition requests
         bool requestDisarm();
         bool requestArm();
         bool requestTakeoff();
@@ -75,8 +78,8 @@ namespace flychams::control
 
     private: // State management
         void update();
-        void setState(const core::AgentState& new_state);
-        bool isValid(const core::AgentState& from, const core::AgentState& to) const;
+        void setStatus(const core::AgentStatus& new_status);
+        bool isValid(const core::AgentStatus& from, const core::AgentStatus& to) const;
 
     private: // State handlers
         void handleIdle();
@@ -96,8 +99,9 @@ namespace flychams::control
         core::CallbackGroupPtr callback_group_;
         // Subscriber
         core::SubscriberPtr<core::OdometryMsg> odom_sub_;
-        // Publisher
-        core::PublisherPtr<core::AgentStateMsg> state_pub_;
+        // Publishers
+        core::PublisherPtr<core::AgentStatusMsg> status_pub_;
+        core::PublisherPtr<core::PointStampedMsg> position_pub_;
         // Timer
         core::TimerPtr update_timer_;
     };

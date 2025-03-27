@@ -38,6 +38,7 @@ namespace flychams::core
         // Path settings
         std::string config_source_file;
         std::string airsim_settings_destination_file;
+        std::string trajectory_root;
 
         // GUI settings
         // Scenario view settings
@@ -73,21 +74,25 @@ namespace flychams::core
         std::string global_metrics;
 
         // Agent topics
-        std::string agent_state;
-        std::string agent_global_odom;
-        std::string agent_position_goal;
-        std::string agent_tracking_info;
-        std::string agent_tracking_goal;
+        std::string agent_status;
+        std::string agent_position;
+        std::string agent_clusters;
+        std::string agent_position_setpoint;
+        std::string agent_head_setpoints;
+        std::string agent_window_setpoints;
         std::string agent_metrics;
         std::string agent_markers;
 
         // Target topics
-        std::string target_info;
+        std::string target_true_position;
+        std::string target_est_position;
+        std::string target_assignment;
         std::string target_metrics;
         std::string target_markers;
 
         // Cluster topics
-        std::string cluster_info;
+        std::string cluster_geometry;
+        std::string cluster_assignment;
         std::string cluster_metrics;
         std::string cluster_markers;
     };
@@ -250,6 +255,7 @@ namespace flychams::core
         ID id;
         Name name;
         ID target_group_id;
+        int target_index;
 
         // Internal config
         TargetType type;

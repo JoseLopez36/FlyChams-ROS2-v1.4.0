@@ -13,12 +13,12 @@ using namespace flychams::control;
 /**
  * ════════════════════════════════════════════════════════════════
  * @brief Control node for controlling the state and position
- * of the drone
+ * of the drones
  *
  * @details
  * This class implements the control node for controlling the state
- * and position of the drone. It uses the discoverer node to discover
- * each agent and then creates a controller for it.
+ * and position of the drones. It uses the discoverer node to discover
+ * each drone and then creates controllers for it.
  *
  * ════════════════════════════════════════════════════════════════
  * @author Jose Francisco Lopez Ruiz
@@ -60,28 +60,28 @@ private: // Element management
 
         // Arm drone. Try each 100ms until success
         bool arm_result = false;
-        while (!arm_result || drone_state->getState() != AgentState::ARMED)
+        while (!arm_result || drone_state->getStatus() != AgentStatus::ARMED)
         {
             arm_result = drone_state->requestArm();
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         // Takeoff drone. Try each 100ms until success
         bool takeoff_result = false;
-        while (!takeoff_result || drone_state->getState() != AgentState::TAKEN_OFF)
+        while (!takeoff_result || drone_state->getStatus() != AgentStatus::TAKEN_OFF)
         {
             takeoff_result = drone_state->requestTakeoff();
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         // Hover drone. Try each 100ms until success
         bool hover_result = false;
-        while (!hover_result || drone_state->getState() != AgentState::HOVERED)
+        while (!hover_result || drone_state->getStatus() != AgentStatus::HOVERED)
         {
             hover_result = drone_state->requestHover();
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         // Transition to tracking state. Try each 100ms until success
         bool tracking_result = false;
-        while (!tracking_result || drone_state->getState() != AgentState::TRACKING)
+        while (!tracking_result || drone_state->getStatus() != AgentStatus::TRACKING)
         {
             tracking_result = drone_state->requestTracking();
             std::this_thread::sleep_for(std::chrono::milliseconds(100));

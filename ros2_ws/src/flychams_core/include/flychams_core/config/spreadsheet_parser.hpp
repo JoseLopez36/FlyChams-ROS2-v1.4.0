@@ -283,6 +283,7 @@ namespace flychams::core
 							target_unit->id = ss.str();
 							target_unit->name = target->name;
 							target_unit->target_group_id = target->target_group_id;
+							target_unit->target_index = i;
 							target_unit->type = target->type;
 							target_unit->count = target->count;
 							target_unit->priority = target->priority;

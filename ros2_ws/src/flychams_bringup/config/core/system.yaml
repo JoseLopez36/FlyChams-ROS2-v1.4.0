@@ -10,6 +10,7 @@
     path:
       config_spreadsheet_path: "/home/testuser/FlyChams-ROS2/config/Configuration.xlsx"
       airsim_settings_path: "/home/testuser/FlyChams-ROS2/config/settings.json"
+      trajectory_root: "/home/testuser/FlyChams-ROS2/config/Trajectories"
     # GUI settings
     gui:
       # Scenario view settings

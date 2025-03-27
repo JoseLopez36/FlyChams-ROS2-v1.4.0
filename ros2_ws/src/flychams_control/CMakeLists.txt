@@ -33,10 +33,15 @@ target_link_libraries(${PROJECT_NAME}
   rclcpp::rclcpp
 )
 
-# Create executable for control node
+# Create executable for drone control node
 add_executable(drone_control_node src/drone_control_node.cpp)
 target_link_libraries(drone_control_node ${PROJECT_NAME})
 ament_target_dependencies(drone_control_node rclcpp flychams_core)
+
+# Create executable for head control node
+add_executable(head_control_node src/head_control_node.cpp)
+target_link_libraries(head_control_node ${PROJECT_NAME})
+ament_target_dependencies(head_control_node rclcpp flychams_core)
 
 # Install targets and headers
 install(TARGETS ${PROJECT_NAME}
@@ -47,7 +52,7 @@ install(TARGETS ${PROJECT_NAME}
   INCLUDES DESTINATION include
 )
 
-install(TARGETS drone_control_node
+install(TARGETS drone_control_node head_control_node
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 

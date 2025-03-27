@@ -49,18 +49,18 @@ namespace flychams::control
 		float update_rate_;
 
 	private: // Data
-		// Current state
-		core::AgentState curr_state_;
-		bool has_state_;
-		// Tracking goal
-		core::TrackingGoalMsg goal_;
-		bool has_goal_;
+		// Current status
+		core::AgentStatus curr_status_;
+		bool has_status_;
+		// Head setpoints
+		core::AgentHeadSetpointsMsg head_setpoints_;
+		bool has_head_setpoints_;
 		// Central head command
 		HeadCmd central_cmd_;
 
 	private: // Callbacks
-		void stateCallback(const core::AgentStateMsg::SharedPtr msg);
-		void goalCallback(const core::TrackingGoalMsg::SharedPtr msg);
+		void statusCallback(const core::AgentStatusMsg::SharedPtr msg);
+		void headSetpointsCallback(const core::AgentHeadSetpointsMsg::SharedPtr msg);
 
 	private: // Head management
 		// Update
@@ -70,8 +70,8 @@ namespace flychams::control
 		// Callback group
 		core::CallbackGroupPtr callback_group_;
 		// Subscribers
-		core::SubscriberPtr<core::AgentStateMsg> state_sub_;
-		core::SubscriberPtr<core::TrackingGoalMsg> goal_sub_;
+		core::SubscriberPtr<core::AgentStatusMsg> status_sub_;
+		core::SubscriberPtr<core::AgentHeadSetpointsMsg> head_setpoints_sub_;
 		// Timer
 		core::TimerPtr update_timer_;
 	};

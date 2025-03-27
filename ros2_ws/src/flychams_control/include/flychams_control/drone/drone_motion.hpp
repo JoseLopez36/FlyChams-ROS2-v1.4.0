@@ -52,24 +52,24 @@ namespace flychams::control
 		MotionMode motion_mode_;
 
 	private: // Data
-		// Current state
-		core::AgentState curr_state_;
-		bool has_state_;
+		// Current status
+		core::AgentStatus curr_status_;
+		bool has_status_;
 		// Current position
 		core::PointMsg curr_position_;
 		bool has_position_;
-		// Goal position
-		core::PointMsg goal_position_;
-		bool has_goal_;
+		// Setpoint position
+		core::PointMsg setpoint_position_;
+		bool has_setpoint_;
 		// Speed planner
 		SpeedPlanner speed_planner_;
 		// Step time
 		core::Time last_update_time_;
 
 	private: // Callbacks
-		void stateCallback(const core::AgentStateMsg::SharedPtr msg);
-		void odomCallback(const core::OdometryMsg::SharedPtr msg);
-		void goalCallback(const core::PositionGoalMsg::SharedPtr msg);
+		void statusCallback(const core::AgentStatusMsg::SharedPtr msg);
+		void positionCallback(const core::PointStampedMsg::SharedPtr msg);
+		void setpointPositionCallback(const core::PointStampedMsg::SharedPtr msg);
 
 	private: // Motion management
 		void update();
@@ -80,9 +80,9 @@ namespace flychams::control
 		// Callback group
 		core::CallbackGroupPtr callback_group_;
 		// Subscribers
-		core::SubscriberPtr<core::AgentStateMsg> state_sub_;
-		core::SubscriberPtr<core::OdometryMsg> odom_sub_;
-		core::SubscriberPtr<core::PositionGoalMsg> goal_sub_;
+		core::SubscriberPtr<core::AgentStatusMsg> status_sub_;
+		core::SubscriberPtr<core::PointStampedMsg> position_sub_;
+		core::SubscriberPtr<core::PointStampedMsg> setpoint_position_sub_;
 		// Timer
 		core::TimerPtr update_timer_;
 	};

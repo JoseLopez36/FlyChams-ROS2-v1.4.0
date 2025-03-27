@@ -1,10 +1,7 @@
 #pragma once
 
-// Standard includes
-#include <mutex>
-
 // Trajectory includes
-#include "flychams_targets/target_trajectory/trajectory_parser.hpp"
+#include "flychams_targets/control/trajectory_parser.hpp"
 
 // Base module include
 #include "flychams_core/base/base_module.hpp"
@@ -13,21 +10,22 @@ namespace flychams::targets
 {
     /**
      * ════════════════════════════════════════════════════════════════
-     * @brief Control for target trajectories and data publishing
+     * @brief State manager for targets
      *
      * @details
-     * This class is responsible for controlling the position of targets.
-     * It also handles the data publishing of target information.
+     * This class is responsible for managing the state of targets.
+     * It handles the state of the target, mainly its instantaneus
+     * position.
      *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
-     * @date 2025-02-26
+     * @date 2025-03-27
      * ════════════════════════════════════════════════════════════════
      */
-    class TargetController : public core::BaseModule
+    class TargetState : public core::BaseModule
     {
     public: // Constructor/Destructor
-        TargetController(const core::ID& target_id, core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::FrameworkTools::SharedPtr framework_tools, core::TopicTools::SharedPtr topic_tools, core::TransformTools::SharedPtr transform_tools)
+        TargetState(const core::ID& target_id, core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::FrameworkTools::SharedPtr framework_tools, core::TopicTools::SharedPtr topic_tools, core::TransformTools::SharedPtr transform_tools)
             : BaseModule(node, config_tools, framework_tools, topic_tools, transform_tools), target_id_(target_id)
         {
             init();
@@ -38,33 +36,33 @@ namespace flychams::targets
         void onShutdown() override;
 
     public: // Types
-        using SharedPtr = std::shared_ptr<TargetController>;
+        using SharedPtr = std::shared_ptr<TargetState>;
 
     private: // Parameters
         core::ID target_id_;
+        float update_rate_;
+        float cmd_timeout_;
 
     private: // Data
-        // Trajectory data
+        // Trajectory
         std::vector<TrajectoryParser::Point> trajectory_;
         int current_idx_;
         int num_points_;
         bool reverse_;
         float time_elapsed_;
-        // Target info
-        core::TargetInfoMsg info_;
+        // Message
+        core::PointStampedMsg position_msg_;
+        // Time step
+        core::Time last_update_time_;
 
-    public: // Public methods
-        // Update
-        void update(const float& dt);
-        core::PointMsg getPosition() const;
-
-    private: // Methods
-        void updateInfo(const float& dt, core::PointMsg& position);
-        void publishInfo(const core::TargetInfoMsg& info);
+    private: // State management
+        void update();
 
     private:
-        // Publishers
-        core::PublisherPtr<core::TargetInfoMsg> info_pub_;
+        // Publisher
+        core::PublisherPtr<core::PointStampedMsg> position_pub_;
+        // Timer
+        core::TimerPtr update_timer_;
     };
 
 } // namespace flychams::targets

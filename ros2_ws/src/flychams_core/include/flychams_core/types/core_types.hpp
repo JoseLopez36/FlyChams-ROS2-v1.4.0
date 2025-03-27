@@ -30,8 +30,6 @@ namespace flychams::core
 
     using ID = std::string;
     using IDs = std::vector<ID>;
-    using UnorderedIDs = std::unordered_set<ID>;
-    using OrderedIDs = std::set<ID>;
     using Name = std::string;
 
     // ════════════════════════════════════════════════════════════════
@@ -207,7 +205,7 @@ namespace flychams::core
     /**
      * Enum for agent states
      */
-    enum class AgentState
+    enum class AgentStatus
     {
         IDLE,                // Initial state, UAV is inactive
         DISARMED,            // UAV is disarmed, safe state

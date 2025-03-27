@@ -85,6 +85,9 @@ namespace flychams::core
         void addVehicle(const ID& vehicle_id);
         void removeVehicle(const ID& vehicle_id);
 
+    public: // Vehicle state methods (override)
+        SubscriberPtr<OdometryMsg> createOdometrySubscriber(const ID& vehicle_id, const std::function<void(const OdometryMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions()) override;
+
     public: // Global control methods
         bool resetSimulation() override;
         bool runSimulation() override;

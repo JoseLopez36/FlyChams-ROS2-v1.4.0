@@ -13,7 +13,8 @@ find_package(flychams_core REQUIRED)
 
 # Create control library
 set(TARGET_SRC
-  src/target_control/target_controller.cpp
+  src/state/target_state.cpp
+  src/control/target_motion.cpp
 )
 add_library(${PROJECT_NAME} SHARED ${TARGET_SRC})
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -31,6 +32,11 @@ target_link_libraries(${PROJECT_NAME}
   rclcpp::rclcpp
 )
 
+# Create executable for state node
+add_executable(target_state_node src/target_state_node.cpp)
+target_link_libraries(target_state_node ${PROJECT_NAME})
+ament_target_dependencies(target_state_node rclcpp flychams_core)
+
 # Create executable for control node
 add_executable(target_control_node src/target_control_node.cpp)
 target_link_libraries(target_control_node ${PROJECT_NAME})
@@ -45,7 +51,7 @@ install(TARGETS ${PROJECT_NAME}
   INCLUDES DESTINATION include
 )
 
-install(TARGETS target_control_node
+install(TARGETS target_state_node target_control_node
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -25,10 +25,10 @@ using namespace flychams::perception;
  * @date 2025-03-01
  * ════════════════════════════════════════════════════════════════
  */
-class ClusteringNode : public BaseDiscovererNode
+class TargetClusteringNode : public BaseDiscovererNode
 {
 public: // Constructor/Destructor
-    ClusteringNode(const std::string& node_name, const rclcpp::NodeOptions& options)
+    TargetClusteringNode(const std::string& node_name, const rclcpp::NodeOptions& options)
         : BaseDiscovererNode(node_name, options)
     {
         // Nothing to do
@@ -85,7 +85,7 @@ int main(int argc, char** argv)
     options.allow_undeclared_parameters(true);
     options.automatically_declare_parameters_from_overrides(true);
     // Create and initialize node
-    auto node = std::make_shared<ClusteringNode>("clustering_node", options);
+    auto node = std::make_shared<TargetClusteringNode>("target_clustering_node", options);
     node->init();
     // Create executor and add node
     rclcpp::executors::MultiThreadedExecutor executor;

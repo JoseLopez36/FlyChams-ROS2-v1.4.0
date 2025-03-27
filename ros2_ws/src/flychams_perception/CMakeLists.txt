@@ -13,9 +13,9 @@ find_package(flychams_core REQUIRED)
 
 # Create perception library
 set(PERCEPTION_SRC
-  src/clustering/cluster_analysis.cpp
   src/clustering/target_clustering.cpp
-  src/clustering/kmeans_mod.cpp
+  src/analysis/cluster_analysis.cpp
+  src/clustering/k_means_mod.cpp
   external/hungarian-algorithm-cpp/Hungarian.cpp
 )
 add_library(${PROJECT_NAME} SHARED ${PERCEPTION_SRC})
@@ -36,10 +36,15 @@ target_link_libraries(${PROJECT_NAME}
   rclcpp::rclcpp
 )
 
-# Create executable for clustering node
-add_executable(clustering_node src/clustering_node.cpp)
-target_link_libraries(clustering_node ${PROJECT_NAME})
-ament_target_dependencies(clustering_node rclcpp flychams_core)
+# Create executable for target clustering node
+add_executable(target_clustering_node src/target_clustering_node.cpp)
+target_link_libraries(target_clustering_node ${PROJECT_NAME})
+ament_target_dependencies(target_clustering_node rclcpp flychams_core)
+
+# Create executable for cluster analysis node
+add_executable(cluster_analysis_node src/cluster_analysis_node.cpp)
+target_link_libraries(cluster_analysis_node ${PROJECT_NAME})
+ament_target_dependencies(cluster_analysis_node rclcpp flychams_core)
 
 # Install targets and headers
 install(TARGETS ${PROJECT_NAME}
@@ -50,7 +55,7 @@ install(TARGETS ${PROJECT_NAME}
   INCLUDES DESTINATION include
 )
 
-install(TARGETS clustering_node
+install(TARGETS target_clustering_node cluster_analysis_node
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -5,6 +5,7 @@
 
 // Standard messages
 #include <std_msgs/msg/header.hpp>
+#include <std_msgs/msg/string.hpp>
 
 // Geometry messages
 #include <geometry_msgs/msg/point.hpp>
@@ -22,9 +23,6 @@
 // Navigation messages
 #include <nav_msgs/msg/odometry.hpp>
 
-// Sensor messages
-#include <sensor_msgs/msg/camera_info.hpp>
-
 // Visualization messages
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
@@ -39,19 +37,21 @@
 #include <tf2/utils.h>
 
 // Custom message types
-#include "flychams_interfaces/msg/element.hpp"
+// Global messages
 #include "flychams_interfaces/msg/registration.hpp"
-#include "flychams_interfaces/msg/agent_state.hpp"
-#include "flychams_interfaces/msg/position_goal.hpp"
-#include "flychams_interfaces/msg/tracking_info.hpp"
-#include "flychams_interfaces/msg/tracking_goal.hpp"
-#include "flychams_interfaces/msg/target_info.hpp"
-#include "flychams_interfaces/msg/cluster_info.hpp"
-#include "flychams_interfaces/msg/agent_metrics.hpp"
-#include "flychams_interfaces/msg/target_metrics.hpp"
-#include "flychams_interfaces/msg/cluster_metrics.hpp"
 #include "flychams_interfaces/msg/global_metrics.hpp"
-#include "flychams_interfaces/msg/crop.hpp"
+// Agent messages
+#include "flychams_interfaces/msg/agent_status.hpp"
+#include "flychams_interfaces/msg/agent_clusters.hpp"
+#include "flychams_interfaces/msg/agent_head_setpoints.hpp"
+#include "flychams_interfaces/msg/agent_window_setpoints.hpp"
+#include "flychams_interfaces/msg/agent_metrics.hpp"
+// Target messages
+#include "flychams_interfaces/msg/target_metrics.hpp"
+// Cluster messages
+#include "flychams_interfaces/msg/cluster_geometry.hpp"
+#include "flychams_interfaces/msg/cluster_metrics.hpp"
+
 
 namespace flychams::core
 {
@@ -115,13 +115,13 @@ namespace flychams::core
     using TransformStampedMsg = geometry_msgs::msg::TransformStamped;
     // Odometry
     using OdometryMsg = nav_msgs::msg::Odometry;
-    // Camera info
-    using CameraInfoMsg = sensor_msgs::msg::CameraInfo;
     // Marker
     using MarkerMsg = visualization_msgs::msg::Marker;
     using MarkerArrayMsg = visualization_msgs::msg::MarkerArray;
     // Color
     using ColorMsg = std_msgs::msg::ColorRGBA;
+    // String
+    using StringMsg = std_msgs::msg::String;
 
     // ════════════════════════════════════════════════════════════════
     // TF2 TYPES: Transform types
@@ -136,25 +136,22 @@ namespace flychams::core
     // CUSTOM MESSAGE TYPES: FlyChams-specific message types
     // ════════════════════════════════════════════════════════════════
 
-    // Element
+    // Basic
+    using CropMsg = flychams_interfaces::msg::Crop;
     using ElementMsg = flychams_interfaces::msg::Element;
     // Registration messages
     using RegistrationMsg = flychams_interfaces::msg::Registration;
-    // Agent messages
-    using AgentStateMsg = flychams_interfaces::msg::AgentState;
-    using PositionGoalMsg = flychams_interfaces::msg::PositionGoal;
-    using TrackingInfoMsg = flychams_interfaces::msg::TrackingInfo;
-    using TrackingGoalMsg = flychams_interfaces::msg::TrackingGoal;
-    // Target messages
-    using TargetInfoMsg = flychams_interfaces::msg::TargetInfo;
-    // Cluster messages
-    using ClusterInfoMsg = flychams_interfaces::msg::ClusterInfo;
-    // Metrics messages
-    using AgentMetricsMsg = flychams_interfaces::msg::AgentMetrics;
-    using TargetMetricsMsg = flychams_interfaces::msg::TargetMetrics;
-    using ClusterMetricsMsg = flychams_interfaces::msg::ClusterMetrics;
     using GlobalMetricsMsg = flychams_interfaces::msg::GlobalMetrics;
-    // Basic
-    using CropMsg = flychams_interfaces::msg::Crop;
+    // Agent messages
+    using AgentStatusMsg = flychams_interfaces::msg::AgentStatus;
+    using AgentClustersMsg = flychams_interfaces::msg::AgentClusters;
+    using AgentHeadSetpointsMsg = flychams_interfaces::msg::AgentHeadSetpoints;
+    using AgentWindowSetpointsMsg = flychams_interfaces::msg::AgentWindowSetpoints;
+    using AgentMetricsMsg = flychams_interfaces::msg::AgentMetrics;
+    // Target messages
+    using TargetMetricsMsg = flychams_interfaces::msg::TargetMetrics;
+    // Cluster messages
+    using ClusterGeometryMsg = flychams_interfaces::msg::ClusterGeometry;
+    using ClusterMetricsMsg = flychams_interfaces::msg::ClusterMetrics;
 
 } // namespace flychams::core

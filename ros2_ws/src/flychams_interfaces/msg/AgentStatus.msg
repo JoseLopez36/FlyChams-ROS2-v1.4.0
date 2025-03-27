@@ -1,7 +1,7 @@
 std_msgs/Header header
-uint8 state
+uint8 status
 
-# State values
+# Status values
 # IDLE: 0        Initial state, UAV is inactive
 # DISARMED: 1    UAV is disarmed, safe state
 # ARMED: 2       UAV is armed, ready for takeoff

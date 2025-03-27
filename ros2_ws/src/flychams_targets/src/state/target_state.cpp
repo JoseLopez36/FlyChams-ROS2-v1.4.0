@@ -1,6 +1,5 @@
-#include "flychams_targets/target_control/target_controller.hpp"
+#include "flychams_targets/state/target_state.hpp"
 
-using namespace std::chrono_literals;
 using namespace flychams::core;
 
 namespace flychams::targets
@@ -9,15 +8,21 @@ namespace flychams::targets
     // CONSTRUCTOR: Constructor and destructor
     // ════════════════════════════════════════════════════════════════════════════
 
-    void TargetController::onInit()
+    void TargetState::onInit()
     {
         // Get parameters from parameter server
         // Get update rate
-        float update_rate = RosUtils::getParameterOr<float>(node_, "target_registration.target_update_rate", 20.0f);
+        update_rate_ = RosUtils::getParameterOr<float>(node_, "target_state.state_update_rate", 10.0f);
+
+        // Compute command timeout
+        cmd_timeout_ = (1.0f / update_rate_) * 1.25f;
 
         // Parse trajectory
-        const auto& path = config_tools_->getTarget(target_id_)->trajectory_path;
-        RCLCPP_INFO(node_->get_logger(), "Parsing trajectory for target %s with path %s", target_id_.c_str(), path.c_str());
+        const auto& root = config_tools_->getSystem().trajectory_root;
+        const auto& folder = config_tools_->getTarget(target_id_)->trajectory_folder;
+        const auto& index = config_tools_->getTarget(target_id_)->target_index;
+        const auto& path = root + "/" + folder + "/" + "TRAJ" + std::to_string(index) + ".csv";
+        RCLCPP_INFO(node_->get_logger(), "Target state: Parsing trajectory for target %s with path %s", target_id_.c_str(), path.c_str());
         trajectory_ = TrajectoryParser::parse(path);
 
         // Initialize trajectory data
@@ -26,52 +31,52 @@ namespace flychams::targets
         num_points_ = static_cast<int>(trajectory_.size());
         reverse_ = false;
 
-        // Initialize target info
-        info_.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
-        info_.position.x = trajectory_[0].x;
-        info_.position.y = trajectory_[0].y;
-        info_.position.z = trajectory_[0].z;
-
-        // Initialize target info publisher
-        info_pub_ = topic_tools_->createTargetInfoPublisher(target_id_);
-    }
-
-    void TargetController::onShutdown()
-    {
-        // Destroy trajectory
-        trajectory_.clear();
-        // Destroy publisher
-        info_pub_.reset();
-    }
-
-    // ════════════════════════════════════════════════════════════════════════════
-    // PUBLIC METHODS: Methods for initializing and updating the target
-    // ════════════════════════════════════════════════════════════════════════════
-
-    void TargetController::update(const float& dt)
-    {
-        // Update target info
-        info_.header.stamp = RosUtils::now(node_);
-        updateInfo(dt, info_.position);
-
-        // Publish target info
-        publishInfo(info_);
-    }
-
-    core::PointMsg TargetController::getPosition() const
-    {
-        return info_.position;
-    }
-
-    // ════════════════════════════════════════════════════════════════════════════
-    // PRIVATE METHODS: Methods for updating the target
-    // ════════════════════════════════════════════════════════════════════════════
-
-    void TargetController::updateInfo(const float& dt, core::PointMsg& position)
-    {
         // Check if trajectory is empty
-        if (trajectory_.empty())
+        if (num_points_ == 0)
+        {
+            RCLCPP_ERROR(node_->get_logger(), "Target state: No trajectory data available for target %s",
+                target_id_.c_str());
+            rclcpp::shutdown();
             return;
+        }
+
+        // Initialize target position
+        position_msg_.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
+        position_msg_.point.x = trajectory_[0].x;
+        position_msg_.point.y = trajectory_[0].y;
+        position_msg_.point.z = trajectory_[0].z;
+
+        // Initialize target position publisher and publish first message
+        position_pub_ = topic_tools_->createTargetTruePositionPublisher(target_id_);
+        position_pub_->publish(position_msg_);
+
+        // Set update timer
+        last_update_time_ = RosUtils::now(node_);
+        update_timer_ = RosUtils::createTimer(node_, update_rate_,
+            std::bind(&TargetState::update, this));
+    }
+
+    void TargetState::onShutdown()
+    {
+        // Reset time elapsed
+        time_elapsed_ = 0.0f;
+        // Destroy update timer
+        update_timer_.reset();
+    }
+
+    // ════════════════════════════════════════════════════════════════════════════
+    // UPDATE: Update motion
+    // ════════════════════════════════════════════════════════════════════════════
+
+    void TargetState::update()
+    {
+        // Compute time step
+        auto current_time = RosUtils::now(node_);
+        float dt = (current_time - last_update_time_).seconds();
+        last_update_time_ = current_time;
+
+        // Limit dt to prevent extreme values after pauses
+        dt = std::min(dt, cmd_timeout_);
 
         // Update time elapsed
         time_elapsed_ += dt;
@@ -88,7 +93,7 @@ namespace flychams::targets
         else
             prev_point = trajectory_[current_idx_ - 1];
 
-        // Find the closest trajectory point based on time
+        // Find the closest trajectory point based on time and direction
         if (!reverse_)
         {
             if (current_idx_ < num_points_ - 1 && next_point.t <= time_elapsed_)
@@ -114,19 +119,13 @@ namespace flychams::targets
             }
         }
 
-        // Get current point
-        const auto& point = trajectory_[current_idx_];
-
-        // Update target position
-        position.x = point.x;
-        position.y = point.y;
-        position.z = point.z;
-    }
-
-    void TargetController::publishInfo(const core::TargetInfoMsg& info)
-    {
-        // Publish target info
-        info_pub_->publish(info);
+        // Update and publish target position
+        TrajectoryParser::Point pos = trajectory_[current_idx_];
+        position_msg_.header.stamp = RosUtils::now(node_);
+        position_msg_.point.x = pos.x;
+        position_msg_.point.y = pos.y;
+        position_msg_.point.z = pos.z;
+        position_pub_->publish(position_msg_);
     }
 
 } // namespace flychams::targets

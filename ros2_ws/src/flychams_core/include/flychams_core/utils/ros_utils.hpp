@@ -115,28 +115,6 @@ namespace flychams::core
             return Quaternionr{ static_cast<float>(quat.x), static_cast<float>(quat.y), static_cast<float>(quat.z), static_cast<float>(quat.w) };
         }
 
-        static std::pair<Matrix3Xr, RowVectorXr> fromMsg(const TrackingInfoMsg& info)
-        {
-            // Get the number of clusters
-            size_t n_clusters = info.centers.size();
-
-            // Create matrices to store cluster centers and radii
-            Matrix3Xr centers(3, n_clusters);
-            RowVectorXr radii(n_clusters);
-
-            // Fill the matrices with data from the message
-            for (size_t i = 0; i < n_clusters; i++)
-            {
-                // Extract center coordinates
-                centers.col(i) = fromMsg(info.centers[i]);
-
-                // Extract radius
-                radii(i) = info.radii[i];
-            }
-
-            return std::make_pair(centers, radii);
-        }
-
         static void toMsg(const Vector3r& vector, PointMsg& point)
         {
             point.x = static_cast<double>(vector.x());

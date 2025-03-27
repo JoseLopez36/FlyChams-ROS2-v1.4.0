@@ -1,4 +1,8 @@
 /flychams/**:
   ros__parameters:
-    target_control:
-      target_update_rate: 20.0 # (Hz)
+    # Target state parameters
+    target_state:
+      state_update_rate: 20.0 # (Hz)
+    # Target motion parameters
+    target_motion:
+      motion_update_rate: 20.0 # (Hz)
