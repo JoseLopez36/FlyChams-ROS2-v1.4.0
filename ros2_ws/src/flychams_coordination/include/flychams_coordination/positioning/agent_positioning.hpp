@@ -1,8 +1,5 @@
 #pragma once
 
-// Standard includes
-#include <mutex>
-
 // Position solver include
 #include "flychams_coordination/positioning/position_solver.hpp"
 
@@ -13,23 +10,22 @@ namespace flychams::coordination
 {
     /**
      * ════════════════════════════════════════════════════════════════
-     * @brief Controller for UAV agent position and yaw
+     * @brief Agent positioning module
      *
      * @details
-     * This class is responsible for controlling the position and yaw
-     * of UAV agents using PID controllers. It manages multiple agents
-     * and their respective control parameters.
+     * This class is responsible for computing the position of an agent
+     * based on its cluster distribution.
      *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
-     * @date 2025-01-29
+     * @date 2025-03-28
      * ════════════════════════════════════════════════════════════════
      */
     class AgentPositioning : public core::BaseModule
     {
     public: // Constructor/Destructor
-        AgentPositioning(const core::ID& agent_id, core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::FrameworkTools::SharedPtr framework_tools, core::TopicTools::SharedPtr topic_tools, core::TransformTools::SharedPtr transform_tools)
-            : BaseModule(node, config_tools, framework_tools, topic_tools, transform_tools), agent_id_(agent_id)
+        AgentPositioning(const core::ID& agent_id, core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::FrameworkTools::SharedPtr framework_tools, core::TopicTools::SharedPtr topic_tools, core::TransformTools::SharedPtr transform_tools, core::CallbackGroupPtr module_cb_group)
+            : BaseModule(node, config_tools, framework_tools, topic_tools, transform_tools, module_cb_group), agent_id_(agent_id)
         {
             init();
         }
@@ -40,37 +36,59 @@ namespace flychams::coordination
 
     public: // Types
         using SharedPtr = std::shared_ptr<AgentPositioning>;
+        struct Agent
+        {
+            // Status data
+            core::AgentStatus status;
+            bool has_status;
+            // Position data
+            core::PointMsg position;
+            bool has_position;
+            // Clusters data
+            core::AgentClustersMsg clusters;
+            bool has_clusters;
+            // Setpoint message
+            core::PointStampedMsg setpoint;
+            // Subscribers
+            core::SubscriberPtr<core::AgentStatusMsg> status_sub;
+            core::SubscriberPtr<core::PointStampedMsg> position_sub;
+            core::SubscriberPtr<core::AgentClustersMsg> clusters_sub;
+            // Publisher
+            core::PublisherPtr<core::PointStampedMsg> setpoint_pub;
+            // Constructor
+            Agent()
+                : status(), has_status(false), position(), has_position(false), clusters(),
+                has_clusters(false), setpoint(), status_sub(), position_sub(), clusters_sub(),
+                setpoint_pub()
+            {
+            }
+        };
 
     private: // Parameters
         core::ID agent_id_;
+        float update_rate_;
+        // Positioning parameters
+        float min_height_;
+        float max_height_;
+        core::TrackingParameters tracking_params_;
 
     private: // Data
-        // Odom
-        core::Vector3r curr_pos_; 	            // Current position (x, y, z)
-        bool has_odom_;
-        // Clusters
-        std::pair<core::Matrix3Xr, core::RowVectorXr> clusters_;
-        bool has_clusters_;
-        // Odom and goal mutex
-        std::mutex mutex_;
+        // Agent
+        Agent agent_;
         // Position solver
-        PositionSolver::SharedPtr solver_;
+        PositionSolver solver_;
 
-    private: // Methods
-        // Callbacks
-        void odomCallback(const core::OdometryMsg::SharedPtr msg);
-        void infoCallback(const core::TrackingInfoMsg::SharedPtr msg);
-        // Update
-        void updatePosition();
+    private: // Callbacks
+        void statusCallback(const core::AgentStatusMsg::SharedPtr msg);
+        void positionCallback(const core::PointStampedMsg::SharedPtr msg);
+        void clustersCallback(const core::AgentClustersMsg::SharedPtr msg);
 
-    private:
-        // Subscribers
-        core::SubscriberPtr<core::OdometryMsg> odom_sub_;
-        core::SubscriberPtr<core::TrackingInfoMsg> info_sub_;
-        // Publishers
-        core::PublisherPtr<core::PositionGoalMsg> goal_pub_;
-        // Timers
-        core::TimerPtr positioning_timer_;
+    private: // Positioning management
+        void update();
+
+    private: // ROS components
+        // Timer
+        core::TimerPtr update_timer_;
     };
 
 } // namespace flychams::coordination

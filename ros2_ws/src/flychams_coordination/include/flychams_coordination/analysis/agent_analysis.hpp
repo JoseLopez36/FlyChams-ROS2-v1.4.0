@@ -90,7 +90,7 @@ namespace flychams::coordination
         void update();
 
     private: // ROS components
-        // Timers
+        // Timer
         core::TimerPtr update_timer_;
     };
 

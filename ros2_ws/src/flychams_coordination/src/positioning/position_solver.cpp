@@ -5,69 +5,20 @@ using namespace flychams::core;
 namespace flychams::coordination
 {
     // ════════════════════════════════════════════════════════════════════════════
-    // CONSTRUCTOR: Constructor and destructor
+    // PUBLIC METHODS: Public methods for configuration and control
     // ════════════════════════════════════════════════════════════════════════════
 
-    PositionSolver::PositionSolver()
-    {
-        // Initialize solver parameters
-        solver_params_.tol = 1e-6f;
-        solver_params_.max_iter = 100;
-        solver_params_.eps = 1.0f;
-    }
-
-    PositionSolver::~PositionSolver()
-    {
-        destroySolver();
-    }
-
-    // ════════════════════════════════════════════════════════════════════════════
-    // METHODS: Configuration and runtime methods
-    // ════════════════════════════════════════════════════════════════════════════
-
-    void PositionSolver::setSolverParams(const SolverParams& params)
-    {
-        if (params.eps <= 0.0f || params.tol <= 0.0f)
-            throw std::invalid_argument("Tolerances must be positive");
-
-        solver_params_.tol = params.tol;
-        solver_params_.max_iter = params.max_iter;
-        solver_params_.eps = params.eps;
-    }
-
-    void PositionSolver::setFunctionParams(const FunctionParams& params)
-    {
-        if (params.h_min >= params.h_max)
-            throw std::invalid_argument("h_min must be less than h_max");
-        if (params.tracking_params.n <= 0)
-            throw std::invalid_argument("Number of cameras must be positive");
-
-        function_params_ = params;
-    }
-
-    void PositionSolver::initSolver()
+    void PositionSolver::init()
     {
         // Create an NLopt optimizer
-        int dim = 3; // Dimension of the problem
-        opt_ = nlopt_create(NLOPT_LN_NELDERMEAD, dim);
-        if (!opt_)
-        {
-            throw std::runtime_error("Failed to create NLOpt optimizer");
-            return;
-        }
+        opt_ = nlopt_create(NLOPT_LN_NELDERMEAD, 3); // 3 is the dimension of the problem
 
-        // Define the optimization bounds
-        const double lb[3] = { -HUGE_VAL, -HUGE_VAL, static_cast<double>(function_params_.h_min) };
-        const double ub[3] = { HUGE_VAL, HUGE_VAL, static_cast<double>(function_params_.h_max) };
-        nlopt_set_lower_bounds(opt_, lb);
-        nlopt_set_upper_bounds(opt_, ub);
-
-        // Optimization options
-        nlopt_set_xtol_rel(opt_, static_cast<double>(solver_params_.tol)); // Set convergence tolerance
-        nlopt_set_maxeval(opt_, solver_params_.max_iter);                  // Maximum number of function evaluations
+        // Optimizer options
+        nlopt_set_xtol_rel(opt_, static_cast<double>(tol_)); // Set convergence tolerance
+        nlopt_set_maxeval(opt_, max_iter_);                  // Maximum number of function evaluations
     }
 
-    void PositionSolver::destroySolver()
+    void PositionSolver::destroy()
     {
         if (opt_)
         {
@@ -75,66 +26,107 @@ namespace flychams::coordination
         }
     }
 
-    Vector3r PositionSolver::solve(const Vector3r& x0, const Matrix3Xr& tab_P, const RowVectorXr& tab_r)
+    void PositionSolver::reset()
     {
+        // Nothing to do
+    }
+
+    void PositionSolver::setMode(const SolverMode& mode)
+    {
+        mode_ = mode;
+    }
+
+    void PositionSolver::setParameters(const float& tol, const int& max_iter, const float& eps)
+    {
+        // Check parameters
+        if (tol <= 0.0f || max_iter <= 0 || eps <= 0.0f)
+        {
+            throw std::invalid_argument("Invalid parameters");
+        }
+
+        // Set parameters
+        tol_ = tol;
+        max_iter_ = max_iter;
+        eps_ = eps;
+    }
+
+    Vector3r PositionSolver::run(const Matrix3Xr& tab_P, const RowVectorXr& tab_r, const Vector3r& x0,
+        const float& min_h, const float& max_h, const TrackingParameters& params)
+    {
+        // Check if NLopt optimizer is initialized
+        if (!opt_)
+        {
+            throw std::runtime_error("NLopt optimizer not initialized");
+        }
+
+        // Define the optimization bounds
+        const double lb[3] = { -HUGE_VAL, -HUGE_VAL, static_cast<double>(min_h) };
+        const double ub[3] = { HUGE_VAL, HUGE_VAL, static_cast<double>(max_h) };
+        nlopt_set_lower_bounds(opt_, lb);
+        nlopt_set_upper_bounds(opt_, ub);
+
         // Clip height to limits
         Vector3r x0_clipped = x0;
-        x0_clipped(2) = std::clamp(x0(2), function_params_.h_min, function_params_.h_max);
+        x0_clipped(2) = std::min(std::max(x0(2), min_h), max_h);
+
+        // Create data struct with the number of clusters
+        int num_clusters = static_cast<int>(tab_P.cols());
+        Data data(num_clusters);
+        data.params = params;
+        data.tab_P = tab_P;
+        data.tab_r = tab_r;
+        data.xHat = Vector3r::Zero();
 
         // First optimization (solve for initial position)
-        Vector3r x_opt_1 = preOptimization(x0_clipped, tab_P, tab_r);
+        Vector3r xOpt_1 = preOptimization(x0_clipped, data);
 
         // Iterative optimization (solve for optimal position)
-        return iterativeOptimization(x_opt_1, tab_P, tab_r, solver_params_.eps);
+        return iterativeOptimization(xOpt_1, data);
     }
 
     // ════════════════════════════════════════════════════════════════════════════
     // IMPLEMENTATION: Optimization methods
     // ════════════════════════════════════════════════════════════════════════════
 
-    Vector3r PositionSolver::preOptimization(const Vector3r& x0, const Matrix3Xr& tab_P, const RowVectorXr& tab_r)
+    Vector3r PositionSolver::preOptimization(const Vector3r& x0, Data& data)
     {
-        // Set the objective cost function J1 (with parameters)
-        FunctionData dataJ1(function_params_, tab_P, tab_r, Vector3r::Zero());
-        nlopt_set_min_objective(opt_, funJ1, &dataJ1);
+        // Set the objective cost function J1 along with the data
+        nlopt_set_min_objective(opt_, funJ1, &data);
 
         // Optimize for J1
-        Vector3r x_opt = x0;
-        optimize(x_opt);
+        Vector3r xOpt = x0; // Start from initial position
+        optimize(xOpt);
 
-        return x_opt;
+        return xOpt;
     }
 
-    Vector3r PositionSolver::iterativeOptimization(const Vector3r& x0, const Matrix3Xr& tab_P, const RowVectorXr& tab_r, const float& eps)
+    Vector3r PositionSolver::iterativeOptimization(const Vector3r& x0, Data& data)
     {
         // Initialize with the previous solution
-        Vector3r x_opt_prev = x0;
-        Vector3r x_opt = x_opt_prev;
-
-        // Define the data for the convex relaxation (J2)
-        FunctionData dataJ2(function_params_, tab_P, tab_r, Vector3r::Zero());
+        Vector3r xOpt_prev = x0;
+        Vector3r xOpt = xOpt_prev;
 
         // Iteratively call the optimization algorithm that implements the convex relaxation (J2)
-        float x_dif_norm = HUGE_VALF;
-        while (x_dif_norm > eps)
+        float xDiff = HUGE_VALF;
+        while (xDiff > eps_)
         {
             // Define the xHat parameter of cost function J2
-            dataJ2.x_hat << x_opt_prev[0], x_opt_prev[1], x_opt_prev[2];
+            data.xHat << xOpt_prev[0], xOpt_prev[1], xOpt_prev[2];
 
-            // Set the objective cost function J2 (with parameters)
-            nlopt_set_min_objective(opt_, funJ2, &dataJ2);
+            // Set the objective cost function J2 along with the data
+            nlopt_set_min_objective(opt_, funJ2, &data);
 
             // Optimize for J2
-            optimize(x_opt);
+            optimize(xOpt);
 
             // Compute the norm of difference
-            x_dif_norm = (x_opt - x_opt_prev).norm();
+            xDiff = (xOpt - xOpt_prev).norm();
 
             // Update the previous solution
-            x_opt_prev = x_opt;
+            xOpt_prev = xOpt;
         }
 
-        return x_opt;
+        return xOpt;
     }
 
     // ════════════════════════════════════════════════════════════════════════════
@@ -144,24 +136,28 @@ namespace flychams::coordination
     double PositionSolver::funJ1(unsigned n, const double* x, double* grad, void* data)
     {
         // Extract data
-        FunctionData* function_data = reinterpret_cast<FunctionData*>(data);
-        Vector3r x_vec(static_cast<float>(x[0]), static_cast<float>(x[1]), static_cast<float>(x[2]));
+        Data* data_struct = reinterpret_cast<Data*>(data);
+        Vector3r xVec(static_cast<float>(x[0]), static_cast<float>(x[1]), static_cast<float>(x[2]));
 
         // Compute the value of the optimization index based on nested intervals (without non-convex term) based on tracking mode
         float J1 = 0.0f;
-        switch (function_data->params.tracking_params.mode)
+        switch (data_struct->params.mode)
         {
         case TrackingMode::MultiCameraTracking:
-            for (int i = 0; i < function_data->params.tracking_params.n; i++)
+            for (int i = 0; i < data_struct->params.n; i++)
             {
-                J1 += calculateCameraJ1(i, x_vec, function_data);
+                J1 += calculateCameraJ1(data_struct->tab_P.col(i), data_struct->tab_r(i), xVec,
+                    data_struct->params.camera_params[i],
+                    data_struct->params.projection_params[i]);
             }
             break;
 
         case TrackingMode::MultiWindowTracking:
-            for (int i = 0; i < function_data->params.tracking_params.n; i++)
+            for (int i = 0; i < data_struct->params.n; i++)
             {
-                J1 += calculateWindowJ1(i, x_vec, function_data);
+                J1 += calculateWindowJ1(data_struct->tab_P.col(i), data_struct->tab_r(i), xVec,
+                    data_struct->params.window_params[i],
+                    data_struct->params.projection_params[i]);
             }
             break;
 
@@ -176,24 +172,28 @@ namespace flychams::coordination
     double PositionSolver::funJ2(unsigned n, const double* x, double* grad, void* data)
     {
         // Extract data
-        FunctionData* function_data = reinterpret_cast<FunctionData*>(data);
-        Vector3r x_vec(static_cast<float>(x[0]), static_cast<float>(x[1]), static_cast<float>(x[2]));
+        Data* data_struct = reinterpret_cast<Data*>(data);
+        Vector3r xVec(static_cast<float>(x[0]), static_cast<float>(x[1]), static_cast<float>(x[2]));
 
         // Compute the value of the optimization index based on nested intervals (with non-convex term) based on tracking mode
         float J2 = 0.0f;
-        switch (function_data->params.tracking_params.mode)
+        switch (data_struct->params.mode)
         {
         case TrackingMode::MultiCameraTracking:
-            for (int i = 0; i < function_data->params.tracking_params.n; i++)
+            for (int i = 0; i < data_struct->params.n; i++)
             {
-                J2 += calculateCameraJ2(i, x_vec, function_data);
+                J2 += calculateCameraJ2(data_struct->tab_P.col(i), data_struct->tab_r(i), xVec, data_struct->xHat,
+                    data_struct->params.camera_params[i],
+                    data_struct->params.projection_params[i]);
             }
             break;
 
         case TrackingMode::MultiWindowTracking:
-            for (int i = 0; i < function_data->params.tracking_params.n; i++)
+            for (int i = 0; i < data_struct->params.n; i++)
             {
-                J2 += calculateWindowJ2(i, x_vec, function_data);
+                J2 += calculateWindowJ2(data_struct->tab_P.col(i), data_struct->tab_r(i), xVec, data_struct->xHat,
+                    data_struct->params.window_params[i],
+                    data_struct->params.projection_params[i]);
             }
             break;
 
@@ -209,23 +209,25 @@ namespace flychams::coordination
     // IMPLEMENTATION: Cost functions
     // ════════════════════════════════════════════════════════════════════════════
 
-    float PositionSolver::calculateCameraJ1(const int& i, const Vector3r& x, const FunctionData* data)
+    float PositionSolver::calculateCameraJ1(const Vector3r& z, const float& r, const Vector3r& x, const CameraParameters& camera_params, const ProjectionParameters& projection_params)
     {
+        // Args:
+        // z: center of the cluster
+        // r: radius of the cluster
+        // x: position of the vehicle
+        // camera_params: parameters of the camera
+        // projection_params: parameters of the cluster projection
+
         // Extract the necessary parameters
-        const auto& tracking_params = data->params.tracking_params;
-        const float& s_min = tracking_params.projection_params[i].s_min;
-        const float& s_max = tracking_params.projection_params[i].s_max;
-        const float& s_ref = tracking_params.projection_params[i].s_ref;
-        const float& f_min = tracking_params.camera_params[i].f_min;
-        const float& f_max = tracking_params.camera_params[i].f_max;
-        const float& f_ref = tracking_params.camera_params[i].f_ref;
+        const auto& s_min = projection_params.s_min;
+        const auto& s_max = projection_params.s_max;
+        const auto& s_ref = projection_params.s_ref;
+        const auto& f_min = camera_params.f_min;
+        const auto& f_max = camera_params.f_max;
+        const auto& f_ref = camera_params.f_ref;
 
         // Target position and distance to its camera (approximated by distance to the vehicle)
-        const Vector3r z = data->tab_P.col(i);
         const float d = (x - z).norm();
-
-        // Equivalent interest radius of the real target
-        const float r = data->tab_r(i);
 
         // Calculate the reference distance to the target
         const float d_ref = r * f_ref / s_ref;
@@ -254,27 +256,33 @@ namespace flychams::coordination
         return psi_i + lambda_i + gamma_i;
     }
 
-    float PositionSolver::calculateCameraJ2(const int& i, const Vector3r& x, const FunctionData* data)
+    float PositionSolver::calculateCameraJ2(const Vector3r& z, const float& r, const Vector3r& x, const Vector3r& xHat, const CameraParameters& camera_params, const ProjectionParameters& projection_params)
     {
+        // Args:
+        // z: center of the cluster
+        // r: radius of the cluster
+        // x: position of the vehicle
+        // xHat: estimated position of the vehicle
+        // camera_params: parameters of the camera
+        // projection_params: parameters of the cluster projection
+
         // Distance threshold to consider that xHat coincides with zi
         // Considering that hMin is several meters, it should not be reached unless set very high, since zi are at height 0
         float eps_dist = 0.1f;
 
         // Extract the necessary parameters
-        const auto& tracking_params = data->params.tracking_params;
-        const float& s_min = tracking_params.projection_params[i].s_min;
-        const float& s_max = tracking_params.projection_params[i].s_max;
-        const float& s_ref = tracking_params.projection_params[i].s_ref;
-        const float& f_min = tracking_params.camera_params[i].f_min;
-        const float& f_max = tracking_params.camera_params[i].f_max;
-        const float& f_ref = tracking_params.camera_params[i].f_ref;
+        const auto& s_min = projection_params.s_min;
+        const auto& s_max = projection_params.s_max;
+        const auto& s_ref = projection_params.s_ref;
+        const auto& f_min = camera_params.f_min;
+        const auto& f_max = camera_params.f_max;
+        const auto& f_ref = camera_params.f_ref;
 
         // Target position and distance to its camera (approximated by distance to the vehicle)
-        const Vector3r z = data->tab_P.col(i);
         const float d = (x - z).norm();
 
         // Vector indicating the direction to project
-        const Vector3r v = data->x_hat - z;
+        const Vector3r v = xHat - z;
         const float v_norm = v.norm();
         Vector3r eta = Vector3r::Zero();
         if (v_norm > eps_dist)
@@ -282,9 +290,6 @@ namespace flychams::coordination
 
         // Calculate the projection as a substitute for distance for the non-convex term
         const float d_proj = (x - z).transpose() * eta;
-
-        // Equivalent interest radius of the real target
-        const float r = data->tab_r(i);
 
         // Calculate the reference distance to the target
         const float d_ref = r * f_ref / s_ref;
@@ -310,28 +315,30 @@ namespace flychams::coordination
         const float nu_i = 1.0f;
         const float gamma_i = mu_i * (x - p_ref).transpose() * (x - p_ref) + nu_i * pow((d - (x - z).transpose() * Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
-        // Accumulate into the total index
+        // Return the value of Ji
         return psi_i + lambda_i + gamma_i;
     }
 
-    float PositionSolver::calculateWindowJ1(const int& i, const Vector3r& x, const FunctionData* data)
+    float PositionSolver::calculateWindowJ1(const Vector3r& z, const float& r, const Vector3r& x, const WindowParameters& window_params, const ProjectionParameters& projection_params)
     {
+        // Args:
+        // z: center of the cluster
+        // r: radius of the cluster
+        // x: position of the vehicle
+        // window_params: parameters of the window
+        // projection_params: parameters of the cluster projection
+
         // Extract the necessary parameters
-        const auto& tracking_params = data->params.tracking_params;
-        const float& s_min = tracking_params.projection_params[i].s_min;
-        const float& s_max = tracking_params.projection_params[i].s_max;
-        const float& s_ref = tracking_params.projection_params[i].s_ref;
-        const float& f = tracking_params.window_params[i].camera_params.f_ref;
-        const float& lambda_min = tracking_params.window_params[i].lambda_min;
-        const float& lambda_max = tracking_params.window_params[i].lambda_max;
-        const float& lambda_ref = tracking_params.window_params[i].lambda_ref;
+        const auto& s_min = projection_params.s_min;
+        const auto& s_max = projection_params.s_max;
+        const auto& s_ref = projection_params.s_ref;
+        const auto& f = window_params.camera_params.f_ref;
+        const auto& lambda_min = window_params.lambda_min;
+        const auto& lambda_max = window_params.lambda_max;
+        const auto& lambda_ref = window_params.lambda_ref;
 
         // Target position and distance to its camera (approximated by distance to the vehicle)
-        const Vector3r z = data->tab_P.col(i);
         const float d = (x - z).norm();
-
-        // Equivalent interest radius of the real target
-        const float r = data->tab_r(i);
 
         // Calculate the reference distance to the target
         const float d_ref = (r * f * lambda_ref) / s_ref;
@@ -356,32 +363,38 @@ namespace flychams::coordination
         const float nu_i = 1.0f;
         const float gamma_i = mu_i * (x - p_ref).transpose() * (x - p_ref) + nu_i * pow((d - (x - z).transpose() * Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
-        // Accumulate into the total index
+        // Return the value of Ji
         return psi_i + lambda_i + gamma_i;
     }
 
-    float PositionSolver::calculateWindowJ2(const int& i, const Vector3r& x, const FunctionData* data)
+    float PositionSolver::calculateWindowJ2(const Vector3r& z, const float& r, const Vector3r& x, const Vector3r& xHat, const WindowParameters& window_params, const ProjectionParameters& projection_params)
     {
+        // Args:
+        // z: center of the cluster
+        // r: radius of the cluster
+        // x: position of the vehicle
+        // xHat: estimated position of the vehicle
+        // window_params: parameters of the window
+        // projection_params: parameters of the cluster projection
+
         // Distance threshold to consider that xHat coincides with zi
         // Considering that hMin is several meters, it should not be reached unless set very high, since zi are at height 0
         float eps_dist = 0.1f;
 
         // Extract the necessary parameters
-        const auto& tracking_params = data->params.tracking_params;
-        const float& s_min = tracking_params.projection_params[i].s_min;
-        const float& s_max = tracking_params.projection_params[i].s_max;
-        const float& s_ref = tracking_params.projection_params[i].s_ref;
-        const float& f = tracking_params.window_params[i].camera_params.f_ref;
-        const float& lambda_min = tracking_params.window_params[i].lambda_min;
-        const float& lambda_max = tracking_params.window_params[i].lambda_max;
-        const float& lambda_ref = tracking_params.window_params[i].lambda_ref;
+        const auto& s_min = projection_params.s_min;
+        const auto& s_max = projection_params.s_max;
+        const auto& s_ref = projection_params.s_ref;
+        const auto& f = window_params.camera_params.f_ref;
+        const auto& lambda_min = window_params.lambda_min;
+        const auto& lambda_max = window_params.lambda_max;
+        const auto& lambda_ref = window_params.lambda_ref;
 
         // Target position and distance to its camera (approximated by distance to the vehicle)
-        const Vector3r z = data->tab_P.col(i);
         const float d = (x - z).norm();
 
         // Vector indicating the direction to project
-        const Vector3r v = data->x_hat - z;
+        const Vector3r v = xHat - z;
         const float v_norm = v.norm();
         Vector3r eta = Vector3r::Zero();
         if (v_norm > eps_dist)
@@ -389,9 +402,6 @@ namespace flychams::coordination
 
         // Calculate the projection as a substitute for distance for the non-convex term
         const float d_proj = (x - z).transpose() * eta;
-
-        // Equivalent interest radius of the real target
-        const float r = data->tab_r(i);
 
         // Calculate the reference distance to the target
         const float d_ref = (r * f * lambda_ref) / s_ref;
@@ -418,7 +428,7 @@ namespace flychams::coordination
         const float nu_i = 1.0f;
         const float gamma_i = mu_i * (x - p_ref).transpose() * (x - p_ref) + nu_i * pow((d - (x - z).transpose() * Vector3r(0.0f, 0.0f, 1.0f)), 2);
 
-        // Accumulate into the total index
+        // Return the value of Ji
         return psi_i + lambda_i + gamma_i;
     }
 
@@ -426,18 +436,18 @@ namespace flychams::coordination
     // IMPLEMENTATION: Optimization utility methods
     // ════════════════════════════════════════════════════════════════════════════
 
-    float PositionSolver::optimize(Vector3r& x_opt)
+    float PositionSolver::optimize(Vector3r& xOpt)
     {
-        double x_opt_nlopt[3] = { static_cast<double>(x_opt(0)), static_cast<double>(x_opt(1)), static_cast<double>(x_opt(2)) };
+        double xOpt_nlopt[3] = { static_cast<double>(xOpt(0)), static_cast<double>(xOpt(1)), static_cast<double>(xOpt(2)) };
 
         // Call the optimization algorithm
         // J: optimal value of the cost function
-        // x_opt: value that minimizes the cost function
+        // xOpt: value that minimizes the cost function
         double J;
-        nlopt_optimize(opt_, x_opt_nlopt, &J);
+        nlopt_optimize(opt_, xOpt_nlopt, &J);
 
         // Update the position
-        x_opt << static_cast<float>(x_opt_nlopt[0]), static_cast<float>(x_opt_nlopt[1]), static_cast<float>(x_opt_nlopt[2]);
+        xOpt << static_cast<float>(xOpt_nlopt[0]), static_cast<float>(xOpt_nlopt[1]), static_cast<float>(xOpt_nlopt[2]);
 
         // Return the optimal value of the cost function
         return static_cast<float>(J);

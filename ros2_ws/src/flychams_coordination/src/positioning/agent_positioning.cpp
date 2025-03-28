@@ -1,6 +1,5 @@
 #include "flychams_coordination/positioning/agent_positioning.hpp"
 
-using namespace std::chrono_literals;
 using namespace flychams::core;
 
 namespace flychams::coordination
@@ -12,111 +11,129 @@ namespace flychams::coordination
     void AgentPositioning::onInit()
     {
         // Get parameters from parameter server
-        // Get update rates
-        float update_rate = RosUtils::getParameterOr<float>(node_, "agent_positioning.positioning_update_rate", 5.0f);
+        // Get update rate
+        update_rate_ = RosUtils::getParameterOr<float>(node_, "agent_positioning.positioning_rate", 1.0f);
         // Get solver parameters
-        float convergence_tolerance = RosUtils::getParameterOr<float>(node_, "agent_positioning.solver_params.convergence_tolerance", 1.0e-6f);
-        int max_iterations = RosUtils::getParameterOr<int>(node_, "agent_positioning.solver_params.max_iterations", 100);
-        float eps = RosUtils::getParameterOr<float>(node_, "agent_positioning.solver_params.eps", 1.0f);
+        PositionSolver::SolverMode solver_mode = static_cast<PositionSolver::SolverMode>(RosUtils::getParameterOr<uint8_t>(node_, "agent_positioning.solver_mode", 0));
+        float convergence_tolerance = RosUtils::getParameterOr<float>(node_, "agent_positioning.convergence_tolerance", 1.0e-6f);
+        int max_iterations = RosUtils::getParameterOr<int>(node_, "agent_positioning.max_iterations", 100);
+        float eps = RosUtils::getParameterOr<float>(node_, "agent_positioning.eps", 1.0f);
 
-        // Initialize agent data
-        curr_pos_ = Vector3r::Zero();
-        has_odom_ = false;
-        clusters_ = std::make_pair(Matrix3Xr::Zero(3, 0), RowVectorXr::Zero(0));
-        has_clusters_ = false;
+        // Initialize data
+        agent_ = Agent();
 
-        // Set solver parameters
-        solver_ = std::make_shared<PositionSolver>();
-        PositionSolver::SolverParams solver_params;
-        solver_params.tol = convergence_tolerance;
-        solver_params.max_iter = max_iterations;
-        solver_params.eps = eps;
-        solver_->setSolverParams(solver_params);
-
-        // Set function parameters
-        PositionSolver::FunctionParams function_params;
-        function_params.h_min = config_tools_->getAgent(agent_id_)->min_admissible_height;
-        function_params.h_max = config_tools_->getAgent(agent_id_)->max_admissible_height;
-        function_params.tracking_params = config_tools_->getTrackingParameters(agent_id_);
-        solver_->setFunctionParams(function_params);
+        // Initialize setpoint message
+        agent_.setpoint.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
+        agent_.setpoint.point.x = 0.0;
+        agent_.setpoint.point.y = 0.0;
+        agent_.setpoint.point.z = 0.0;
 
         // Initialize solver
-        solver_->initSolver();
+        solver_.reset();
+        solver_.setMode(solver_mode);
+        solver_.setParameters(convergence_tolerance, max_iterations, eps);
+        solver_.init();
 
-        // Subscribe to odom and goal topics
-        odom_sub_ = topic_tools_->createAgentOdomSubscriber(agent_id_,
-            std::bind(&AgentPositioning::odomCallback, this, std::placeholders::_1));
-        info_sub_ = topic_tools_->createAgentTrackingInfoSubscriber(agent_id_,
-            std::bind(&AgentPositioning::infoCallback, this, std::placeholders::_1));
+        // Get positioning parameters
+        const auto& config_ptr = config_tools_->getConfig();
+        const auto& agent_ptr = config_tools_->getAgent(agent_id_);
+        min_height_ = config_ptr->altitude_constraint(0);
+        max_height_ = std::min(config_ptr->altitude_constraint(1), agent_ptr->max_altitude);
+        tracking_params_ = config_tools_->getTrackingParameters(agent_id_);
 
-        // Publish to goal topic
-        goal_pub_ = topic_tools_->createAgentPositionGoalPublisher(agent_id_);
+        // Create subscribers for agent status, position and clusters
+        agent_.status_sub = topic_tools_->createAgentStatusSubscriber(agent_id_,
+            std::bind(&AgentPositioning::statusCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
+        agent_.position_sub = topic_tools_->createAgentPositionSubscriber(agent_id_,
+            std::bind(&AgentPositioning::positionCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
+        agent_.clusters_sub = topic_tools_->createAgentClustersSubscriber(agent_id_,
+            std::bind(&AgentPositioning::clustersCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
 
-        // Set update timers
-        positioning_timer_ = RosUtils::createTimer(node_, update_rate,
-            std::bind(&AgentPositioning::updatePosition, this));
+        // Create publisher for agent setpoint
+        agent_.setpoint_pub = topic_tools_->createAgentPositionSetpointPublisher(agent_id_);
+
+        // Set update timer
+        update_timer_ = RosUtils::createTimer(node_, update_rate_,
+            std::bind(&AgentPositioning::update, this), module_cb_group_);
     }
 
     void AgentPositioning::onShutdown()
     {
-        std::lock_guard<std::mutex> lock(mutex_);
-        // Destroy subscribers
-        odom_sub_.reset();
-        info_sub_.reset();
-        // Destroy publishers
-        goal_pub_.reset();
         // Destroy solver
-        solver_->destroySolver();
-        // Destroy update timers
-        positioning_timer_.reset();
+        solver_.destroy();
+        // Destroy agent data
+        agent_.status_sub.reset();
+        agent_.position_sub.reset();
+        agent_.clusters_sub.reset();
+        agent_.setpoint_pub.reset();
+        // Destroy update timer
+        update_timer_.reset();
     }
 
     // ════════════════════════════════════════════════════════════════════════════
     // CALLBACKS: Callback functions
     // ════════════════════════════════════════════════════════════════════════════
 
-    void AgentPositioning::odomCallback(const core::OdometryMsg::SharedPtr msg)
+    void AgentPositioning::statusCallback(const AgentStatusMsg::SharedPtr msg)
     {
-        // Get agent position
-        std::lock_guard<std::mutex> lock(mutex_);
-        curr_pos_ = RosUtils::fromMsg(msg->pose.pose.position);
-        has_odom_ = true;
+        // Update agent status
+        agent_.status = static_cast<AgentStatus>(msg->status);
+        agent_.has_status = true;
     }
 
-    void AgentPositioning::infoCallback(const core::TrackingInfoMsg::SharedPtr msg)
+    void AgentPositioning::positionCallback(const PointStampedMsg::SharedPtr msg)
     {
-        // Get cluster centers and radii
-        std::lock_guard<std::mutex> lock(mutex_);
-        clusters_ = RosUtils::fromMsg(*msg);
-        has_clusters_ = true;
+        // Update agent position
+        agent_.position = msg->point;
+        agent_.has_position = true;
+    }
+
+    void AgentPositioning::clustersCallback(const AgentClustersMsg::SharedPtr msg)
+    {
+        // Update agent clusters
+        agent_.clusters = *msg;
+        agent_.has_clusters = true;
     }
 
     // ════════════════════════════════════════════════════════════════════════════
-    // UPDATE: Solve positioning problem
+    // UPDATE: Update positioning
     // ════════════════════════════════════════════════════════════════════════════
 
-    void AgentPositioning::updatePosition()
+    void AgentPositioning::update()
     {
-        std::lock_guard<std::mutex> lock(mutex_);
-
-        // Check if agent has odom and clusters
-        if (!has_odom_ || !has_clusters_)
+        // Check if we have a valid agent status, position and cluster assignments
+        if (!agent_.has_status || !agent_.has_position || !agent_.has_clusters)
         {
-            RCLCPP_WARN(node_->get_logger(), "Agent positioning: Agent %s has no odom or clusters", agent_id_.c_str());
+            RCLCPP_WARN(node_->get_logger(), "Agent positioning: Agent %s has no status, position or clusters", agent_id_.c_str());
+            return; // Skip positioning if we don't have a valid agent status, position or clusters
+        }
+
+        // Check if we are in the correct state to position
+        if (agent_.status != AgentStatus::TRACKING)
+        {
+            RCLCPP_WARN(node_->get_logger(), "Agent positioning: Agent %s is not in the correct state to position",
+                agent_id_.c_str());
             return;
         }
 
-        // Solve for the optimal position
-        Vector3r optimal_pos = solver_->solve(curr_pos_, clusters_.first, clusters_.second);
+        // Convert messages to Eigen types
+        Vector3r x0 = RosUtils::fromMsg(agent_.position);
+        int n = static_cast<int>(agent_.clusters.cluster_ids.size());
+        Matrix3Xr tab_P = Matrix3Xr::Zero(3, n);
+        RowVectorXr tab_r = RowVectorXr::Zero(n);
+        for (size_t i = 0; i < n; i++)
+        {
+            tab_P.col(i) = RosUtils::fromMsg(agent_.clusters.centers[i]);
+            tab_r(i) = agent_.clusters.radii[i];
+        }
 
-        // Publish the goal
-        PositionGoalMsg goal_msg;
-        goal_msg.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
-        RosUtils::toMsg(optimal_pos, goal_msg);
-        goal_pub_->publish(goal_msg);
+        // Solve agent positioning
+        Vector3r optimal_position = solver_.run(tab_P, tab_r, x0, min_height_, max_height_, tracking_params_);
 
-        RCLCPP_INFO(node_->get_logger(), "Agent positioning: Agent %s has updated optimal goal to x=%f, y=%f, z=%f",
-            agent_id_.c_str(), optimal_pos.x(), optimal_pos.y(), optimal_pos.z());
+        // Publish position
+        agent_.setpoint.header.stamp = RosUtils::now(node_);
+        RosUtils::toMsg(optimal_position, agent_.setpoint.point);
+        agent_.setpoint_pub->publish(agent_.setpoint);
     }
 
 } // namespace flychams::coordination

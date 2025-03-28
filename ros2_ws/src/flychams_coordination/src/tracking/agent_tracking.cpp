@@ -1,6 +1,5 @@
 #include "flychams_coordination/tracking/agent_tracking.hpp"
 
-using namespace std::chrono_literals;
 using namespace flychams::core;
 
 namespace flychams::coordination
@@ -13,54 +12,40 @@ namespace flychams::coordination
     {
         // Get parameters from parameter server
         // Get update rate
-        float update_rate = RosUtils::getParameterOr<float>(node_, "agent_tracking.tracking_update_rate", 20.0f);
+        update_rate_ = RosUtils::getParameterOr<float>(node_, "agent_tracking.tracking_rate", 20.0f);
+
+        // Initialize data
+        agent_ = Agent();
 
         // Get tracking parameters
         tracking_params_ = config_tools_->getTrackingParameters(agent_id_);
+        int n = tracking_params_.n; // Number of tracking units
 
-        // Get central head ID
-        central_head_id_ = config_tools_->getCentralHead(agent_id_)->id;
+        // Get central head parameters
+        const auto& central_id = config_tools_->getCentralHead(agent_id_)->id;
 
-        // Initialize agent data
-        curr_pos_ = Vector3r::Zero();
-        has_odom_ = false;
-        clusters_ = std::make_pair(Matrix3Xr::Zero(3, 0), RowVectorXr::Zero(0));
-        has_clusters_ = false;
-        prev_angles_ = std::vector<Vector3r>(tracking_params_.n);
-        is_first_update_ = true;
+        // Get tracking heads
+        const auto& tracking_head_ptrs = config_tools_->getTrackingHeads(agent_id_);
 
-        // Prepare tracking goal message
-        int n = tracking_params_.n;
-        goal_.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
+        // Initialize setpoint messages
+        agent_.head_setpoints.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
+        agent_.window_setpoints.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
         switch (tracking_params_.mode)
         {
         case TrackingMode::MultiCameraTracking:
-            goal_.unit_types = std::vector<uint8_t>(n);
-            goal_.head_ids = std::vector<std::string>(n);
-            goal_.orientations = std::vector<QuaternionMsg>(n);
-            goal_.fovs = std::vector<float>(n);
+            agent_.head_setpoints.head_ids = std::vector<std::string>(n);
+            agent_.head_setpoints.quat_setpoints = std::vector<QuaternionMsg>(n, QuaternionMsg());
+            agent_.head_setpoints.fov_setpoints = std::vector<float>(n, 0.0f);
 
             for (int i = 0; i < n; i++)
             {
-                goal_.unit_types[i] = static_cast<uint8_t>(TrackingUnitType::Physical);
-                goal_.head_ids[i] = tracking_params_.camera_params[i].id;
-                goal_.orientations[i] = QuaternionMsg();
-                goal_.fovs[i] = 0.0f;
+                agent_.head_setpoints.head_ids[i] = tracking_head_ptrs[i]->id;
             }
             break;
 
         case TrackingMode::MultiWindowTracking:
-            goal_.camera_id = tracking_params_.window_params[0].camera_params.id;
-            goal_.unit_types = std::vector<uint8_t>(n);
-            goal_.crops = std::vector<CropMsg>(n);
-            goal_.resolution_factors = std::vector<float>(n);
-
-            for (int i = 0; i < n; i++)
-            {
-                goal_.unit_types[i] = static_cast<uint8_t>(TrackingUnitType::Digital);
-                goal_.crops[i] = CropMsg();
-                goal_.resolution_factors[i] = 0.0f;
-            }
+            agent_.window_setpoints.camera_id = central_id;
+            agent_.window_setpoints.crop_setpoints = std::vector<CropMsg>(n, CropMsg());
             break;
 
         default:
@@ -69,94 +54,121 @@ namespace flychams::coordination
             return;
         }
 
-        // Subscribe to odom and agent info topics
-        odom_sub_ = topic_tools_->createAgentOdomSubscriber(agent_id_,
-            std::bind(&AgentTracking::odomCallback, this, std::placeholders::_1));
-        info_sub_ = topic_tools_->createAgentTrackingInfoSubscriber(agent_id_,
-            std::bind(&AgentTracking::infoCallback, this, std::placeholders::_1));
+        // Initialize solvers
+        solvers_.resize(n);
+        for (int i = 0; i < n; i++)
+        {
+            solvers_[i].reset();
+        }
 
-        // Publish to tracking goal topic   
-        goal_pub_ = topic_tools_->createAgentTrackingGoalPublisher(agent_id_);
+        // Create subscribers for agent status, position and clusters
+        agent_.status_sub = topic_tools_->createAgentStatusSubscriber(agent_id_,
+            std::bind(&AgentTracking::statusCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
+        agent_.position_sub = topic_tools_->createAgentPositionSubscriber(agent_id_,
+            std::bind(&AgentTracking::positionCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
+        agent_.clusters_sub = topic_tools_->createAgentClustersSubscriber(agent_id_,
+            std::bind(&AgentTracking::clustersCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
 
-        // Set update timers
-        tracking_timer_ = RosUtils::createTimer(node_, update_rate,
-            std::bind(&AgentTracking::updateTracking, this));
+        // Create publisher for tracking setpoints
+        agent_.head_setpoints_pub = topic_tools_->createAgentHeadSetpointsPublisher(agent_id_);
+        agent_.window_setpoints_pub = topic_tools_->createAgentWindowSetpointsPublisher(agent_id_);
+
+        // Set update timer
+        update_timer_ = RosUtils::createTimer(node_, update_rate_,
+            std::bind(&AgentTracking::update, this), module_cb_group_);
     }
 
     void AgentTracking::onShutdown()
     {
-        std::lock_guard<std::mutex> lock(mutex_);
-        // Destroy subscribers
-        odom_sub_.reset();
-        info_sub_.reset();
-        // Destroy publishers
-        goal_pub_.reset();
-        // Destroy update timers
-        tracking_timer_.reset();
+        // Destroy agent data
+        agent_.status_sub.reset();
+        agent_.position_sub.reset();
+        agent_.clusters_sub.reset();
+        agent_.head_setpoints_pub.reset();
+        agent_.window_setpoints_pub.reset();
+        // Destroy update timer
+        update_timer_.reset();
     }
 
     // ════════════════════════════════════════════════════════════════════════════
     // CALLBACKS: Callback functions
     // ════════════════════════════════════════════════════════════════════════════
 
-    void AgentTracking::odomCallback(const core::OdometryMsg::SharedPtr msg)
+    void AgentTracking::statusCallback(const AgentStatusMsg::SharedPtr msg)
     {
-        // Get agent position
-        std::lock_guard<std::mutex> lock(mutex_);
-        curr_pos_ = RosUtils::fromMsg(msg->pose.pose.position);
-        has_odom_ = true;
+        // Update agent status
+        agent_.status = static_cast<AgentStatus>(msg->status);
+        agent_.has_status = true;
     }
 
-    void AgentTracking::infoCallback(const core::TrackingInfoMsg::SharedPtr msg)
+    void AgentTracking::positionCallback(const PointStampedMsg::SharedPtr msg)
     {
-        // Get cluster centers and radii
-        std::lock_guard<std::mutex> lock(mutex_);
-        clusters_ = RosUtils::fromMsg(*msg);
-        has_clusters_ = true;
+        // Update agent position
+        agent_.position = msg->point;
+        agent_.has_position = true;
+    }
+
+    void AgentTracking::clustersCallback(const AgentClustersMsg::SharedPtr msg)
+    {
+        // Update agent clusters
+        agent_.clusters = *msg;
+        agent_.has_clusters = true;
     }
 
     // ════════════════════════════════════════════════════════════════════════════
     // UPDATE: Update tracking
     // ════════════════════════════════════════════════════════════════════════════
 
-    void AgentTracking::updateTracking()
+    void AgentTracking::update()
     {
-        std::lock_guard<std::mutex> lock(mutex_);
-
-        // Check if agent has odometry and clusters
-        if (!has_odom_ || !has_clusters_)
+        // Check if we have a valid agent status, position and cluster assignments
+        if (!agent_.has_status || !agent_.has_position || !agent_.has_clusters)
         {
-            RCLCPP_WARN(node_->get_logger(), "Agent %s has no odometry or clusters", agent_id_.c_str());
+            RCLCPP_WARN(node_->get_logger(), "Agent tracking: Agent %s has no status, position or clusters", agent_id_.c_str());
+            return; // Skip tracking if we don't have a valid agent status, position or clusters
+        }
+
+        // Check if we are in the correct state to track
+        if (agent_.status != AgentStatus::TRACKING)
+        {
+            RCLCPP_WARN(node_->get_logger(), "Agent tracking: Agent %s is not in the correct state to track",
+                agent_id_.c_str());
             return;
         }
 
-        // Update tracking goal message based on tracking mode
+        // Convert messages to Eigen types
+        Vector3r x = RosUtils::fromMsg(agent_.position);
+        int n = static_cast<int>(agent_.clusters.cluster_ids.size());
+        Matrix3Xr tab_P = Matrix3Xr::Zero(3, n);
+        RowVectorXr tab_r = RowVectorXr::Zero(n);
+        for (size_t i = 0; i < n; i++)
+        {
+            tab_P.col(i) = RosUtils::fromMsg(agent_.clusters.centers[i]);
+            tab_r(i) = agent_.clusters.radii[i];
+        }
+
+        // Solve tracking
         switch (tracking_params_.mode)
         {
         case TrackingMode::MultiCameraTracking:
-            computeMultiCameraTracking(clusters_.first, clusters_.second, goal_);
+            computeMultiCamera(tab_P, tab_r, agent_.head_setpoints);
             break;
 
         case TrackingMode::MultiWindowTracking:
-            computeMultiWindowTracking(clusters_.first, clusters_.second, goal_);
+            computeMultiWindow(tab_P, tab_r, agent_.window_setpoints);
             break;
-
-        default:
-            RCLCPP_ERROR(node_->get_logger(), "AgentTracking: Invalid tracking mode for agent %s", agent_id_.c_str());
-            return;
         }
 
-        // Publish tracking goal
-        goal_.header.stamp = RosUtils::now(node_);
-        goal_pub_->publish(goal_);
-        RCLCPP_INFO(node_->get_logger(), "Tracking goal published for agent %s", agent_id_.c_str());
+        // Publish tracking setpoints
+        agent_.head_setpoints_pub->publish(agent_.head_setpoints);
+        agent_.window_setpoints_pub->publish(agent_.window_setpoints);
     }
 
     // ════════════════════════════════════════════════════════════════════════════
     // IMPLEMENTATION: Multi-mode tracking methods
     // ════════════════════════════════════════════════════════════════════════════
 
-    void AgentTracking::computeMultiCameraTracking(const Matrix3Xr& tab_P, const RowVectorXr& tab_r, TrackingGoalMsg& goal)
+    void AgentTracking::computeMultiCamera(const Matrix3Xr& tab_P, const RowVectorXr& tab_r, AgentHeadSetpointsMsg& setpoints)
     {
         for (int i = 0; i < tracking_params_.n; i++)
         {
@@ -165,90 +177,60 @@ namespace flychams::coordination
             const auto& projection_params = tracking_params_.projection_params[i];
 
             // Get target position and interest radius
-            const auto& wPt = tab_P.col(i);
+            const auto& z = tab_P.col(i);
             const auto& r = tab_r(i);
 
-            // First, get the transform between world and optical frame
-            const TransformMsg& wTc = transform_tools_->getTransformBetweenFrames(transform_tools_->getGlobalFrame(), transform_tools_->getCameraOpticalFrame(agent_id_, camera_params.id));
-            const Vector3r& wPc = RosUtils::fromMsg(wTc.translation);
-            const Matrix3r& wRc = MathUtils::quaternionToRotationMatrix(RosUtils::fromMsg(wTc.rotation));
+            // Get the transform between world and camera optical frame
+            const std::string& world_frame = transform_tools_->getGlobalFrame();
+            const std::string& optical_frame = transform_tools_->getCameraOpticalFrame(agent_id_, camera_params.id);
+            const TransformMsg& world_to_optical = transform_tools_->getTransform(world_frame, optical_frame);
+            const Matrix4r& T = RosUtils::fromMsg(world_to_optical);
 
-            // Second, compute tracking focal length
-            float new_f = TrackingUtils::computeFocal(wPt, r, wPc, camera_params, projection_params);
+            // Solve tracking for this camera
+            const auto& [focal, rpy] = solvers_[i].runCamera(z, r, T, camera_params, projection_params);
 
-            // Third, compute tracking orientation
-            // Get previous orientation
-            Vector3r prev_rpy = Vector3r::Zero();
-            if (!is_first_update_)
-                prev_rpy = prev_angles_[i];
-            // Calculate new orientation
-            Vector3r new_rpy = TrackingUtils::computeOrientation(wPt, wPc, wRc, prev_rpy, is_first_update_);
-            prev_angles_[i] = new_rpy;
-
-            // Update tracking goal
-            RosUtils::toMsg(MathUtils::eulerToQuaternion(new_rpy), goal.orientations[i]);
-            goal.fovs[i] = MathUtils::computeFov(new_f, camera_params.sensor_width);
+            // Update tracking setpoint
+            RosUtils::toMsg(MathUtils::eulerToQuaternion(rpy), setpoints.quat_setpoints[i]);
+            setpoints.fov_setpoints[i] = MathUtils::computeFov(focal, camera_params.sensor_width);
         }
-
-        // Update first update flag
-        is_first_update_ = false;
     }
 
-    void AgentTracking::computeMultiWindowTracking(const Matrix3Xr& tab_P, const RowVectorXr& tab_r, TrackingGoalMsg& goal)
+    void AgentTracking::computeMultiWindow(const Matrix3Xr& tab_P, const RowVectorXr& tab_r, AgentWindowSetpointsMsg& setpoints)
     {
-        // Get central camera parameters
-        const auto& camera_params = tracking_params_.window_params[0].camera_params;
-
-        // Get the transform between world and optical frame
+        // Get the transform between world and central camera optical frame
         const std::string& world_frame = transform_tools_->getGlobalFrame();
-        const std::string& optical_frame = transform_tools_->getCameraOpticalFrame(agent_id_, central_head_id_);
+        const std::string& optical_frame = transform_tools_->getCameraOpticalFrame(agent_id_, setpoints.camera_id);
         const TransformMsg& world_to_optical = transform_tools_->getTransform(world_frame, optical_frame);
-        const Matrix4r& wTc = RosUtils::fromMsg(world_to_optical);
-        const Vector3r& wPc = wTc.block<3, 1>(0, 3);
+        const Matrix4r& T = RosUtils::fromMsg(world_to_optical);
 
-        // Project points on central camera
-        Matrix2Xr tab_p = MathUtils::projectPoints(tab_P, wTc, camera_params.k_ref);
-
-        // Flip the horizontal coordinates to handle X-axis mirroring
-        for (int i = 0; i < tab_p.cols(); i++)
-        {
-            tab_p(0, i) = camera_params.width - tab_p(0, i);
-        }
-
-        // Update tracking goal
+        // Update tracking setpoints
         for (int i = 0; i < tracking_params_.n; i++)
         {
             // Get window and central camera parameters
             const auto& window_params = tracking_params_.window_params[i];
             const auto& projection_params = tracking_params_.projection_params[i];
 
-            // Get target position, interest radius and projected point
-            const auto& wPt = tab_P.col(i);
+            // Get target position and interest radius
+            const auto& z = tab_P.col(i);
             const auto& r = tab_r(i);
-            const auto& p = tab_p.col(i);
 
-            // Create tracking crop parameters
-            float lambda;
-            Vector2i size = TrackingUtils::computeWindowSize(wPt, r, wPc, window_params, projection_params, lambda);
-            Vector2i corner = TrackingUtils::computeWindowCorner(p, size);
+            // Solve tracking for this window
+            const auto& [size, corner] = solvers_[i].runWindow(z, r, T, window_params, projection_params);
 
-            // Check if crop is out of bounds (i.e. if the crop is completely outside the image bounds)
+            // Check if crop is out of bounds (i.e. if the crop is completely outside the image)
             bool is_out_of_bounds =
-                (corner(0) + size(0) <= 0) ||           // Completely to the left
-                (corner(1) + size(1) <= 0) ||           // Completely above
-                (corner(0) >= camera_params.width) ||   // Completely to the right
-                (corner(1) >= camera_params.height);    // Completely below
+                (corner(0) + size(0) <= 0) ||                           // Completely to the left
+                (corner(1) + size(1) <= 0) ||                           // Completely above
+                (corner(0) >= window_params.camera_params.width) ||     // Completely to the right
+                (corner(1) >= window_params.camera_params.height);      // Completely below
 
-            // Update tracking goal
-            goal.crops[i].x = corner(0);
-            goal.crops[i].y = corner(1);
-            goal.crops[i].w = size(0);
-            goal.crops[i].h = size(1);
-            goal.crops[i].is_out_of_bounds = is_out_of_bounds;
-            goal.resolution_factors[i] = lambda;
-
-            // Print tracking goal
-            RCLCPP_INFO(node_->get_logger(), "Tracking goal for window %d: x=%d, y=%d, w=%d, h=%d, lambda=%f", i, goal.crops[i].x, goal.crops[i].y, goal.crops[i].w, goal.crops[i].h, goal.resolution_factors[i]);
+            // Update tracking setpoint
+            auto& crop = setpoints.crop_setpoints[i];
+            crop.x = corner(0);
+            crop.y = corner(1);
+            crop.w = size(0);
+            crop.h = size(1);
+            crop.is_out_of_bounds = is_out_of_bounds;
         }
     }
 

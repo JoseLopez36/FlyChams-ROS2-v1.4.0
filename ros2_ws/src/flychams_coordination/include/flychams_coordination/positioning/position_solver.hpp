@@ -1,10 +1,6 @@
 #pragma once
 
-// Standard includes
-#include <cmath>
-#include <algorithm>
-
-/* Non-Linear Optimization Library: https://github.com/stevengj/nlopt*/
+// Non-Linear Optimization Library: https://github.com/stevengj/nlopt
 #include <nlopt.hpp>
 
 // Utilities
@@ -14,7 +10,7 @@ namespace flychams::coordination
 {
     /**
      * ════════════════════════════════════════════════════════════════
-     * @brief Solver for optimal agent positioning
+     * @brief Solver for agent positioning
      *
      * @details
      * This class implements optimization algorithms for finding optimal
@@ -29,74 +25,62 @@ namespace flychams::coordination
      */
     class PositionSolver
     {
-    public: // Constructor/Destructor
-        PositionSolver();
-        ~PositionSolver();
-
     public: // Types
         using SharedPtr = std::shared_ptr<PositionSolver>;
-        // Settings types
-        struct SolverParams
+        // Modes
+        enum class SolverMode
         {
-            float tol;        // Convergence tolerance
-            int max_iter;     // Maximum iterations
-            float eps;        // Solution difference threshold
+            NLOPT_NELDER_MEAD
         };
-        // Function parameters
-        struct FunctionParams
+        // Data
+        struct Data
         {
-            float h_min;                                        // Agent minimum height [m]
-            float h_max;                                        // Agent maximum height [m]
-            core::TrackingParameters tracking_params;           // Tracking parameters
-        };
-        // Data types
-        struct FunctionData
-        {
-            FunctionParams params;        // Function parameters
-            core::Matrix3Xr tab_P;        // Camera positions matrix
-            core::RowVectorXr tab_r;      // Target positions vector
-            core::Vector3r x_hat;         // Estimated optimal position
+            core::TrackingParameters params;    // Tracking parameters
+            core::Matrix3Xr tab_P;              // Cluster positions matrix
+            core::RowVectorXr tab_r;            // Cluster radii vector
+            core::Vector3r xHat;                // Estimated optimal position
 
-            FunctionData(
-                const FunctionParams& params,
-                const core::Matrix3Xr& tab_P,
-                const core::RowVectorXr& tab_r,
-                const core::Vector3r& x_hat)
-                : params(params), tab_P(tab_P), tab_r(tab_r), x_hat(x_hat) {
+            Data(const int& num_clusters)
+                : params(), tab_P(3, num_clusters), tab_r(num_clusters), xHat() {
             }
         };
 
-    private: // Settings
-        SolverParams solver_params_;     // Solver configuration
-        FunctionParams function_params_; // Cost function parameters
+    private: // Parameters
+        SolverMode mode_;
+        float tol_;
+        int max_iter_;
+        float eps_;
 
     private: // Data
-        nlopt_opt opt_;                  // NLopt optimizer instance
+        // NLopt optimizer instance
+        nlopt_opt opt_;
 
     public: // Public methods
-        // Parameter configuration methods
-        void setSolverParams(const SolverParams& params);
-        void setFunctionParams(const FunctionParams& params);
-        // Solver lifecycle methods
-        void initSolver();
-        void destroySolver();
-        // High-level optimization method
-        core::Vector3r solve(const core::Vector3r& x0, const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r);
+        // Configuration
+        void init();
+        void destroy();
+        void reset();
+        void setMode(const SolverMode& mode);
+        void setParameters(const float& tol, const int& max_iter, const float& eps);
+        // Optimization
+        core::Vector3r run(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r,
+            const core::Vector3r& x0, const float& min_h, const float& max_h,
+            const core::TrackingParameters& params);
 
     private: // Implementation
         // Optimization stages
-        core::Vector3r preOptimization(const core::Vector3r& x0, const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r);
-        core::Vector3r iterativeOptimization(const core::Vector3r& x0, const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const float& eps);
+        core::Vector3r preOptimization(const core::Vector3r& x0, Data& data);
+        core::Vector3r iterativeOptimization(const core::Vector3r& x0, Data& data);
         // Objective functions
         static double funJ1(unsigned n, const double* x, double* grad, void* data);
         static double funJ2(unsigned n, const double* x, double* grad, void* data);
         // Cost function implementations
-        static float calculateCameraJ1(const int& i, const core::Vector3r& x, const FunctionData* data);
-        static float calculateCameraJ2(const int& i, const core::Vector3r& x, const FunctionData* data);
-        static float calculateWindowJ1(const int& i, const core::Vector3r& x, const FunctionData* data);
-        static float calculateWindowJ2(const int& i, const core::Vector3r& x, const FunctionData* data);
+        static float calculateCameraJ1(const core::Vector3r& z, const float& r, const core::Vector3r& x, const core::CameraParameters& camera_params, const core::ProjectionParameters& projection_params);
+        static float calculateCameraJ2(const core::Vector3r& z, const float& r, const core::Vector3r& x, const core::Vector3r& xHat, const core::CameraParameters& camera_params, const core::ProjectionParameters& projection_params);
+        static float calculateWindowJ1(const core::Vector3r& z, const float& r, const core::Vector3r& x, const core::WindowParameters& window_params, const core::ProjectionParameters& projection_params);
+        static float calculateWindowJ2(const core::Vector3r& z, const float& r, const core::Vector3r& x, const core::Vector3r& xHat, const core::WindowParameters& window_params, const core::ProjectionParameters& projection_params);
         // Optimization utility methods
-        float optimize(core::Vector3r& x_opt);
+        float optimize(core::Vector3r& xOpt);
     };
 
 } // namespace flychams::coord

@@ -331,7 +331,7 @@ namespace flychams::core
         // Camera ID
         std::string id;
         // Camera intrinsic matrix K
-        Matrix3r k_ref;
+        Matrix3r K;
         // Focal lengths (m)
         float f_min;
         float f_max;

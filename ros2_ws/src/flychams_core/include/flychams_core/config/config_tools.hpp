@@ -243,11 +243,11 @@ namespace flychams::core
             params.rho = std::sqrt(rho_x * rho_y);                                      // [m/pix]
 
             // Camera reference intrinsic matrix K
-            params.k_ref = Matrix3r::Identity();
-            params.k_ref(0, 0) = params.f_ref / rho_x;
-            params.k_ref(1, 1) = params.f_ref / rho_y;
-            params.k_ref(0, 2) = params.width / 2.0f;
-            params.k_ref(1, 2) = params.height / 2.0f;
+            params.K = Matrix3r::Identity();
+            params.K(0, 0) = params.f_ref / rho_x;
+            params.K(1, 1) = params.f_ref / rho_y;
+            params.K(0, 2) = params.width / 2.0f;
+            params.K(1, 2) = params.height / 2.0f;
 
             // Print camera parameters for debugging
             RCLCPP_INFO(node_->get_logger(), "Camera parameters for agent %s, head %s:", agent_id.c_str(), head_id.c_str());
@@ -256,7 +256,7 @@ namespace flychams::core
             RCLCPP_INFO(node_->get_logger(), "  Resolution: %d x %d [pix]", params.width, params.height);
             RCLCPP_INFO(node_->get_logger(), "  Sensor dimensions: %.6f x %.6f [m]", params.sensor_width, params.sensor_height);
             RCLCPP_INFO(node_->get_logger(), "  Regularized pixel size: %.6f [m/pix]", params.rho);
-            RCLCPP_INFO(node_->get_logger(), "  Intrinsic matrix K: fx=%f fy=%f cx=%f cy=%f", params.k_ref(0, 0), params.k_ref(1, 1), params.k_ref(0, 2), params.k_ref(1, 2));
+            RCLCPP_INFO(node_->get_logger(), "  Intrinsic matrix K: fx=%f fy=%f cx=%f cy=%f", params.K(0, 0), params.K(1, 1), params.K(0, 2), params.K(1, 2));
 
             return params;
         }

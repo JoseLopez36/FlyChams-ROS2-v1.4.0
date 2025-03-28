@@ -48,9 +48,12 @@ public: // Constructor/Destructor
 private: // Element management
     void onAddAgent(const ID& agent_id) override
     {
+        // Create callback group for each agent positioning system
+        auto positioning_cb_group = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
         // Create agent positioning system
         agent_positionings_.insert({ agent_id,
-        std::make_shared<AgentPositioning>(agent_id, node_, config_tools_, framework_tools_, topic_tools_, transform_tools_) });
+            std::make_shared<AgentPositioning>(agent_id, node_, config_tools_, framework_tools_, topic_tools_, transform_tools_, positioning_cb_group) });
     }
 
     void onRemoveAgent(const ID& agent_id) override

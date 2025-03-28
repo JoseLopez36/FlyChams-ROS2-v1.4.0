@@ -13,30 +13,30 @@ The `flychams_coordination` package implements coordination algorithms for multi
 
 ## Nodes
 
-### Assignment
+### Agent Assignment
 
 - Assigns agents to clusters:
   - Implements assignment algorithms
   - Optimizes cluster to agent assignments
 
-### Analysis
+### Agent Analysis
 
 - Analyzes the assignment of agents to clusters:
   - Implements analysis algorithms
   - Publishes each agent's clusters
 
-### Positioning
+### Agent Positioning
 
 - Determines optimal positions for agents:
   - Considers tracking quality (e.g. distance, verticality, etc.)
   - Generates position commands for agents
 
-### Tracking
+### Agent Tracking
 
 - Manages target tracking:
   - Implements novel tracking strategies
   - Maintains consistent tracking of moving targets
-  - Manages the content of tracking windows for the dashboard
+  - Manages the content of tracking windows in the dashboard
 
 ## Configuration
 
