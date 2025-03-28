@@ -51,9 +51,13 @@ public: // Constructor/Destructor
 private: // Element management
     void onAddAgent(const ID& agent_id) override
     {
+        // Create callback group for each drone control unit
+        auto state_cb_group = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        auto motion_cb_group = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
         // Create drone controllers
-        auto drone_state = std::make_shared<DroneState>(agent_id, node_, config_tools_, framework_tools_, topic_tools_, transform_tools_);
-        auto drone_motion = std::make_shared<DroneMotion>(agent_id, node_, config_tools_, framework_tools_, topic_tools_, transform_tools_);
+        auto drone_state = std::make_shared<DroneState>(agent_id, node_, config_tools_, framework_tools_, topic_tools_, transform_tools_, state_cb_group);
+        auto drone_motion = std::make_shared<DroneMotion>(agent_id, node_, config_tools_, framework_tools_, topic_tools_, transform_tools_, motion_cb_group);
         drone_state_.insert(std::make_pair(agent_id, drone_state));
         drone_motion_.insert(std::make_pair(agent_id, drone_motion));
         RCLCPP_INFO(node_->get_logger(), "Drone controllers created for agent %s", agent_id.c_str());

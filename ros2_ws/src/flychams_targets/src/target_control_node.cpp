@@ -49,8 +49,11 @@ public: // Constructor/Destructor
 private: // Element management
     void onAddTarget(const ID& target_id) override
     {
+        // Create callback group for target controllers
+        auto motion_cb_group = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
         // Create target controllers
-        auto target_motion = std::make_shared<TargetMotion>(target_id, node_, config_tools_, framework_tools_, topic_tools_, transform_tools_);
+        auto target_motion = std::make_shared<TargetMotion>(target_id, node_, config_tools_, framework_tools_, topic_tools_, transform_tools_, motion_cb_group);
         target_motion_.insert(std::make_pair(target_id, target_motion));
         RCLCPP_INFO(node_->get_logger(), "Target controllers created for target %s", target_id.c_str());
     }

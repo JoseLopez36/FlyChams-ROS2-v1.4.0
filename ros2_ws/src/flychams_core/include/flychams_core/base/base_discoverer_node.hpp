@@ -1,9 +1,5 @@
 #pragma once
 
-// Standard includes
-#include <mutex>
-#include <unordered_map>
-
 // Tools includes
 #include "flychams_core/config/config_tools.hpp"
 #include "flychams_core/framework/framework_tools.hpp"
@@ -48,10 +44,15 @@ namespace flychams::core
             topic_tools_ = std::make_shared<TopicTools>(node_, config_tools_);
             transform_tools_ = std::make_shared<TransformTools>(node_, config_tools_);
 
+            // Create callback group
+            discovery_cb_group_ = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+            sub_options_with_discovery_cb_group_.callback_group = discovery_cb_group_;
+
             // Initialize discovery subscriber
             elements_.clear();
             discovery_sub_ = topic_tools_->createRegistrationSubscriber(
-                std::bind(&BaseDiscovererNode::onDiscovery, this, std::placeholders::_1));
+                std::bind(&BaseDiscovererNode::onDiscovery, this, std::placeholders::_1),
+                sub_options_with_discovery_cb_group_);
 
             // Call on init overridable method
             onInit();
@@ -65,9 +66,6 @@ namespace flychams::core
 
         void shutdown()
         {
-            // Lock elements map
-            std::lock_guard<std::mutex> lock(mutex_);
-
             RCLCPP_INFO(node_->get_logger(), "Shutting down %s node...", node_name_.c_str());
             // Call on shutdown overridable method
             onShutdown();
@@ -97,9 +95,6 @@ namespace flychams::core
     private: // Discovery callback
         void onDiscovery(const RegistrationMsg::SharedPtr msg)
         {
-            // Lock elements map
-            std::lock_guard<std::mutex> lock(mutex_);
-
             // Track elements in this message
             std::unordered_set<ID> current_elements;
             for (const auto& element : msg->elements)
@@ -189,7 +184,9 @@ namespace flychams::core
         TransformTools::SharedPtr transform_tools_;
         // Discovered elements
         std::unordered_map<ID, ElementType> elements_;
-        std::mutex mutex_;
+        // Callback group
+        CallbackGroupPtr discovery_cb_group_;
+        rclcpp::SubscriptionOptions sub_options_with_discovery_cb_group_;
         // Discovery subscriber
         SubscriberPtr<RegistrationMsg> discovery_sub_;
     };

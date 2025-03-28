@@ -20,8 +20,8 @@ namespace flychams::bringup
 	class AgentRegistration : public core::BaseModule
 	{
 	public: // Constructor/Destructor
-		AgentRegistration(core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::FrameworkTools::SharedPtr framework_tools, core::TopicTools::SharedPtr topic_tools, core::TransformTools::SharedPtr transform_tools)
-			: BaseModule(node, config_tools, framework_tools, topic_tools, transform_tools)
+		AgentRegistration(core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::FrameworkTools::SharedPtr framework_tools, core::TopicTools::SharedPtr topic_tools, core::TransformTools::SharedPtr transform_tools, core::CallbackGroupPtr module_cb_group)
+			: BaseModule(node, config_tools, framework_tools, topic_tools, transform_tools, module_cb_group)
 		{
 			init();
 		}

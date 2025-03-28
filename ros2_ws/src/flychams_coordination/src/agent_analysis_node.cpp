@@ -1,34 +1,32 @@
 #include "rclcpp/rclcpp.hpp"
 
-// Perception includes
-#include "flychams_perception/clustering/target_clustering.hpp"
+// Coordination includes
+#include "flychams_coordination/analysis/agent_analysis.hpp"
 
 // Core includes
 #include "flychams_core/base/base_discoverer_node.hpp"
 
 using namespace flychams::core;
-using namespace flychams::perception;
+using namespace flychams::coordination;
 
 /**
  * ════════════════════════════════════════════════════════════════
- * @brief Clustering node for clustering the different targets
- * in the simulation
+ * @brief Agent analysis node for analyzing agent data
  *
  * @details
- * This class implements the clustering node for clustering the
- * different targets in the simulation. It uses the discoverer node to
- * discover the different targets and then creates a clustering for each
- * target discovered.
+ * This class implements the agent analysis node for analyzing
+ * agent data (e.g. clusters). It uses the discoverer node to discover
+ * the different agents and then adds them to the analysis manager.
  *
  * ════════════════════════════════════════════════════════════════
  * @author Jose Francisco Lopez Ruiz
- * @date 2025-03-01
+ * @date 2025-03-28
  * ════════════════════════════════════════════════════════════════
  */
-class TargetClusteringNode : public BaseDiscovererNode
+class AgentAnalysisNode : public BaseDiscovererNode
 {
 public: // Constructor/Destructor
-    TargetClusteringNode(const std::string& node_name, const rclcpp::NodeOptions& options)
+    AgentAnalysisNode(const std::string& node_name, const rclcpp::NodeOptions& options)
         : BaseDiscovererNode(node_name, options)
     {
         // Nothing to do
@@ -37,44 +35,44 @@ public: // Constructor/Destructor
     void onInit() override
     {
         // Use callback group from discovery node (to avoid race conditions)
-        // Initialize target clustering
-        target_clustering_ = std::make_shared<TargetClustering>(node_, config_tools_, framework_tools_, topic_tools_, transform_tools_, discovery_cb_group_);
+        // Initialize agent analysis system
+        agent_analysis_ = std::make_shared<AgentAnalysis>(node_, config_tools_, framework_tools_, topic_tools_, transform_tools_, discovery_cb_group_);
     }
 
     void onShutdown() override
     {
-        // Destroy target clustering system
-        target_clustering_.reset();
+        // Destroy agent analysis system
+        agent_analysis_.reset();
     }
 
 private: // Element management
-    void onAddTarget(const ID& target_id) override
+    void onAddAgent(const ID& agent_id) override
     {
-        // Add target to clustering
-        target_clustering_->addTarget(target_id);
+        // Add agent to analysis manager
+        agent_analysis_->addAgent(agent_id);
     }
 
-    void onRemoveTarget(const ID& target_id) override
+    void onRemoveAgent(const ID& agent_id) override
     {
-        // Remove target from clustering
-        target_clustering_->removeTarget(target_id);
+        // Remove agent from analysis manager
+        agent_analysis_->removeAgent(agent_id);
     }
 
     void onAddCluster(const ID& cluster_id) override
     {
-        // Add cluster to clustering
-        target_clustering_->addCluster(cluster_id);
+        // Add cluster to analysis manager
+        agent_analysis_->addCluster(cluster_id);
     }
 
     void onRemoveCluster(const ID& cluster_id) override
     {
-        // Remove cluster from clustering
-        target_clustering_->removeCluster(cluster_id);
+        // Remove cluster from analysis manager
+        agent_analysis_->removeCluster(cluster_id);
     }
 
 private: // Components
-    // Target clustering system
-    TargetClustering::SharedPtr target_clustering_;
+    // Agent analysis system
+    AgentAnalysis::SharedPtr agent_analysis_;
 };
 
 int main(int argc, char** argv)
@@ -85,8 +83,8 @@ int main(int argc, char** argv)
     rclcpp::NodeOptions options;
     options.allow_undeclared_parameters(true);
     options.automatically_declare_parameters_from_overrides(true);
-    // Create and initialize node
-    auto node = std::make_shared<TargetClusteringNode>("target_clustering_node", options);
+    // Create node
+    auto node = std::make_shared<AgentAnalysisNode>("agent_analysis_node", options);
     node->init();
     // Create executor and add node
     rclcpp::executors::MultiThreadedExecutor executor;

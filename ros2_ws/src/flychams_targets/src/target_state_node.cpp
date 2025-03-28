@@ -48,8 +48,11 @@ public: // Constructor/Destructor
 private: // Element management
     void onAddTarget(const ID& target_id) override
     {
+        // Create callback group for target state
+        auto state_cb_group = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
         // Create target controllers
-        auto target_state = std::make_shared<TargetState>(target_id, node_, config_tools_, framework_tools_, topic_tools_, transform_tools_);
+        auto target_state = std::make_shared<TargetState>(target_id, node_, config_tools_, framework_tools_, topic_tools_, transform_tools_, state_cb_group);
         target_state_.insert(std::make_pair(target_id, target_state));
         RCLCPP_INFO(node_->get_logger(), "Target state created for target %s", target_id.c_str());
     }

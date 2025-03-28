@@ -25,8 +25,8 @@ namespace flychams::perception
 	class TargetClustering : public core::BaseModule
 	{
 	public: // Constructor/Destructor
-		TargetClustering(core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::FrameworkTools::SharedPtr framework_tools, core::TopicTools::SharedPtr topic_tools, core::TransformTools::SharedPtr transform_tools)
-			: BaseModule(node, config_tools, framework_tools, topic_tools, transform_tools)
+		TargetClustering(core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::FrameworkTools::SharedPtr framework_tools, core::TopicTools::SharedPtr topic_tools, core::TransformTools::SharedPtr transform_tools, core::CallbackGroupPtr module_cb_group)
+			: BaseModule(node, config_tools, framework_tools, topic_tools, transform_tools, module_cb_group)
 		{
 			init();
 		}
@@ -39,8 +39,6 @@ namespace flychams::perception
 		using SharedPtr = std::shared_ptr<TargetClustering>;
 		struct Target
 		{
-			// Assignment data
-			core::ID assigned_id;
 			// Position data
 			core::PointMsg position;
 			bool has_position;
@@ -50,7 +48,7 @@ namespace flychams::perception
 			core::PublisherPtr<core::StringMsg> assignment_pub;
 			// Constructor
 			Target()
-				: assigned_id(), position(), has_position(false), position_sub(), assignment_pub()
+				: position(), has_position(false), position_sub(), assignment_pub()
 			{
 			}
 		};
@@ -83,8 +81,6 @@ namespace flychams::perception
 		void update();
 
 	private: // ROS components
-		// Callback group
-		core::CallbackGroupPtr callback_group_;
 		// Timer
 		core::TimerPtr update_timer_;
 	};

@@ -25,8 +25,8 @@ namespace flychams::perception
 	class ClusterAnalysis : public core::BaseModule
 	{
 	public: // Constructor/Destructor
-		ClusterAnalysis(core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::FrameworkTools::SharedPtr framework_tools, core::TopicTools::SharedPtr topic_tools, core::TransformTools::SharedPtr transform_tools)
-			: BaseModule(node, config_tools, framework_tools, topic_tools, transform_tools)
+		ClusterAnalysis(core::NodePtr node, core::ConfigTools::SharedPtr config_tools, core::FrameworkTools::SharedPtr framework_tools, core::TopicTools::SharedPtr topic_tools, core::TransformTools::SharedPtr transform_tools, core::CallbackGroupPtr module_cb_group)
+			: BaseModule(node, config_tools, framework_tools, topic_tools, transform_tools, module_cb_group)
 		{
 			init();
 		}
@@ -96,8 +96,6 @@ namespace flychams::perception
 		std::pair<core::Vector2r, float> calculateEnclosingCircle(const std::vector<core::PointMsg>& points, const float& min_radius, const float& margin_radius);
 
 	private: // ROS components
-		// Callback group
-		core::CallbackGroupPtr callback_group_;
 		// Timer
 		core::TimerPtr update_timer_;
 	};

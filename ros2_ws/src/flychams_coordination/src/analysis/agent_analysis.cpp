@@ -1,4 +1,4 @@
-#include "flychams_coordination/assignment/agent_assignment.hpp"
+#include "flychams_coordination/analysis/agent_analysis.hpp"
 
 using namespace flychams::core;
 
@@ -8,28 +8,22 @@ namespace flychams::coordination
     // CONSTRUCTOR: Constructor and destructor
     // ════════════════════════════════════════════════════════════════════════════
 
-    void AgentAssignment::onInit()
+    void AgentAnalysis::onInit()
     {
         // Get parameters from parameter server
         // Get update rate
-        update_rate_ = RosUtils::getParameterOr<float>(node_, "agent_assignment.update_rate", 1.0f);
-        // Get assignment mode
-        assignment_mode_ = static_cast<AssignmentSolver::AssignmentMode>(RosUtils::getParameterOr<int>(node_, "agent_assignment.mode", 0));
+        update_rate_ = RosUtils::getParameterOr<float>(node_, "agent_analysis.analysis_rate", 20.0f);
 
         // Initialize data
         clusters_.clear();
         agents_.clear();
 
-        // Initialize solver
-        solver_.reset();
-        solver_.setMode(assignment_mode_);
-
         // Set update timer
         update_timer_ = RosUtils::createTimer(node_, update_rate_,
-            std::bind(&AgentAssignment::update, this), module_cb_group_);
+            std::bind(&AgentAnalysis::update, this), module_cb_group_);
     }
 
-    void AgentAssignment::onShutdown()
+    void AgentAnalysis::onShutdown()
     {
         // Destroy clusters and agents
         clusters_.clear();
@@ -42,13 +36,10 @@ namespace flychams::coordination
     // PUBLIC METHODS: Public methods for adding/removing clusters and agents
     // ════════════════════════════════════════════════════════════════════════════
 
-    void AgentAssignment::addAgent(const ID& agent_id)
+    void AgentAnalysis::addAgent(const ID& agent_id)
     {
         // Create and add agent
         agents_.insert({ agent_id, Agent() });
-
-        // Get maximum number of assignments
-        agents_[agent_id].max_assignments = config_tools_->getMaxAssignments(agent_id);
 
         // Create agent status subscriber
         agents_[agent_id].status_sub = topic_tools_->createAgentStatusSubscriber(agent_id,
@@ -57,21 +48,17 @@ namespace flychams::coordination
                 this->agentStatusCallback(agent_id, msg);
             }, sub_options_with_module_cb_group_);
 
-        // Create agent position subscriber
-        agents_[agent_id].position_sub = topic_tools_->createAgentPositionSubscriber(agent_id,
-            [this, agent_id](const PointStampedMsg::SharedPtr msg)
-            {
-                this->agentPositionCallback(agent_id, msg);
-            }, sub_options_with_module_cb_group_);
+        // Create agent clusters publisher
+        agents_[agent_id].clusters_pub = topic_tools_->createAgentClustersPublisher(agent_id);
     }
 
-    void AgentAssignment::removeAgent(const ID& agent_id)
+    void AgentAnalysis::removeAgent(const ID& agent_id)
     {
         // Remove agent from map
         agents_.erase(agent_id);
     }
 
-    void AgentAssignment::addCluster(const ID& cluster_id)
+    void AgentAnalysis::addCluster(const ID& cluster_id)
     {
         // Create and add cluster
         clusters_.insert({ cluster_id, Cluster() });
@@ -83,11 +70,15 @@ namespace flychams::coordination
                 this->clusterGeometryCallback(cluster_id, msg);
             }, sub_options_with_module_cb_group_);
 
-        // Create cluster assignment publisher
-        clusters_[cluster_id].assignment_pub = topic_tools_->createClusterAssignmentPublisher(cluster_id);
+        // Create cluster assignment subscriber
+        clusters_[cluster_id].assignment_sub = topic_tools_->createClusterAssignmentSubscriber(cluster_id,
+            [this, cluster_id](const StringMsg::SharedPtr msg)
+            {
+                this->clusterAssignmentCallback(cluster_id, msg);
+            }, sub_options_with_module_cb_group_);
     }
 
-    void AgentAssignment::removeCluster(const ID& cluster_id)
+    void AgentAnalysis::removeCluster(const ID& cluster_id)
     {
         // Remove cluster from map
         clusters_.erase(cluster_id);
@@ -97,7 +88,7 @@ namespace flychams::coordination
     // CALLBACKS: Callback functions
     // ════════════════════════════════════════════════════════════════════════════
 
-    void AgentAssignment::clusterGeometryCallback(const ID& cluster_id, const ClusterGeometryMsg::SharedPtr msg)
+    void AgentAnalysis::clusterGeometryCallback(const ID& cluster_id, const ClusterGeometryMsg::SharedPtr msg)
     {
         // Update cluster geometry
         clusters_[cluster_id].center = msg->center;
@@ -105,88 +96,70 @@ namespace flychams::coordination
         clusters_[cluster_id].has_geometry = true;
     }
 
-    void AgentAssignment::agentStatusCallback(const ID& agent_id, const AgentStatusMsg::SharedPtr msg)
+    void AgentAnalysis::clusterAssignmentCallback(const ID& cluster_id, const StringMsg::SharedPtr msg)
+    {
+        // Update cluster assignment
+        clusters_[cluster_id].assignment = msg->data;
+        clusters_[cluster_id].has_assignment = true;
+    }
+
+    void AgentAnalysis::agentStatusCallback(const ID& agent_id, const AgentStatusMsg::SharedPtr msg)
     {
         // Update agent status
         agents_[agent_id].status = static_cast<AgentStatus>(msg->status);
         agents_[agent_id].has_status = true;
     }
 
-    void AgentAssignment::agentPositionCallback(const ID& agent_id, const PointStampedMsg::SharedPtr msg)
-    {
-        // Update agent position
-        agents_[agent_id].position = msg->point;
-        agents_[agent_id].has_position = true;
-    }
-
     // ════════════════════════════════════════════════════════════════════════════
-    // UPDATE: Update assignment
+    // UPDATE: Update analysis
     // ════════════════════════════════════════════════════════════════════════════
 
-    void AgentAssignment::update()
+    void AgentAnalysis::update()
     {
-        // Check if we have a valid agent status, position and cluster geometry
+        // Check if we have a valid agent status, cluster geometries and assignments
         for (const auto& [agent_id, agent] : agents_)
         {
-            if (!agent.has_status || !agent.has_position)
+            if (!agent.has_status)
             {
-                RCLCPP_WARN(node_->get_logger(), "Agent assignment: Agent %s has no status or position", agent_id.c_str());
-                return; // Skip assignment if we don't have a valid agent status or position
+                RCLCPP_WARN(node_->get_logger(), "Agent analysis: Agent %s has no status", agent_id.c_str());
+                return; // Skip updating if we don't have a valid agent status
             }
 
-            // Check if we are in the correct state to assign clusters
+            // Check if we are in the correct state to analyze
             if (agent.status != AgentStatus::TRACKING)
             {
-                RCLCPP_WARN(node_->get_logger(), "Agent assignment: Agent %s is not in the correct state to assign clusters",
+                RCLCPP_WARN(node_->get_logger(), "Agent analysis: Agent %s is not in the correct state to analyze",
                     agent_id.c_str());
                 return;
             }
         }
         for (const auto& [cluster_id, cluster] : clusters_)
         {
-            if (!cluster.has_geometry)
+            if (!cluster.has_geometry || !cluster.has_assignment)
             {
-                RCLCPP_WARN(node_->get_logger(), "Agent assignment: Cluster %s has no geometry", cluster_id.c_str());
-                return; // Skip assignment if we don't have a valid cluster geometry
+                RCLCPP_WARN(node_->get_logger(), "Agent analysis: Cluster %s has no geometry or assignment", cluster_id.c_str());
+                return; // Skip updating if we don't have a valid cluster geometry or assignment
             }
         }
 
-        // Create points map
-        AssignmentSolver::Clusters clusters;
-        for (const auto& [cluster_id, cluster] : clusters_)
-        {
-            clusters.insert({ cluster_id, {RosUtils::fromMsg(cluster.center), cluster.radius} });
-        }
-        AssignmentSolver::Agents agents;
+        // Iterate over agents to get their assignments
         for (const auto& [agent_id, agent] : agents_)
         {
-            agents.insert({ agent_id, {RosUtils::fromMsg(agent.position), agent.max_assignments} });
-        }
+            // Create agent clusters message
+            AgentClustersMsg clusters_msg;
+            clusters_msg.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
 
-        // Perform agent assignment based on assignment mode
-        AssignmentSolver::Assignments assignments;
-        switch (assignment_mode_)
-        {
-        case AssignmentSolver::AssignmentMode::GREEDY:
-        {
-            assignments = solver_.runGreedy(clusters, agents);
-            break;
-        }
+            // Add cluster info to agent info
+            for (const auto& [cluster_id, cluster] : clusters_)
+            {
+                // Add to message
+                clusters_msg.cluster_ids.push_back(cluster_id);
+                clusters_msg.centers.push_back(cluster.center);
+                clusters_msg.radii.push_back(cluster.radius);
+            }
 
-        default:
-            RCLCPP_ERROR(node_->get_logger(), "Agent assignment: Invalid assignment mode");
-            return;
-        }
-
-        // Publish assignments
-        for (const auto& [cluster_id, agent_id] : assignments)
-        {
-            // Create assignment message
-            StringMsg assignment_msg;
-            assignment_msg.data = agent_id;
-
-            // Publish assignment
-            clusters_[cluster_id].assignment_pub->publish(assignment_msg);
+            // Publish agent clusters
+            agent.clusters_pub->publish(clusters_msg);
         }
     }
 

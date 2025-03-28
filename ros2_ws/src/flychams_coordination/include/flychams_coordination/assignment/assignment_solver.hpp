@@ -1,13 +1,13 @@
 #pragma once
 
 // Standard includes
-#include <cmath>
-#include <algorithm>
+#include <vector>
 #include <unordered_map>
 #include <unordered_set>
 
 // Utilities
 #include "flychams_core/types/core_types.hpp"
+#include "flychams_core/utils/math_utils.hpp"
 
 namespace flychams::coordination
 {
@@ -32,70 +32,27 @@ namespace flychams::coordination
      */
     class AssignmentSolver
     {
-    public: // Constructor/Destructor
-        AssignmentSolver();
-
     public: // Types
-        using SharedPtr = std::shared_ptr<AssignmentSolver>;
         // Modes
         enum class AssignmentMode
         {
-            GreedyCoordination,     // Distance-based greedy assignment. Default
-            SubOptimalCoordination  // Advanced coordination (TODO)
+            GREEDY,     // Distance-based greedy assignment. Default
+            SUBOPTIMAL  // Advanced coordination (TODO)
         };
-        // Settings types
-        struct SolverParams
-        {
-            float tol;      // Convergence tolerance
-            int max_iter;   // Maximum iterations
-            float eps;      // Numerical stability epsilon
-        };
-        struct FunctionParams
-        {
-            float w_obs;    // Weight for observation quality
-            float w_dist;   // Weight for distance cost
-            float w_switch; // Weight for assignment switching
-        };
-        // Data types
-        struct Agent
-        {
-            bool valid;             // Whether the agent is valid
-            core::Vector3r pos;     // Agent position
-            int max;                // Maximum number of assignments
-
-            Agent() : valid(false), pos(0.0f, 0.0f, 0.0f), max(0) {}
-            Agent(int max_assignments) : valid(false), pos(0.0f, 0.0f, 0.0f), max(max_assignments) {}
-        };
-        struct Cluster
-        {
-            bool valid;             // Whether the cluster is valid
-            core::Vector3r center;  // Cluster center
-            float radius;           // Cluster radius
-
-            Cluster() : valid(false), center(0.0f, 0.0f, 0.0f), radius(0.0f) {}
-        };
-        using Agents = std::unordered_map<core::ID, Agent>; // Agent ID -> Agent
-        using Clusters = std::unordered_map<core::ID, Cluster>; // Cluster ID -> Cluster
-        using Assignments = std::unordered_map<core::ID, core::ID>; // Cluster ID -> Agent ID
+        // Data
+        using Agents = std::unordered_map<core::ID, std::pair<core::Vector3r, int>>;        // Agent ID -> (Position, Max assignments)
+        using Clusters = std::unordered_map<core::ID, std::pair<core::Vector3r, float>>;    // Cluster ID -> (Center, Radius)
+        using Assignments = std::unordered_map<core::ID, core::ID>; 	                    // Agent ID -> Cluster ID
 
     private: // Parameters
-        SolverParams solver_params_;     // Solver configuration parameters
-        FunctionParams params_;          // Cost function parameters
-
-    private: // Data
-        // IDs
-        std::unordered_map<core::ID, int> A; // Agent ID -> Max assignments
-        std::unordered_set<core::ID> C;      // Cluster IDs
+        AssignmentMode mode_;
 
     public: // Public methods
-        // Parameter configuration methods
-        void setSolverParams(const SolverParams& params);
-        void setFunctionParams(const FunctionParams& params);
+        // Configuration
+        void reset();
+        void setMode(const AssignmentMode& mode);
         // Control
-        Assignments solveGreedy(const Agents& agents, const Clusters& clusters);
-
-    private: // Implementation
-        // TODO: Implementation of other assignment methods
+        Assignments runGreedy(const Clusters& C, const Agents& A);
     };
 
 } // namespace flychams::coordination

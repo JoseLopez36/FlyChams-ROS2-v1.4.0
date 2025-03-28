@@ -36,8 +36,9 @@ public: // Constructor/Destructor
 
     void onInit() override
     {
+        // Use callback group from discovery node (to avoid race conditions)
         // Initialize agent assignment system
-        agent_assignment_ = std::make_shared<AgentAssignment>(node_, config_tools_, framework_tools_, topic_tools_, transform_tools_);
+        agent_assignment_ = std::make_shared<AgentAssignment>(node_, config_tools_, framework_tools_, topic_tools_, transform_tools_, discovery_cb_group_);
     }
 
     void onShutdown() override

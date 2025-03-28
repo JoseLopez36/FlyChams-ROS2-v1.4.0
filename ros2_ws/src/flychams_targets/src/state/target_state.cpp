@@ -53,7 +53,7 @@ namespace flychams::targets
         // Set update timer
         last_update_time_ = RosUtils::now(node_);
         update_timer_ = RosUtils::createTimer(node_, update_rate_,
-            std::bind(&TargetState::update, this));
+            std::bind(&TargetState::update, this), module_cb_group_);
     }
 
     void TargetState::onShutdown()

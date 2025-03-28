@@ -8,7 +8,7 @@ using namespace flychams::core;
 namespace flychams::perception
 {
 	// ════════════════════════════════════════════════════════════════════════════
-	// PUBLIC METHODS: Public methods for configuration and element management
+	// PUBLIC METHODS: Public methods for configuration and control
 	// ════════════════════════════════════════════════════════════════════════════
 
 	void KMeansMod::reset()

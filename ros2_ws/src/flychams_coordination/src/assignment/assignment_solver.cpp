@@ -5,42 +5,20 @@ using namespace flychams::core;
 namespace flychams::coordination
 {
     // ════════════════════════════════════════════════════════════════════════════
-    // CONSTRUCTOR: Constructor and destructor
+    // PUBLIC METHODS: Public methods for configuration and control
     // ════════════════════════════════════════════════════════════════════════════
 
-    AssignmentSolver::AssignmentSolver()
+    void AssignmentSolver::reset()
     {
-        // Initialize solver parameters
-        solver_params_.tol = 1e-6f;
-        solver_params_.max_iter = 100;
-        solver_params_.eps = 1.0f;
+        // Nothing to do
     }
 
-    // ════════════════════════════════════════════════════════════════════════════
-    // CONFIGURATION: Set solver parameters and function parameters
-    // ════════════════════════════════════════════════════════════════════════════
-
-    void AssignmentSolver::setSolverParams(const SolverParams& params)
+    void AssignmentSolver::setMode(const AssignmentMode& mode)
     {
-        if (params.eps <= 0.0f || params.tol <= 0.0f)
-            throw std::invalid_argument("Tolerances must be positive");
-
-        solver_params_ = params;
+        mode_ = mode;
     }
 
-    void AssignmentSolver::setFunctionParams(const FunctionParams& params)
-    {
-        if (params.w_obs <= 0.0f || params.w_dist <= 0.0f || params.w_switch <= 0.0f)
-            throw std::invalid_argument("Weights must be positive");
-
-        params_ = params;
-    }
-
-    // ════════════════════════════════════════════════════════════════════════════
-    // SOLVER METHODS: Assignment solving methods
-    // ════════════════════════════════════════════════════════════════════════════
-
-    AssignmentSolver::Assignments AssignmentSolver::solveGreedy(const Agents& A, const Clusters& C)
+    AssignmentSolver::Assignments AssignmentSolver::runGreedy(const Clusters& C, const Agents& A)
     {
         // Initialize empty assignment
         Assignments assignments;
@@ -52,10 +30,10 @@ namespace flychams::coordination
         }
 
         // Create a list of unassigned clusters
-        std::vector<std::pair<core::ID, core::Vector3r>> U;
-        for (const auto& [Cj_id, Cj] : C)
+        Clusters U;
+        for (const auto& Cj : C)
         {
-            U.push_back({ Cj_id, Cj.center });
+            U.insert(Cj);
         }
 
         // Create a map to track how many clusters are assigned to each agent
@@ -70,28 +48,26 @@ namespace flychams::coordination
         {
             float min_dist = HUGE_VALF;
             core::ID best_A_id = "";
-            size_t best_U_idx = 0;
+            core::ID best_U_id = "";
 
             // Find the best agent-cluster pair based on distance
-            for (size_t j = 0; j < U.size(); j++)
+            for (const auto& [Uj_id, Uj] : U)
             {
-                const auto& [Uj_id, Uj] = U[j];
-
                 for (const auto& [Ai_id, Ai] : A)
                 {
                     // Skip if agent has reached maximum assignments
-                    if (n[Ai_id] >= Ai.max)
+                    if (n[Ai_id] >= Ai.second)
                         continue;
 
                     // Calculate distance
-                    float dist = (Ai.pos - Uj).norm();
+                    float dist = (Ai.first - Uj.first).norm();
 
                     // Update best assignment if this is better
                     if (dist < min_dist)
                     {
                         min_dist = dist;
                         best_A_id = Ai_id;
-                        best_U_idx = j;
+                        best_U_id = Uj_id;
                     }
                 }
             }
@@ -99,17 +75,14 @@ namespace flychams::coordination
             // If we found a valid assignment
             if (min_dist < HUGE_VALF)
             {
-                // Get the cluster ID
-                const auto& [Uj_id, _] = U[best_U_idx];
-
                 // Add to assignments
-                assignments[Uj_id] = best_A_id;
+                assignments[best_U_id] = best_A_id;
 
                 // Increment agent assignment count
                 n[best_A_id]++;
 
                 // Remove the assigned cluster from unassigned list
-                U.erase(U.begin() + best_U_idx);
+                U.erase(best_U_id);
             }
             else
             {

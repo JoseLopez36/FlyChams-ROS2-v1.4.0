@@ -6,23 +6,30 @@ Coordination package for the Flying Chameleons (FlyChams) project that manages m
 
 The `flychams_coordination` package implements coordination algorithms for multi-agent systems in the FlyChams project. It handles:
 
-1. **Agent positioning** - Determines optimal positions for agents
-2. **Agent assignment** - Assigns agents to clusters or regions
-3. **Target tracking** - Coordinates agents to maintain optimal tracking of targets
+1. **Agent assignment** - Assigns agents to clusters or meaningful regions
+2. **Agent analysis** - Analyzes the assignment of agents to clusters
+3. **Agent positioning** - Determines optimal positions for agents
+4. **Target tracking** - Coordinates agents to maintain optimal tracking of targets
 
 ## Nodes
+
+### Assignment
+
+- Assigns agents to clusters:
+  - Implements assignment algorithms
+  - Optimizes cluster to agent assignments
+
+### Analysis
+
+- Analyzes the assignment of agents to clusters:
+  - Implements analysis algorithms
+  - Publishes each agent's clusters
 
 ### Positioning
 
 - Determines optimal positions for agents:
   - Considers tracking quality (e.g. distance, verticality, etc.)
   - Generates position commands for agents
-
-### Assignment
-
-- Assigns agents to clusters:
-  - Implements assignment algorithms
-  - Optimizes overall system performance
 
 ### Tracking
 

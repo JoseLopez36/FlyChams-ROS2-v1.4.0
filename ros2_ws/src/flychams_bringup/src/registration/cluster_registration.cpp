@@ -15,28 +15,8 @@ namespace flychams::bringup
 		int cluster_index = 0;
 		for (const auto& [agent_id, agent_ptr] : config_tools_->getAgentTeam())
 		{
-			// Get tracking config
-			const auto& tracking_config = config_tools_->getTracking(agent_id);
-			const auto& mode = tracking_config.mode;
-
-			// Get maximum number of assignments per agent based on tracking mode
-			int max_assign = 0;
-			switch (mode)
-			{
-			case TrackingMode::MultiCameraTracking:
-				max_assign = static_cast<int>(config_tools_->getTrackingHeads(agent_id).size());
-				break;
-
-			case TrackingMode::MultiWindowTracking:
-				max_assign = tracking_config.num_windows;
-				break;
-			}
-
-			if (max_assign == 0)
-			{
-				RCLCPP_ERROR(node_->get_logger(), "No assignments found for agent %s. Skipping cluster registration.", agent_id.c_str());
-				continue;
-			}
+			// Get maximum number of assignments per agent
+			const int max_assign = config_tools_->getMaxAssignments(agent_id);
 
 			// Iterate over all assignments and register clusters
 			for (int i = 0; i < max_assign; i++)

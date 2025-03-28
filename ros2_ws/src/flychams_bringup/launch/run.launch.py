@@ -14,10 +14,12 @@ def generate_launch_description():
         'drone_control': 'info',
         'head_control': 'info',
         # Perception nodes
-        'clustering': 'info',
+        'target_clustering': 'info',
+        'cluster_analysis': 'info',
         # Coordination nodes
-        'agent_positioning': 'info',
         'agent_assignment': 'info',
+        'agent_analysis': 'info',
+        'agent_positioning': 'info',
         'agent_tracking': 'info',
         # Dashboard nodes
         'gui': 'info',
@@ -30,9 +32,11 @@ def generate_launch_description():
     # Define launch arguments for each node
     launch_drone_control = LaunchConfiguration('drone_control')
     launch_head_control = LaunchConfiguration('head_control')
-    launch_clustering = LaunchConfiguration('clustering')
-    launch_agent_positioning = LaunchConfiguration('agent_positioning')
+    launch_target_clustering = LaunchConfiguration('target_clustering')
+    launch_cluster_analysis = LaunchConfiguration('cluster_analysis')
     launch_agent_assignment = LaunchConfiguration('agent_assignment')
+    launch_agent_analysis = LaunchConfiguration('agent_analysis')
+    launch_agent_positioning = LaunchConfiguration('agent_positioning')
     launch_agent_tracking = LaunchConfiguration('agent_tracking')
     launch_gui = LaunchConfiguration('gui')
     launch_visualization = LaunchConfiguration('visualization')
@@ -42,9 +46,11 @@ def generate_launch_description():
     # Define log level arguments for each node
     log_level_drone_control = LaunchConfiguration('log_drone_control')
     log_level_head_control = LaunchConfiguration('log_head_control')
-    log_level_clustering = LaunchConfiguration('log_clustering')
-    log_level_agent_positioning = LaunchConfiguration('log_agent_positioning')
+    log_level_target_clustering = LaunchConfiguration('log_target_clustering')
+    log_level_cluster_analysis = LaunchConfiguration('log_cluster_analysis')
     log_level_agent_assignment = LaunchConfiguration('log_agent_assignment')
+    log_level_agent_analysis = LaunchConfiguration('log_agent_analysis')
+    log_level_agent_positioning = LaunchConfiguration('log_agent_positioning')
     log_level_agent_tracking = LaunchConfiguration('log_agent_tracking')
     log_level_gui = LaunchConfiguration('log_gui')
     log_level_visualization = LaunchConfiguration('log_visualization')
@@ -133,6 +139,16 @@ def generate_launch_description():
         description='Flag to enable/disable the Agent Assignment node'))
     
     ld.append(DeclareLaunchArgument(
+        'agent_analysis',
+        default_value='True',
+        description='Flag to enable/disable the Agent Analysis node'))
+    
+    ld.append(DeclareLaunchArgument(
+        'agent_positioning',
+        default_value='True',
+        description='Flag to enable/disable the Agent Positioning node'))
+    
+    ld.append(DeclareLaunchArgument(
         'agent_tracking',
         default_value='True',
         description='Flag to enable/disable the Agent Tracking node'))
@@ -177,6 +193,16 @@ def generate_launch_description():
         'log_agent_assignment',
         default_value='info',
         description='Log level for the Agent Assignment node'))
+
+    ld.append(DeclareLaunchArgument(
+        'log_agent_analysis',
+        default_value='info',
+        description='Log level for the Agent Analysis node'))
+    
+    ld.append(DeclareLaunchArgument(
+        'log_agent_positioning',
+        default_value='info',
+        description='Log level for the Agent Positioning node'))
     
     ld.append(DeclareLaunchArgument(
         'log_agent_tracking',
@@ -245,16 +271,36 @@ def generate_launch_description():
     )
 
     # ============= PERCEPTION NODES =============
-    # Conditionally add Clustering node
+    # Conditionally add Target Clustering node
     ld.append(
         Node(
             package='flychams_perception',
-            executable='clustering_node',
-            name='clustering_node',
+            executable='target_clustering_node',
+            name='target_clustering_node',
             output='screen',
             namespace='flychams',
-            condition=IfCondition(launch_clustering),
-            arguments=['--ros-args', '--log-level', log_level_clustering],
+            condition=IfCondition(launch_target_clustering),
+            arguments=['--ros-args', '--log-level', log_level_target_clustering],
+            parameters=[
+                system_path, 
+                topics_path, 
+                frames_path, 
+                perception_path,
+                {'use_sim_time': True}
+            ]
+        )
+    )
+
+    # Conditionally add Cluster Analysis node
+    ld.append(
+        Node(
+            package='flychams_perception',
+            executable='cluster_analysis_node',
+            name='cluster_analysis_node',
+            output='screen',
+            namespace='flychams',
+            condition=IfCondition(launch_cluster_analysis),
+            arguments=['--ros-args', '--log-level', log_level_cluster_analysis],
             parameters=[
                 system_path, 
                 topics_path, 
@@ -266,26 +312,6 @@ def generate_launch_description():
     )
 
     # ============= COORDINATION NODES =============
-    # Conditionally add Agent Positioning node
-    ld.append(
-        Node(
-            package='flychams_coordination',
-            executable='agent_positioning_node',
-            name='agent_positioning_node',
-            output='screen',
-            namespace='flychams',
-            condition=IfCondition(launch_agent_positioning),
-            arguments=['--ros-args', '--log-level', log_level_agent_positioning],
-            parameters=[
-                system_path, 
-                topics_path, 
-                frames_path, 
-                coordination_path,
-                {'use_sim_time': True}
-            ]
-        )
-    )
-
     # Conditionally add Agent Assignment node
     ld.append(
         Node(
@@ -296,6 +322,46 @@ def generate_launch_description():
             namespace='flychams',
             condition=IfCondition(launch_agent_assignment),
             arguments=['--ros-args', '--log-level', log_level_agent_assignment],
+            parameters=[
+                system_path, 
+                topics_path, 
+                frames_path, 
+                coordination_path,
+                {'use_sim_time': True}
+            ]
+        )
+    )
+
+    # Conditionally add Agent Analysis node
+    ld.append(
+        Node(
+            package='flychams_coordination',
+            executable='agent_analysis_node',
+            name='agent_analysis_node',
+            output='screen',
+            namespace='flychams',
+            condition=IfCondition(launch_agent_analysis),
+            arguments=['--ros-args', '--log-level', log_level_agent_analysis],
+            parameters=[
+                system_path, 
+                topics_path, 
+                frames_path, 
+                coordination_path,
+                {'use_sim_time': True}
+            ]
+        )
+    )
+
+    # Conditionally add Agent Positioning node
+    ld.append(
+        Node(
+            package='flychams_coordination',
+            executable='agent_positioning_node',
+            name='agent_positioning_node',
+            output='screen',
+            namespace='flychams',
+            condition=IfCondition(launch_agent_positioning),
+            arguments=['--ros-args', '--log-level', log_level_agent_positioning],
             parameters=[
                 system_path, 
                 topics_path, 

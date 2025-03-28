@@ -27,17 +27,14 @@ namespace flychams::perception
 		targets_.clear();
 		clusters_.clear();
 
-		// Set K-Means parameters
+		// Initialize K-Means
 		k_means_.reset();
 		k_means_.setParameters(ini_bonding_coef, max_bonding_coef, bonding_coef_time_to_max, max_hysteresis_ratio, min_hysteresis_ratio);
-
-		// Create callback group
-		callback_group_ = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
 		// Set update timer
 		last_update_time_ = RosUtils::now(node_);
 		update_timer_ = RosUtils::createTimer(node_, update_rate_,
-			std::bind(&TargetClustering::update, this), callback_group_);
+			std::bind(&TargetClustering::update, this), module_cb_group_);
 	}
 
 	void TargetClustering::onShutdown()
@@ -57,12 +54,18 @@ namespace flychams::perception
 	{
 		// Create and add cluster
 		clusters_.insert(cluster_id);
+
+		// Reset K-Means
+		k_means_.reset();
 	}
 
 	void TargetClustering::removeCluster(const ID& cluster_id)
 	{
 		// Remove cluster from map
 		clusters_.erase(cluster_id);
+
+		// Reset K-Means
+		k_means_.reset();
 	}
 
 	void TargetClustering::addTarget(const ID& target_id)
@@ -70,25 +73,27 @@ namespace flychams::perception
 		// Create and add target
 		targets_.insert({ target_id, Target() });
 
-		// Create subscriber options
-		auto sub_options = rclcpp::SubscriptionOptions();
-		sub_options.callback_group = callback_group_;
-
 		// Create target true position subscriber
 		targets_[target_id].position_sub = topic_tools_->createTargetTruePositionSubscriber(target_id,
 			[this, target_id](const PointStampedMsg::SharedPtr msg)
 			{
 				this->targetPositionCallback(target_id, msg);
-			}, sub_options);
+			}, sub_options_with_module_cb_group_);
 
 		// Create target assignment publisher
 		targets_[target_id].assignment_pub = topic_tools_->createTargetAssignmentPublisher(target_id);
+
+		// Reset K-Means
+		k_means_.reset();
 	}
 
 	void TargetClustering::removeTarget(const ID& target_id)
 	{
 		// Remove target from map
 		targets_.erase(target_id);
+
+		// Reset K-Means
+		k_means_.reset();
 	}
 
 	// ════════════════════════════════════════════════════════════════════════════

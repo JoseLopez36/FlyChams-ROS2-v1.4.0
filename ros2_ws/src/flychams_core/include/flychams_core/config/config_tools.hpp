@@ -163,6 +163,28 @@ namespace flychams::core
         }
 
     public: // Processing getter methods
+        const int getMaxAssignments(const std::string& agent_id) const
+        {
+            // Get tracking config
+            const auto& tracking_config = getTracking(agent_id);
+            const auto& mode = tracking_config.mode;
+
+            // Get maximum number of assignments per agent based on tracking mode
+            int max_assign = 0;
+            switch (mode)
+            {
+            case TrackingMode::MultiCameraTracking:
+                max_assign = static_cast<int>(getTrackingHeads(agent_id).size());
+                break;
+
+            case TrackingMode::MultiWindowTracking:
+                max_assign = tracking_config.num_windows;
+                break;
+            }
+
+            return max_assign;
+        }
+
         const HeadConfigPtr getCentralHead(const std::string& agent_id) const
         {
             for (const auto& [head_id, head_ptr] : getHeadPayload(agent_id))

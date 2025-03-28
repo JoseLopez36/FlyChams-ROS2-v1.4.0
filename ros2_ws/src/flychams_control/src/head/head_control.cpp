@@ -29,20 +29,15 @@ namespace flychams::control
 		RosUtils::toMsg(MathUtils::eulerToQuaternion(central_head_rpy), central_cmd_.ori);
 		central_cmd_.fov = MathUtils::computeFov(central_head_ptr->ref_focal, central_head_ptr->camera.sensor_width);
 
-		// Create callback group
-		callback_group_ = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-		auto sub_options = rclcpp::SubscriptionOptions();
-		sub_options.callback_group = callback_group_;
-
 		// Subscribe to status and head setpoints topics
 		status_sub_ = topic_tools_->createAgentStatusSubscriber(agent_id_,
-			std::bind(&HeadControl::statusCallback, this, std::placeholders::_1), sub_options);
+			std::bind(&HeadControl::statusCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
 		head_setpoints_sub_ = topic_tools_->createAgentHeadSetpointsSubscriber(agent_id_,
-			std::bind(&HeadControl::headSetpointsCallback, this, std::placeholders::_1), sub_options);
+			std::bind(&HeadControl::headSetpointsCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
 
 		// Set update timer
 		update_timer_ = RosUtils::createTimer(node_, update_rate_,
-			std::bind(&HeadControl::update, this), callback_group_);
+			std::bind(&HeadControl::update, this), module_cb_group_);
 	}
 
 	void HeadControl::onShutdown()

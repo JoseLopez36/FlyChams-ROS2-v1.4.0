@@ -40,23 +40,18 @@ namespace flychams::control
 		// Set speed planner parameters
 		speed_planner_.setParameters(min_speed, max_speed, min_distance, max_distance, max_acceleration);
 
-		// Create callback group
-		callback_group_ = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-		auto sub_options = rclcpp::SubscriptionOptions();
-		sub_options.callback_group = callback_group_;
-
 		// Subscribe to status, position and setpoint topics
 		status_sub_ = topic_tools_->createAgentStatusSubscriber(agent_id_,
-			std::bind(&DroneMotion::statusCallback, this, std::placeholders::_1), sub_options);
+			std::bind(&DroneMotion::statusCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
 		position_sub_ = topic_tools_->createAgentPositionSubscriber(agent_id_,
-			std::bind(&DroneMotion::positionCallback, this, std::placeholders::_1), sub_options);
+			std::bind(&DroneMotion::positionCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
 		setpoint_position_sub_ = topic_tools_->createAgentPositionSetpointSubscriber(agent_id_,
-			std::bind(&DroneMotion::setpointPositionCallback, this, std::placeholders::_1), sub_options);
+			std::bind(&DroneMotion::setpointPositionCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
 
 		// Set update timer
 		last_update_time_ = RosUtils::now(node_);
 		update_timer_ = RosUtils::createTimer(node_, update_rate_,
-			std::bind(&DroneMotion::update, this), callback_group_);
+			std::bind(&DroneMotion::update, this), module_cb_group_);
 	}
 
 	void DroneMotion::onShutdown()

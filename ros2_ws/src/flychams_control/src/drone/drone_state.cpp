@@ -39,14 +39,9 @@ namespace flychams::control
         position_msg_ = PointStampedMsg();
         position_msg_.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
 
-        // Create callback group
-        callback_group_ = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-        auto sub_options = rclcpp::SubscriptionOptions();
-        sub_options.callback_group = callback_group_;
-
         // Subscribe to agent odom topic from framework tools
         odom_sub_ = framework_tools_->createOdometrySubscriber(agent_id_,
-            std::bind(&DroneState::odomCallback, this, std::placeholders::_1), sub_options);
+            std::bind(&DroneState::odomCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
 
         // Create publisher for agent status and position
         status_pub_ = topic_tools_->createAgentStatusPublisher(agent_id_);
@@ -56,7 +51,7 @@ namespace flychams::control
         last_update_time_ = RosUtils::now(node_);
         status_duration_ = 0.0f;
         update_timer_ = RosUtils::createTimer(node_, update_rate_,
-            std::bind(&DroneState::update, this), callback_group_);
+            std::bind(&DroneState::update, this), module_cb_group_);
     }
 
     void DroneState::onShutdown()

@@ -25,13 +25,16 @@ namespace flychams::core
     class BaseModule
     {
     public: // Constructor/Destructor
-        BaseModule(NodePtr node, ConfigTools::SharedPtr config_tools, FrameworkTools::SharedPtr framework_tools, TopicTools::SharedPtr topic_tools, TransformTools::SharedPtr transform_tools)
-            : node_(node), config_tools_(config_tools), framework_tools_(framework_tools), topic_tools_(topic_tools), transform_tools_(transform_tools)
+        BaseModule(NodePtr node, ConfigTools::SharedPtr config_tools, FrameworkTools::SharedPtr framework_tools, TopicTools::SharedPtr topic_tools, TransformTools::SharedPtr transform_tools, CallbackGroupPtr module_cb_group)
+            : node_(node), config_tools_(config_tools), framework_tools_(framework_tools), topic_tools_(topic_tools), transform_tools_(transform_tools), module_cb_group_(module_cb_group)
         {
             // Nothing to do
         }
         void init()
         {
+            // Initialize subscription options
+            sub_options_with_module_cb_group_.callback_group = module_cb_group_;
+
             // Call on init overridable method
             onInit();
         }
@@ -67,6 +70,10 @@ namespace flychams::core
         FrameworkTools::SharedPtr framework_tools_;
         TopicTools::SharedPtr topic_tools_;
         TransformTools::SharedPtr transform_tools_;
+        // Callback group
+        CallbackGroupPtr module_cb_group_;
+        // Subscription options
+        rclcpp::SubscriptionOptions sub_options_with_module_cb_group_;
     };
 
 } // namespace flychams::core

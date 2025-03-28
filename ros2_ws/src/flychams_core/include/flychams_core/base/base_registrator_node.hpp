@@ -1,9 +1,5 @@
 #pragma once
 
-// Standard includes
-#include <mutex>
-#include <unordered_map>
-
 // Tools includes
 #include "flychams_core/config/config_tools.hpp"
 #include "flychams_core/framework/framework_tools.hpp"
@@ -49,12 +45,16 @@ namespace flychams::core
             topic_tools_ = std::make_shared<TopicTools>(node_, config_tools_);
             transform_tools_ = std::make_shared<TransformTools>(node_, config_tools_);
 
+            // Create callback group
+            registration_cb_group_ = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+            sub_options_with_registration_cb_group_.callback_group = registration_cb_group_;
+
             // Initialize registration publisher
             elements_.clear();
             registration_pub_ = topic_tools_->createRegistrationPublisher();
 
             // Initialize update timer (1 Hz)
-            update_timer_ = RosUtils::createWallTimer(node_, 1.0f, [this]() { publishRegistration(); });
+            update_timer_ = RosUtils::createWallTimer(node_, 1.0f, [this]() { publishRegistration(); }, registration_cb_group_);
 
             // Call on init overridable method
             onInit();
@@ -68,9 +68,6 @@ namespace flychams::core
 
         void shutdown()
         {
-            // Lock elements map
-            std::lock_guard<std::mutex> lock(mutex_);
-
             RCLCPP_INFO(node_->get_logger(), "Shutting down %s node...", node_name_.c_str());
             // Call on shutdown overridable method
             onShutdown();
@@ -97,9 +94,6 @@ namespace flychams::core
         // Element registration
         void registerElement(const ID& element_id, const ElementType& element_type)
         {
-            // Lock elements map
-            std::lock_guard<std::mutex> lock(mutex_);
-
             // Add element to map (only if not already registered)
             if (elements_.find(element_id) != elements_.end())
                 return;
@@ -118,9 +112,6 @@ namespace flychams::core
 
         void unregisterElement(const ID& element_id, const ElementType& element_type)
         {
-            // Lock elements map
-            std::lock_guard<std::mutex> lock(mutex_);
-
             // Remove element from map (only if registered)
             if (elements_.find(element_id) == elements_.end())
                 return;
@@ -140,9 +131,6 @@ namespace flychams::core
     private: // Update
         void publishRegistration()
         {
-            // Lock elements map
-            std::lock_guard<std::mutex> lock(mutex_);
-
             // Create and publish registration message
             RegistrationMsg msg;
             for (const auto& [id, type] : elements_)
@@ -166,7 +154,9 @@ namespace flychams::core
         TransformTools::SharedPtr transform_tools_;
         // Registered elements
         std::unordered_map<ID, ElementType> elements_;
-        std::mutex mutex_;
+        // Callback group
+        CallbackGroupPtr registration_cb_group_;
+        rclcpp::SubscriptionOptions sub_options_with_registration_cb_group_;
         // Registration publisher
         PublisherPtr<RegistrationMsg> registration_pub_;
         // Update timer
