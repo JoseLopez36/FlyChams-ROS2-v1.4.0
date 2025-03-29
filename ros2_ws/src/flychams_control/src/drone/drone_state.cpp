@@ -76,7 +76,7 @@ namespace flychams::control
         // Check if we're in ARMED or LANDING state
         if (curr_status_ != AgentStatus::ARMED && curr_status_ != AgentStatus::LANDING)
         {
-            RCLCPP_ERROR(node_->get_logger(), "Drone state: Cannot disarm agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_status_));
+            RCLCPP_WARN(node_->get_logger(), "Drone state: Cannot disarm agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_status_));
             return false;
         }
 
@@ -107,7 +107,7 @@ namespace flychams::control
         // Check if we're in DISARMED state
         if (curr_status_ != AgentStatus::DISARMED)
         {
-            RCLCPP_ERROR(node_->get_logger(), "Drone state: Cannot arm agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_status_));
+            RCLCPP_WARN(node_->get_logger(), "Drone state: Cannot arm agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_status_));
             return false;
         }
 
@@ -138,7 +138,7 @@ namespace flychams::control
         // Check if we're in ARMED state
         if (curr_status_ != AgentStatus::ARMED)
         {
-            RCLCPP_ERROR(node_->get_logger(), "Drone state: Cannot takeoff agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_status_));
+            RCLCPP_WARN(node_->get_logger(), "Drone state: Cannot takeoff agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_status_));
             return false;
         }
 
@@ -169,7 +169,7 @@ namespace flychams::control
         // Check if we're in TAKEN_OFF or TRACKING state
         if (curr_status_ != AgentStatus::TAKEN_OFF && curr_status_ != AgentStatus::TRACKING)
         {
-            RCLCPP_ERROR(node_->get_logger(), "Drone state: Cannot hover agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_status_));
+            RCLCPP_WARN(node_->get_logger(), "Drone state: Cannot hover agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_status_));
             return false;
         }
 
@@ -200,7 +200,7 @@ namespace flychams::control
         // Check if we're in HOVERED state
         if (curr_status_ != AgentStatus::HOVERED)
         {
-            RCLCPP_ERROR(node_->get_logger(), "Drone state: Cannot move agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_status_));
+            RCLCPP_WARN(node_->get_logger(), "Drone state: Cannot move agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_status_));
             return false;
         }
 
@@ -225,7 +225,7 @@ namespace flychams::control
         // Check if we're in HOVERING, HOVERED or TRACKING state
         if (curr_status_ != AgentStatus::HOVERING && curr_status_ != AgentStatus::HOVERED && curr_status_ != AgentStatus::TRACKING)
         {
-            RCLCPP_ERROR(node_->get_logger(), "Drone state: Cannot land agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_status_));
+            RCLCPP_WARN(node_->get_logger(), "Drone state: Cannot land agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_status_));
             return false;
         }
 
@@ -354,7 +354,7 @@ namespace flychams::control
         // Check if this is a valid transition
         if (!isValid(curr_status_, new_status))
         {
-            RCLCPP_ERROR(node_->get_logger(), "Drone state: Invalid state transition from %d to %d for agent %s",
+            RCLCPP_WARN(node_->get_logger(), "Drone state: Invalid state transition from %d to %d for agent %s",
                 static_cast<int>(curr_status_), static_cast<int>(new_status), agent_id_.c_str());
             return;
         }
@@ -451,7 +451,7 @@ namespace flychams::control
         // Check if takeoff has timed out
         if (status_duration_ > takeoff_timeout_)
         {
-            RCLCPP_ERROR(node_->get_logger(), "Drone state: Takeoff timeout for agent %s, trying again...", agent_id_.c_str());
+            RCLCPP_WARN(node_->get_logger(), "Drone state: Takeoff timeout for agent %s, trying again...", agent_id_.c_str());
             requestTakeoff();
             return;
         }
@@ -474,7 +474,7 @@ namespace flychams::control
         // Check if hover has timed out
         if (status_duration_ > hover_timeout_)
         {
-            RCLCPP_ERROR(node_->get_logger(), "Drone state: Hover timeout for agent %s, trying again...", agent_id_.c_str());
+            RCLCPP_WARN(node_->get_logger(), "Drone state: Hover timeout for agent %s, trying again...", agent_id_.c_str());
             requestHover();
             return;
         }
@@ -502,7 +502,7 @@ namespace flychams::control
         // Check if landing has timed out
         if (status_duration_ > landing_timeout_)
         {
-            RCLCPP_ERROR(node_->get_logger(), "Drone state: Landing timeout for agent %s, trying again...", agent_id_.c_str());
+            RCLCPP_WARN(node_->get_logger(), "Drone state: Landing timeout for agent %s, trying again...", agent_id_.c_str());
             requestLand();
             return;
         }

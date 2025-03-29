@@ -509,9 +509,9 @@ namespace flychams::core
 						auto orientation_vec = parseVector<float>(orientation_str, 3, ',');
 						if (orientation_vec.size() >= 3)
 						{
-							head->orientation(0) = MathUtils::degToRad(orientation_vec[2]);
-							head->orientation(1) = MathUtils::degToRad(orientation_vec[0]);
-							head->orientation(2) = MathUtils::degToRad(orientation_vec[1]);
+							head->orientation(0) = MathUtils::degToRad(orientation_vec[0]);
+							head->orientation(1) = MathUtils::degToRad(orientation_vec[1]);
+							head->orientation(2) = MathUtils::degToRad(orientation_vec[2]);
 						}
 
 						head->min_focal = getCellValue<float>(row.findCell(9)) / 1000.0f;

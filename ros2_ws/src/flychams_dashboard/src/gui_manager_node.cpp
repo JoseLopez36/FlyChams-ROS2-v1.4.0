@@ -34,9 +34,6 @@ public: // Constructor/Destructor
 
     void onInit() override
     {
-        // Initialize agent IDs
-        agent_ids_.clear();
-
         // Initialize selected agent
         selected_agent_id_ = "NONE";
 
@@ -46,8 +43,6 @@ public: // Constructor/Destructor
 
     void onShutdown() override
     {
-        // Destroy agent IDs
-        agent_ids_.clear();
         // Destroy GUI managers
         gui_managers_.clear();
     }
@@ -63,9 +58,6 @@ private: // Agent management
         // Deactivate GUI manager
         manager->deactivate();
 
-        // Add agent ID to list
-        agent_ids_.push_back(agent_id);
-
         // Select agent if no agent is selected
         if (selected_agent_id_ == "NONE")
         {
@@ -78,9 +70,6 @@ private: // Agent management
     {
         // Remove agent from GUI manager
         gui_managers_.erase(agent_id);
-
-        // Remove agent ID from list
-        agent_ids_.erase(std::find(agent_ids_.begin(), agent_ids_.end(), agent_id));
 
         // Select new agent if it is the one being removed
         if (selected_agent_id_ == agent_id)
@@ -98,34 +87,26 @@ private: // Agent management
         if (selected_agent_id_ != "NONE")
         {
             // Activate selected GUI manager and deactivate the rest
-            for (const auto& id : agent_ids_)
+            for (const auto& [id, manager] : gui_managers_)
             {
                 if (id == selected_agent_id_)
                 {
-                    gui_managers_[id]->activate();
+                    RCLCPP_INFO(node_->get_logger(), "Activating GUI manager for agent %s", selected_agent_id_.c_str());
+                    manager->activate();
                 }
                 else
                 {
-                    gui_managers_[id]->deactivate();
+                    manager->deactivate();
                 }
             }
         }
     }
 
-private: // Parameters
-    float update_rate_;
-
-private: // Data
-    // Agent IDs
-    std::vector<ID> agent_ids_;
+private: // Components
     // Selected agent
     ID selected_agent_id_;
-
-private: // Components
     // GUI manager per agent
     std::unordered_map<ID, GuiManager::SharedPtr> gui_managers_;
-    // Timer
-    TimerPtr update_timer_;
 };
 
 int main(int argc, char** argv)

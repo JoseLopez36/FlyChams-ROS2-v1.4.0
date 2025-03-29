@@ -29,18 +29,34 @@ namespace flychams::dashboard
         simulation_window_cmds_.window_ids.push_back(system_config.scenario_view_id);
         simulation_window_cmds_.camera_ids.push_back(system_config.scenario_camera_id);
         simulation_window_cmds_.vehicle_ids.push_back(agent_id_);
+        simulation_window_cmds_.crop_x.push_back(0);
+        simulation_window_cmds_.crop_y.push_back(0);
+        simulation_window_cmds_.crop_w.push_back(0);
+        simulation_window_cmds_.crop_h.push_back(0);
         // Agent window
         simulation_window_cmds_.window_ids.push_back(system_config.agent_view_id);
         simulation_window_cmds_.camera_ids.push_back(system_config.agent_camera_id);
         simulation_window_cmds_.vehicle_ids.push_back(agent_id_);
+        simulation_window_cmds_.crop_x.push_back(0);
+        simulation_window_cmds_.crop_y.push_back(0);
+        simulation_window_cmds_.crop_w.push_back(0);
+        simulation_window_cmds_.crop_h.push_back(0);
         // Payload window
         simulation_window_cmds_.window_ids.push_back(system_config.payload_view_id);
         simulation_window_cmds_.camera_ids.push_back(system_config.payload_camera_id);
         simulation_window_cmds_.vehicle_ids.push_back(agent_id_);
+        simulation_window_cmds_.crop_x.push_back(0);
+        simulation_window_cmds_.crop_y.push_back(0);
+        simulation_window_cmds_.crop_w.push_back(0);
+        simulation_window_cmds_.crop_h.push_back(0);
         // Map window
         simulation_window_cmds_.window_ids.push_back(system_config.map_view_id);
         simulation_window_cmds_.camera_ids.push_back(system_config.map_camera_id);
         simulation_window_cmds_.vehicle_ids.push_back(agent_id_);
+        simulation_window_cmds_.crop_x.push_back(0);
+        simulation_window_cmds_.crop_y.push_back(0);
+        simulation_window_cmds_.crop_w.push_back(0);
+        simulation_window_cmds_.crop_h.push_back(0);
 
         // Initialize operator window commands
         operator_window_cmds_ = WindowCmds();
@@ -48,12 +64,20 @@ namespace flychams::dashboard
         operator_window_cmds_.window_ids.push_back(system_config.central_view_id);
         operator_window_cmds_.camera_ids.push_back(config_tools_->getCentralHead(agent_id_)->id);
         operator_window_cmds_.vehicle_ids.push_back(agent_id_);
+        operator_window_cmds_.crop_x.push_back(0);
+        operator_window_cmds_.crop_y.push_back(0);
+        operator_window_cmds_.crop_w.push_back(0);
+        operator_window_cmds_.crop_h.push_back(0);
         // Tracking windows
         for (const auto& tracking_view_id : system_config.tracking_view_ids)
         {
             operator_window_cmds_.window_ids.push_back(tracking_view_id);
             operator_window_cmds_.camera_ids.push_back("");
             operator_window_cmds_.vehicle_ids.push_back(agent_id_);
+            operator_window_cmds_.crop_x.push_back(0);
+            operator_window_cmds_.crop_y.push_back(0);
+            operator_window_cmds_.crop_w.push_back(0);
+            operator_window_cmds_.crop_h.push_back(0);
         }
 
         // Initialize central head draw commands
@@ -148,15 +172,19 @@ namespace flychams::dashboard
         case GuiMode::RESET:
             // In this mode, we reset the windows
             // First, reset operator windows
+            RCLCPP_INFO(node_->get_logger(), "GUI manager: Resetting operator windows for agent %s", agent_id_.c_str());
             resetWindows(operator_window_cmds_);
             // Then, set simulation windows
+            RCLCPP_INFO(node_->get_logger(), "GUI manager: Setting simulation windows for agent %s", agent_id_.c_str());
             setWindows(simulation_window_cmds_);
             // Finally, set mode to TRACKING
+            RCLCPP_INFO(node_->get_logger(), "GUI manager: Setting mode to TRACKING for agent %s", agent_id_.c_str());
             gui_mode_ = GuiMode::TRACKING;
             break;
 
         case GuiMode::TRACKING:
             // In this mode, we update operator windows if the agent status is TRACKING
+            RCLCPP_INFO(node_->get_logger(), "GUI manager: Updating operator windows for agent %s", agent_id_.c_str());
             // Check if we have a valid agent status
             if (!agent_.has_status)
             {
@@ -175,19 +203,23 @@ namespace flychams::dashboard
             // Update head setpoints commands
             if (agent_.has_head_setpoints)
             {
+                RCLCPP_INFO(node_->get_logger(), "GUI manager: Updating head setpoints for agent %s", agent_id_.c_str());
                 updateHeadSetpoints(agent_.head_setpoints);
             }
 
             // Update window setpoints commands
             if (agent_.has_window_setpoints)
             {
+                RCLCPP_INFO(node_->get_logger(), "GUI manager: Updating window setpoints for agent %s", agent_id_.c_str());
                 updateWindowSetpoints(agent_.window_setpoints);
             }
 
             // Set operator window images
+            RCLCPP_INFO(node_->get_logger(), "GUI manager: Setting operator windows for agent %s", agent_id_.c_str());
             setWindows(operator_window_cmds_);
 
             // Send draw commands to the central window
+            RCLCPP_INFO(node_->get_logger(), "GUI manager: Drawing central window for agent %s", agent_id_.c_str());
             drawWindow(central_draw_cmds_);
             break;
 

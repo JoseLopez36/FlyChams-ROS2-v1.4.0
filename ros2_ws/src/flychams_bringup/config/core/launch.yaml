@@ -4,8 +4,8 @@
 # Log levels: debug, info, warn, error, fatal
 
 # Control nodes
-drone_control: [true, 'info']
-head_control: [false, 'info']
+drone_control: [true, 'error']
+head_control: [true, 'error']
 
 # Perception nodes
 target_clustering: [false, 'info']
@@ -22,6 +22,6 @@ target_state: [false, 'info']
 target_control: [false, 'info']
 
 # Dashboard nodes
-gui_manager: [false, 'info']
-metrics_factory: [false, 'info']
-marker_factory: [false, 'info']
+gui_manager: [true, 'error']
+metrics_factory: [false, 'error']
+marker_factory: [true, 'error']
