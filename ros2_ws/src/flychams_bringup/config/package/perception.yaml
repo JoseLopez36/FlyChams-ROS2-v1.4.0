@@ -6,7 +6,7 @@
       # Persistence parameters
       ini_bonding_coef: 1.0           # Initial bonding coefficient
       max_bonding_coef: 1.0           # Maximum bonding coefficient
-      bonding_coef_time_to_max: 100   # Time from 0 to max bonding coefficient (s)
+      bonding_coef_time_to_max: 100.0 # Time from 0 to max bonding coefficient (s)
       max_hysteresis_ratio: 0.4       # Maximum hysteresis ratio
       min_hysteresis_ratio: 0.2       # Minimum hysteresis ratio
 

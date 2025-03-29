@@ -8,8 +8,8 @@ drone_control: [true, 'error']
 head_control: [true, 'error']
 
 # Perception nodes
-target_clustering: [false, 'info']
-cluster_analysis: [false, 'info']
+target_clustering: [true, 'error']
+cluster_analysis: [true, 'error']
 
 # Coordination nodes
 agent_assignment: [false, 'info']
@@ -18,8 +18,8 @@ agent_positioning: [false, 'info']
 agent_tracking: [false, 'info']
 
 # Targets nodes
-target_state: [false, 'info']
-target_control: [false, 'info']
+target_state: [true, 'error']
+target_control: [true, 'error']
 
 # Dashboard nodes
 gui_manager: [true, 'error']

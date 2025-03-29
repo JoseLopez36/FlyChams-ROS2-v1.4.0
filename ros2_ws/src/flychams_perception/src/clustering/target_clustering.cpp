@@ -139,6 +139,7 @@ namespace flychams::perception
 		}
 
 		// Perform clustering with available points
+		RCLCPP_INFO(node_->get_logger(), "Target clustering: Running K-Means with %zu points and %zu clusters", points.size(), clusters_.size());
 		const auto& assignments = k_means_.run(points, clusters_, dt);
 
 		// Publish assignments
@@ -150,6 +151,9 @@ namespace flychams::perception
 
 			// Publish assignment
 			targets_[target_id].assignment_pub->publish(assignment_msg);
+
+			// Log assignment
+			RCLCPP_INFO(node_->get_logger(), "Target clustering: Target %s assigned to cluster %s", target_id.c_str(), cluster_id.c_str());
 		}
 	}
 

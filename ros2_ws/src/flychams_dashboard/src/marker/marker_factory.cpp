@@ -351,9 +351,9 @@ namespace flychams::dashboard
         boundary_marker.pose.position.z = 0.0f;
         boundary_marker.pose.orientation.w = 1.0f;
         // Set initial scale
-        boundary_marker.scale.x = 0.0f; // length
-        boundary_marker.scale.y = 0.0f; // width
-        boundary_marker.scale.z = 0.0f; // height
+        boundary_marker.scale.x = 0.0f;  // length
+        boundary_marker.scale.y = 0.0f;  // width
+        boundary_marker.scale.z = 0.05f; // height
         // Set color (cyan, semi-transparent)
         boundary_marker.color.r = 0.0f;
         boundary_marker.color.g = 1.0f;

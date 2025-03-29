@@ -121,6 +121,7 @@ namespace flychams::perception
 	{
 		// Function that computes the initial assignments for the base K-means algorithm
 		IndexVector assignments(n);
+		assignments.setConstant(-1);
 
 		// Initialize clusters with the K farthest points
 		IndexVector farthest_list = selectFarthestPoints(tab_P, n, K);
@@ -246,8 +247,11 @@ namespace flychams::perception
 		for (int j = 0; j < n; j++)
 		{
 			int cluster_idx = assignments(j);
-			centroids.col(cluster_idx) += tab_P.col(j);
-			num_points(cluster_idx)++;
+			if (cluster_idx != -1)
+			{
+				centroids.col(cluster_idx) += tab_P.col(j);
+				num_points(cluster_idx)++;
+			}
 		}
 
 		// Compute average for each centroid

@@ -70,7 +70,7 @@ def generate_launch_description():
     ])
 
     # Set environment variable to control ROS logger output
-    os.environ['RCUTILS_LOGGING_USE_STDOUT'] = '0' # Disable logging to stdout
+    os.environ['RCUTILS_LOGGING_USE_STDOUT'] = '1' # Enable logging to stdout
     os.environ['RCUTILS_COLORIZED_OUTPUT'] = '1'   # Enable colored output
 
     # Generate launch description

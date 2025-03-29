@@ -21,7 +21,7 @@ namespace flychams::targets
 		const auto& root = config_tools_->getSystem().trajectory_root;
 		const auto& folder = config_tools_->getTarget(target_id_)->trajectory_folder;
 		const auto& index = config_tools_->getTarget(target_id_)->target_index;
-		const auto& path = root + "/" + folder + "/" + "TRAJ" + std::to_string(index) + ".csv";
+		const auto& path = root + "/" + folder + "/" + "TRAJ" + std::to_string(index + 1) + ".csv";
 		RCLCPP_INFO(node_->get_logger(), "Target motion: Parsing trajectory for target %s with path %s", target_id_.c_str(), path.c_str());
 		trajectory_ = TrajectoryParser::parse(path);
 
