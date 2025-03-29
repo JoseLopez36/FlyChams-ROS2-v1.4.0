@@ -63,32 +63,28 @@ private: // Element management
         RCLCPP_INFO(node_->get_logger(), "Drone controllers created for agent %s", agent_id.c_str());
 
         // Arm drone. Try each 100ms until success
-        bool arm_result = false;
-        while (!arm_result || drone_state->getStatus() != AgentStatus::ARMED)
+        while (drone_state->getStatus() != AgentStatus::ARMED)
         {
-            arm_result = drone_state->requestArm();
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            drone_state->requestArm();
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
         // Takeoff drone. Try each 100ms until success
-        bool takeoff_result = false;
-        while (!takeoff_result || drone_state->getStatus() != AgentStatus::TAKEN_OFF)
+        while (drone_state->getStatus() != AgentStatus::TAKEN_OFF)
         {
-            takeoff_result = drone_state->requestTakeoff();
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            drone_state->requestTakeoff();
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
         // Hover drone. Try each 100ms until success
-        bool hover_result = false;
-        while (!hover_result || drone_state->getStatus() != AgentStatus::HOVERED)
+        while (drone_state->getStatus() != AgentStatus::HOVERED)
         {
-            hover_result = drone_state->requestHover();
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            drone_state->requestHover();
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
         // Transition to tracking state. Try each 100ms until success
-        bool tracking_result = false;
-        while (!tracking_result || drone_state->getStatus() != AgentStatus::TRACKING)
+        while (drone_state->getStatus() != AgentStatus::TRACKING)
         {
-            tracking_result = drone_state->requestTracking();
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            drone_state->requestTracking();
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
         // Now the drone is ready to move to the desired goal
     }

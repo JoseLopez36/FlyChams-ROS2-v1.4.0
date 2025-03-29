@@ -1,12 +1,27 @@
-/flychams/**:
-  ros__parameters:
-    # Nodes to launch
-    dashboard: true
-    metrics_factory: true
-    marker_factory: true
-    agent_assignment: true
-    target_assignment: true
-    cluster_assignment: true
-    simulation: true
-    control: true
-    perception: true
+# Node launch configuration
+# Set to [enable, log_level]
+# Enable: true launches the node, false does not
+# Log levels: debug, info, warn, error, fatal
+
+# Control nodes
+drone_control: [true, 'info']
+head_control: [false, 'info']
+
+# Perception nodes
+target_clustering: [false, 'info']
+cluster_analysis: [false, 'info']
+
+# Coordination nodes
+agent_assignment: [false, 'info']
+agent_analysis: [false, 'info']
+agent_positioning: [false, 'info']
+agent_tracking: [false, 'info']
+
+# Targets nodes
+target_state: [false, 'info']
+target_control: [false, 'info']
+
+# Dashboard nodes
+gui_manager: [false, 'info']
+metrics_factory: [false, 'info']
+marker_factory: [false, 'info']

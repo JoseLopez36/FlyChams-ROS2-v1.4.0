@@ -2,28 +2,28 @@
   ros__parameters:
     # Global topics
     global_topics:
-      registration: "bringup/registration"              # Registration.msg (custom)
-      metrics: "dashboard/global/metrics"               # GlobalMetrics.msg (custom)
+      registration: "bringup/registration"                          # Registration.msg (custom)
+      metrics: "dashboard/global/metrics"                           # GlobalMetrics.msg (custom)
     # Agent topics
     agent_topics:
-      status: "control/AGENTID/state/status"                  # AgentStatus.msg (custom)
-      position: "control/AGENTID/state/position"              # PointStamped.msg
-      clusters: "planning/AGENTID/state/clusters"             # AgentClusters.msg (custom)
-      position_setpoint: "planning/AGENTID/setpoint/position" # PointStamped.msg
-      head_setpoints: "planning/AGENTID/setpoint/head"        # AgentHeadSetpoints.msg (custom)
-      window_setpoints: "planning/AGENTID/setpoint/window"    # AgentWindowSetpoints.msg (custom)
-      metrics: "dashboard/AGENTID/metrics"                    # AgentMetrics.msg (custom)
-      markers: "dashboard/AGENTID/markers"                    # MarkerArray.msg
+      status: "control/AGENTID/state/status"                        # AgentStatus.msg (custom)
+      position: "control/AGENTID/state/position"                    # PointStamped.msg
+      clusters: "coordination/AGENTID/state/clusters"               # AgentClusters.msg (custom)
+      position_setpoint: "coordination/AGENTID/setpoint/position"   # PointStamped.msg
+      head_setpoints: "coordination/AGENTID/setpoint/head"          # AgentHeadSetpoints.msg (custom)
+      window_setpoints: "coordination/AGENTID/setpoint/window"      # AgentWindowSetpoints.msg (custom)
+      metrics: "dashboard/AGENTID/metrics"                          # AgentMetrics.msg (custom)
+      markers: "dashboard/AGENTID/markers"                          # MarkerArray.msg
     # Target topics
     target_topics:
-      true_position: "targets/TARGETID/true_position"   # PointStamped.msg
-      est_position: "perception/TARGETID/est_position"  # PointStamped.msg
-      assignment: "perception/TARGETID/assignment"      # String.msg
-      metrics: "dashboard/TARGETID/metrics"             # TargetMetrics.msg (custom)
-      markers: "dashboard/TARGETID/markers"             # MarkerArray.msg
+      true_position: "targets/TARGETID/true_position"               # PointStamped.msg
+      est_position: "perception/TARGETID/est_position"              # PointStamped.msg
+      assignment: "perception/TARGETID/assignment"                  # String.msg
+      metrics: "dashboard/TARGETID/metrics"                         # TargetMetrics.msg (custom)
+      markers: "dashboard/TARGETID/markers"                         # MarkerArray.msg
     # Cluster topics
     cluster_topics:
-      geometry: "perception/CLUSTERID/geometry"         # ClusterGeometry.msg (custom)
-      assignment: "planning/CLUSTERID/assignment"       # String.msg
-      metrics: "dashboard/CLUSTERID/metrics"            # ClusterMetrics.msg (custom)
-      markers: "dashboard/CLUSTERID/markers"            # MarkerArray.msg
+      geometry: "perception/CLUSTERID/geometry"                     # ClusterGeometry.msg (custom)
+      assignment: "coordination/CLUSTERID/assignment"               # String.msg
+      metrics: "dashboard/CLUSTERID/metrics"                        # ClusterMetrics.msg (custom)
+      markers: "dashboard/CLUSTERID/markers"                        # MarkerArray.msg

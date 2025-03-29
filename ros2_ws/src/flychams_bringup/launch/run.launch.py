@@ -1,65 +1,15 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
+from launch import LaunchContext
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
 from launch_ros.substitutions import FindPackageShare
 from launch.conditions import IfCondition
 import launch.conditions
 import os
+import yaml
     
 def generate_launch_description():
-    # Define logging level for each node
-    log_level = {
-        # Control nodes
-        'drone_control': 'info',
-        'head_control': 'info',
-        # Perception nodes
-        'target_clustering': 'info',
-        'cluster_analysis': 'info',
-        # Coordination nodes
-        'agent_assignment': 'info',
-        'agent_analysis': 'info',
-        'agent_positioning': 'info',
-        'agent_tracking': 'info',
-        # Dashboard nodes
-        'gui_manager': 'info',
-        'metrics_factory': 'info',
-        'marker_factory': 'info',
-        # Targets nodes
-        'target_state': 'info',
-        'target_control': 'info'
-    }
-
-    # Define launch arguments for each node
-    launch_drone_control = LaunchConfiguration('drone_control')
-    launch_head_control = LaunchConfiguration('head_control')
-    launch_target_clustering = LaunchConfiguration('target_clustering')
-    launch_cluster_analysis = LaunchConfiguration('cluster_analysis')
-    launch_agent_assignment = LaunchConfiguration('agent_assignment')
-    launch_agent_analysis = LaunchConfiguration('agent_analysis')
-    launch_agent_positioning = LaunchConfiguration('agent_positioning')
-    launch_agent_tracking = LaunchConfiguration('agent_tracking')
-    launch_gui_manager = LaunchConfiguration('gui_manager')
-    launch_metrics_factory = LaunchConfiguration('metrics_factory')
-    launch_marker_factory = LaunchConfiguration('marker_factory')
-    launch_target_state = LaunchConfiguration('target_state')
-    launch_target_control = LaunchConfiguration('target_control')
-
-    # Define log level arguments for each node
-    log_level_drone_control = LaunchConfiguration('log_drone_control')
-    log_level_head_control = LaunchConfiguration('log_head_control')
-    log_level_target_clustering = LaunchConfiguration('log_target_clustering')
-    log_level_cluster_analysis = LaunchConfiguration('log_cluster_analysis')
-    log_level_agent_assignment = LaunchConfiguration('log_agent_assignment')
-    log_level_agent_analysis = LaunchConfiguration('log_agent_analysis')
-    log_level_agent_positioning = LaunchConfiguration('log_agent_positioning')
-    log_level_agent_tracking = LaunchConfiguration('log_agent_tracking')
-    log_level_gui_manager = LaunchConfiguration('log_gui_manager')
-    log_level_metrics_factory = LaunchConfiguration('log_metrics_factory')
-    log_level_marker_factory = LaunchConfiguration('log_marker_factory')
-    log_level_target_state = LaunchConfiguration('log_target_state')
-    log_level_target_control = LaunchConfiguration('log_target_control')
-
     # Get paths to config files
     # Core parameters
     system_path = PathJoinSubstitution([
@@ -67,6 +17,12 @@ def generate_launch_description():
         'config',
         'core',
         'system.yaml'
+    ])
+    launch_path = PathJoinSubstitution([
+        FindPackageShare('flychams_bringup'),
+        'config',
+        'core',
+        'launch.yaml'
     ])
     topics_path = PathJoinSubstitution([
         FindPackageShare('flychams_bringup'),
@@ -120,391 +76,298 @@ def generate_launch_description():
     # Generate launch description
     ld = []
 
-    # Declare launch arguments with default values
-    ld.append(DeclareLaunchArgument(
-        'drone_control',
-        default_value='True',
-        description='Flag to enable/disable the Drone Control node'))
+    # Load the nodes configuration YAML file
+    # Convert from PathJoinSubstitution to path string and load the file
+    launch_file_path = launch_path.perform(LaunchContext()).strip()
+    with open(launch_file_path, 'r') as f:
+        launch = yaml.safe_load(f)
     
-    ld.append(DeclareLaunchArgument(
-        'head_control',
-        default_value='True',
-        description='Flag to enable/disable the Head Control node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'clustering',
-        default_value='True',
-        description='Flag to enable/disable the Clustering node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'agent_assignment',
-        default_value='True',
-        description='Flag to enable/disable the Agent Assignment node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'agent_analysis',
-        default_value='True',
-        description='Flag to enable/disable the Agent Analysis node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'agent_positioning',
-        default_value='True',
-        description='Flag to enable/disable the Agent Positioning node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'agent_tracking',
-        default_value='True',
-        description='Flag to enable/disable the Agent Tracking node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'gui_manager',
-        default_value='True',
-        description='Flag to enable/disable the GUI Manager node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'metrics_factory',
-        default_value='True',
-        description='Flag to enable/disable the Metrics Factory node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'marker_factory',
-        default_value='True',
-        description='Flag to enable/disable the Marker Factory node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'target_state',
-        default_value='True',
-        description='Flag to enable/disable the Target State node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'target_control',
-        default_value='True',
-        description='Flag to enable/disable the Target Control node'))
-    
-    # Declare log level arguments with default values
-    ld.append(DeclareLaunchArgument(
-        'log_drone_control',
-        default_value='info',
-        description='Log level for the Drone Control node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'log_head_control',
-        default_value='info',
-        description='Log level for the Head Control node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'log_clustering',
-        default_value='info',
-        description='Log level for the Clustering node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'log_agent_assignment',
-        default_value='info',
-        description='Log level for the Agent Assignment node'))
-
-    ld.append(DeclareLaunchArgument(
-        'log_agent_analysis',
-        default_value='info',
-        description='Log level for the Agent Analysis node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'log_agent_positioning',
-        default_value='info',
-        description='Log level for the Agent Positioning node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'log_agent_tracking',
-        default_value='info',
-        description='Log level for the Agent Tracking node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'log_gui_manager',
-        default_value='info',
-        description='Log level for the GUI Manager node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'log_metrics_factory',
-        default_value='info',
-        description='Log level for the Metrics Factory node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'log_marker_factory',
-        default_value='info',
-        description='Log level for the Marker Factory node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'log_target_state',
-        default_value='info',
-        description='Log level for the Target State node'))
-    
-    ld.append(DeclareLaunchArgument(
-        'log_target_control',
-        default_value='info',
-        description='Log level for the Target Control node'))
+    # Get the node activation settings from config
+    # Set default values if not present in config
+    nodes = {
+        # Control nodes
+        'drone_control': launch.get('drone_control', [True, 'info']),
+        'head_control': launch.get('head_control', [True, 'info']),
+        # Perception nodes
+        'target_clustering': launch.get('target_clustering', [True, 'info']),
+        'cluster_analysis': launch.get('cluster_analysis', [True, 'info']),
+        # Coordination nodes
+        'agent_assignment': launch.get('agent_assignment', [True, 'info']),
+        'agent_analysis': launch.get('agent_analysis', [True, 'info']),
+        'agent_positioning': launch.get('agent_positioning', [True, 'info']),
+        'agent_tracking': launch.get('agent_tracking', [True, 'info']),
+        # Targets nodes
+        'target_state': launch.get('target_state', [True, 'info']),
+        'target_control': launch.get('target_control', [True, 'info']),
+        # Dashboard nodes
+        'gui_manager': launch.get('gui_manager', [True, 'info']),
+        'metrics_factory': launch.get('metrics_factory', [True, 'info']),
+        'marker_factory': launch.get('marker_factory', [True, 'info'])
+    }
 
     # ============= CONTROL NODES =============
     # Conditionally add Drone Controller node
-    ld.append(
-        Node(
-            package='flychams_control',
-            executable='drone_control_node',
-            name='drone_control_node',
-            output='screen',
-            namespace='flychams',
-            condition=IfCondition(launch_drone_control),
-            arguments=['--ros-args', '--log-level', log_level_drone_control],
-            parameters=[
-                system_path, 
-                topics_path, 
-                frames_path, 
-                control_path,
-                {'use_sim_time': True}
-            ]
+    if nodes['drone_control'][0]:
+        ld.append(
+            Node(
+                package='flychams_control',
+                executable='drone_control_node',
+                name='drone_control_node',
+                output='screen',
+                namespace='flychams',
+                arguments=['--ros-args', '--log-level', nodes['drone_control'][1]],
+                parameters=[
+                    system_path, 
+                    topics_path, 
+                    frames_path, 
+                    control_path,
+                    {'use_sim_time': True}
+                ]
+            )
         )
-    )
 
     # Conditionally add Head Controller node
-    ld.append(
-        Node(
-            package='flychams_control',
-            executable='head_control_node',
-            name='head_control_node',
-            output='screen',
-            namespace='flychams',
-            condition=IfCondition(launch_head_control),
-            arguments=['--ros-args', '--log-level', log_level_head_control],
-            parameters=[
-                system_path, 
-                topics_path, 
-                frames_path, 
-                control_path,
-                {'use_sim_time': True}
-            ]
+    if nodes['head_control'][0]:
+        ld.append(
+            Node(
+                package='flychams_control',
+                executable='head_control_node',
+                name='head_control_node',
+                output='screen',
+                namespace='flychams',
+                arguments=['--ros-args', '--log-level', nodes['head_control'][1]],
+                parameters=[
+                    system_path, 
+                    topics_path, 
+                    frames_path, 
+                    control_path,
+                    {'use_sim_time': True}
+                ]
+            )
         )
-    )
 
     # ============= PERCEPTION NODES =============
     # Conditionally add Target Clustering node
-    ld.append(
-        Node(
-            package='flychams_perception',
-            executable='target_clustering_node',
-            name='target_clustering_node',
-            output='screen',
-            namespace='flychams',
-            condition=IfCondition(launch_target_clustering),
-            arguments=['--ros-args', '--log-level', log_level_target_clustering],
-            parameters=[
-                system_path, 
-                topics_path, 
-                frames_path, 
-                perception_path,
-                {'use_sim_time': True}
-            ]
+    if nodes['target_clustering'][0]:
+        ld.append(
+            Node(
+                package='flychams_perception',
+                executable='target_clustering_node',
+                name='target_clustering_node',
+                output='screen',
+                namespace='flychams',
+                arguments=['--ros-args', '--log-level', nodes['target_clustering'][1]],
+                parameters=[
+                    system_path, 
+                    topics_path, 
+                    frames_path, 
+                    perception_path,
+                    {'use_sim_time': True}
+                ]
+            )
         )
-    )
 
     # Conditionally add Cluster Analysis node
-    ld.append(
-        Node(
-            package='flychams_perception',
-            executable='cluster_analysis_node',
-            name='cluster_analysis_node',
-            output='screen',
-            namespace='flychams',
-            condition=IfCondition(launch_cluster_analysis),
-            arguments=['--ros-args', '--log-level', log_level_cluster_analysis],
-            parameters=[
-                system_path, 
-                topics_path, 
-                frames_path, 
-                perception_path,
-                {'use_sim_time': True}
-            ]
+    if nodes['cluster_analysis'][0]:
+        ld.append(
+            Node(
+                package='flychams_perception',
+                executable='cluster_analysis_node',
+                name='cluster_analysis_node',
+                output='screen',
+                namespace='flychams',
+                arguments=['--ros-args', '--log-level', nodes['cluster_analysis'][1]],
+                parameters=[
+                    system_path, 
+                    topics_path, 
+                    frames_path, 
+                    perception_path,
+                    {'use_sim_time': True}
+                ]
+            )
         )
-    )
 
     # ============= COORDINATION NODES =============
     # Conditionally add Agent Assignment node
-    ld.append(
-        Node(
-            package='flychams_coordination',
-            executable='agent_assignment_node',
-            name='agent_assignment_node',
-            output='screen',
-            namespace='flychams',
-            condition=IfCondition(launch_agent_assignment),
-            arguments=['--ros-args', '--log-level', log_level_agent_assignment],
-            parameters=[
-                system_path, 
-                topics_path, 
-                frames_path, 
-                coordination_path,
-                {'use_sim_time': True}
-            ]
+    if nodes['agent_assignment'][0]:
+        ld.append(
+            Node(
+                package='flychams_coordination',
+                executable='agent_assignment_node',
+                name='agent_assignment_node',
+                output='screen',
+                namespace='flychams',
+                arguments=['--ros-args', '--log-level', nodes['agent_assignment'][1]],
+                parameters=[
+                    system_path, 
+                    topics_path, 
+                    frames_path, 
+                    coordination_path,
+                    {'use_sim_time': True}
+                ]
+            )
         )
-    )
 
     # Conditionally add Agent Analysis node
-    ld.append(
-        Node(
-            package='flychams_coordination',
-            executable='agent_analysis_node',
-            name='agent_analysis_node',
-            output='screen',
-            namespace='flychams',
-            condition=IfCondition(launch_agent_analysis),
-            arguments=['--ros-args', '--log-level', log_level_agent_analysis],
-            parameters=[
-                system_path, 
-                topics_path, 
-                frames_path, 
-                coordination_path,
-                {'use_sim_time': True}
-            ]
+    if nodes['agent_analysis'][0]:
+        ld.append(
+            Node(
+                package='flychams_coordination',
+                executable='agent_analysis_node',
+                name='agent_analysis_node',
+                output='screen',
+                namespace='flychams',
+                arguments=['--ros-args', '--log-level', nodes['agent_analysis'][1]],
+                parameters=[
+                    system_path, 
+                    topics_path, 
+                    frames_path, 
+                    coordination_path,
+                    {'use_sim_time': True}
+                ]
+            )
         )
-    )
 
     # Conditionally add Agent Positioning node
-    ld.append(
-        Node(
-            package='flychams_coordination',
-            executable='agent_positioning_node',
-            name='agent_positioning_node',
-            output='screen',
-            namespace='flychams',
-            condition=IfCondition(launch_agent_positioning),
-            arguments=['--ros-args', '--log-level', log_level_agent_positioning],
-            parameters=[
-                system_path, 
-                topics_path, 
-                frames_path, 
-                coordination_path,
-                {'use_sim_time': True}
-            ]
+    if nodes['agent_positioning'][0]:
+        ld.append(
+            Node(
+                package='flychams_coordination',
+                executable='agent_positioning_node',
+                name='agent_positioning_node',
+                output='screen',
+                namespace='flychams',
+                arguments=['--ros-args', '--log-level', nodes['agent_positioning'][1]],
+                parameters=[
+                    system_path, 
+                    topics_path, 
+                    frames_path, 
+                    coordination_path,
+                    {'use_sim_time': True}
+                ]
+            )
         )
-    )
 
     # Conditionally add Agent Tracking node
-    ld.append(
-        Node(
-            package='flychams_coordination',
-            executable='agent_tracking_node',
-            name='agent_tracking_node',
-            output='screen',
-            namespace='flychams',
-            condition=IfCondition(launch_agent_tracking),
-            arguments=['--ros-args', '--log-level', log_level_agent_tracking],
-            parameters=[
-                system_path, 
-                topics_path, 
-                frames_path, 
-                coordination_path,
-                {'use_sim_time': True}
-            ]
+    if nodes['agent_tracking'][0]:
+        ld.append(
+            Node(
+                package='flychams_coordination',
+                executable='agent_tracking_node',
+                name='agent_tracking_node',
+                output='screen',
+                namespace='flychams',
+                arguments=['--ros-args', '--log-level', nodes['agent_tracking'][1]],
+                parameters=[
+                    system_path, 
+                    topics_path, 
+                    frames_path, 
+                    coordination_path,
+                    {'use_sim_time': True}
+                ]
+            )
         )
-    )
 
     # ============= DASHBOARD NODES =============
     # Conditionally add GUI Manager node
-    ld.append(
-        Node(
-            package='flychams_dashboard',
-            executable='gui_manager_node',
-            name='gui_manager_node',
-            output='screen',
-            namespace='flychams',
-            condition=IfCondition(launch_gui_manager),
-            arguments=['--ros-args', '--log-level', log_level_gui_manager],
-            parameters=[
-                system_path, 
-                topics_path, 
-                frames_path, 
-                dashboard_path,
-                {'use_sim_time': True}
-            ]
+    if nodes['gui_manager'][0]:
+        ld.append(
+            Node(
+                package='flychams_dashboard',
+                executable='gui_manager_node',
+                name='gui_manager_node',
+                output='screen',
+                namespace='flychams',
+                arguments=['--ros-args', '--log-level', nodes['gui_manager'][1]],
+                parameters=[
+                    system_path, 
+                    topics_path, 
+                    frames_path, 
+                    dashboard_path,
+                    {'use_sim_time': True}
+                ]
+            )
         )
-    )
 
     # Conditionally add Metrics Factory node
-    ld.append(
-        Node(
-            package='flychams_dashboard',
-            executable='metrics_factory_node',
-            name='metrics_factory_node',
-            output='screen',
-            namespace='flychams',
-            condition=IfCondition(launch_metrics_factory),
-            arguments=['--ros-args', '--log-level', log_level_metrics_factory],
-            parameters=[
-                system_path, 
-                topics_path, 
-                frames_path, 
-                dashboard_path,
-                {'use_sim_time': True}
-            ]
+    if nodes['metrics_factory'][0]:
+        ld.append(
+            Node(
+                package='flychams_dashboard',
+                executable='metrics_factory_node',
+                name='metrics_factory_node',
+                output='screen',
+                namespace='flychams',
+                arguments=['--ros-args', '--log-level', nodes['metrics_factory'][1]],
+                parameters=[
+                    system_path, 
+                    topics_path, 
+                    frames_path, 
+                    dashboard_path,
+                    {'use_sim_time': True}
+                ]
+            )
         )
-    )
 
     # Conditionally add Marker Factory node
-    ld.append(
-        Node(
-            package='flychams_dashboard',
-            executable='marker_factory_node',
-            name='marker_factory_node',
-            output='screen',
-            namespace='flychams',
-            condition=IfCondition(launch_marker_factory),
-            arguments=['--ros-args', '--log-level', log_level_marker_factory],
-            parameters=[
-                system_path, 
-                topics_path, 
-                frames_path, 
-                dashboard_path,
-                {'use_sim_time': True}
-            ]
+    if nodes['marker_factory'][0]:
+        ld.append(
+            Node(
+                package='flychams_dashboard',
+                executable='marker_factory_node',
+                name='marker_factory_node',
+                output='screen',
+                namespace='flychams',
+                arguments=['--ros-args', '--log-level', nodes['marker_factory'][1]],
+                parameters=[
+                    system_path, 
+                    topics_path, 
+                    frames_path, 
+                    dashboard_path,
+                    {'use_sim_time': True}
+                ]
+            )
         )
-    )
 
     # ============= TARGETS NODES =============
     # Conditionally add Target State node
-    ld.append(
-        Node(
-            package='flychams_targets',
-            executable='target_state_node',
-            name='target_state_node',
-            output='screen',
-            namespace='flychams',
-            condition=IfCondition(launch_target_state),
-            arguments=['--ros-args', '--log-level', log_level_target_state],
-            parameters=[
-                system_path, 
-                topics_path, 
-                frames_path, 
-                targets_path,
-                {'use_sim_time': True}
-            ]
+    if nodes['target_state'][0]:
+        ld.append(
+            Node(
+                package='flychams_targets',
+                executable='target_state_node',
+                name='target_state_node',
+                output='screen',
+                namespace='flychams',
+                arguments=['--ros-args', '--log-level', nodes['target_state'][1]],
+                parameters=[
+                    system_path, 
+                    topics_path, 
+                    frames_path, 
+                    targets_path,
+                    {'use_sim_time': True}
+                ]
+            )
         )
-    )
 
     # Conditionally add Target Control node
-    ld.append(
-        Node(
-            package='flychams_targets',
-            executable='target_control_node',
-            name='target_control_node',
-            output='screen',
-            namespace='flychams',
-            condition=IfCondition(launch_target_control),
-            arguments=['--ros-args', '--log-level', log_level_target_control],
-            parameters=[
-                system_path, 
-                topics_path, 
-                frames_path, 
-                targets_path,
-                {'use_sim_time': True}
-            ]
+    if nodes['target_control'][0]:
+        ld.append(
+            Node(
+                package='flychams_targets',
+                executable='target_control_node',
+                name='target_control_node',
+                output='screen',
+                namespace='flychams',
+                arguments=['--ros-args', '--log-level', nodes['target_control'][1]],
+                parameters=[
+                    system_path, 
+                    topics_path, 
+                    frames_path, 
+                    targets_path,
+                    {'use_sim_time': True}
+                ]
+            )
         )
-    )
 
     return LaunchDescription(ld)

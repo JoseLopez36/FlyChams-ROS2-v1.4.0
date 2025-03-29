@@ -310,8 +310,16 @@ namespace flychams::control
             handleTakingOff();
             break;
 
+        case AgentStatus::TAKEN_OFF:
+            handleTakenOff();
+            break;
+
         case AgentStatus::HOVERING:
             handleHovering();
+            break;
+
+        case AgentStatus::HOVERED:
+            handleHovered();
             break;
 
         case AgentStatus::TRACKING:
@@ -320,6 +328,10 @@ namespace flychams::control
 
         case AgentStatus::LANDING:
             handleLanding();
+            break;
+
+        case AgentStatus::LANDED:
+            handleLanded();
             break;
 
         case AgentStatus::ERROR:
