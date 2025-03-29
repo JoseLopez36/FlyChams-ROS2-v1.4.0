@@ -1,6 +1,5 @@
 #include "flychams_dashboard/visualization/visualization_factory.hpp"
 
-using namespace std::chrono_literals;
 using namespace flychams::core;
 
 namespace flychams::dashboard

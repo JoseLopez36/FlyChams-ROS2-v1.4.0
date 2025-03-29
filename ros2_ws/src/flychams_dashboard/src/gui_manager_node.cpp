@@ -1,10 +1,7 @@
 #include "rclcpp/rclcpp.hpp"
 
-// Standard includes
-#include <mutex>
-
 // Dashboard includes
-#include "flychams_dashboard/gui/gui_controller.hpp"
+#include "flychams_dashboard/gui/gui_manager.hpp"
 
 // Core includes
 #include "flychams_core/base/base_discoverer_node.hpp"
@@ -14,22 +11,22 @@ using namespace flychams::dashboard;
 
 /**
  * ════════════════════════════════════════════════════════════════
- * @brief GUI node for the FlyingChameleons system
+ * @brief GUI manager node for the FlyingChameleons system
  *
  * @details
  * This class implements the GUI node for the FlyingChameleons system.
  * It uses the discoverer node to discover the different targets and then
- * creates a GUI controller for each target discovered.
+ * creates a GUI manager for each target discovered.
  *
  * ════════════════════════════════════════════════════════════════
  * @author Jose Francisco Lopez Ruiz
  * @date 2025-03-01
  * ════════════════════════════════════════════════════════════════
  */
-class GuiNode : public BaseDiscovererNode
+class GuiManagerNode : public BaseDiscovererNode
 {
 public: // Constructor/Destructor
-    GuiNode(const std::string& node_name, const rclcpp::NodeOptions& options)
+    GuiManagerNode(const std::string& node_name, const rclcpp::NodeOptions& options)
         : BaseDiscovererNode(node_name, options)
     {
         // Nothing to do
@@ -37,87 +34,96 @@ public: // Constructor/Destructor
 
     void onInit() override
     {
+        // Initialize agent IDs
+        agent_ids_.clear();
+
         // Initialize selected agent
         selected_agent_id_ = "NONE";
 
-        // Set update timer
-        float update_rate = RosUtils::getParameterOr<float>(node_, "gui.gui_update_rate", 20.0f);
-        update_timer_ = RosUtils::createTimer(node_, update_rate,
-            std::bind(&GuiNode::onUpdate, this));
+        // Initialize GUI managers
+        gui_managers_.clear();
     }
 
     void onShutdown() override
     {
-        std::lock_guard<std::mutex> lock(mutex_);
-        // Destroy GUI controllers
-        gui_controllers_.clear();
-    }
-
-private: // Update methods
-    void onUpdate()
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (selected_agent_id_ != "NONE")
-        {
-            // Update GUI controller
-            auto controller = gui_controllers_[selected_agent_id_];
-            controller->setTrackingWindows();
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));
-            controller->drawOnCentralWindow();
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));
-        }
+        // Destroy agent IDs
+        agent_ids_.clear();
+        // Destroy GUI managers
+        gui_managers_.clear();
     }
 
 private: // Agent management
     void onAddAgent(const ID& agent_id) override
     {
-        std::lock_guard<std::mutex> lock(mutex_);
-        // Create and add GUI controller
-        auto controller = std::make_shared<GuiController>(agent_id, node_, config_tools_, framework_tools_, topic_tools_, transform_tools_);
-        gui_controllers_.insert({ agent_id, controller });
+        // Use callback group from discovery node (to avoid race conditions)
+        // Create and add GUI manager
+        auto manager = std::make_shared<GuiManager>(agent_id, node_, config_tools_, framework_tools_, topic_tools_, transform_tools_, discovery_cb_group_);
+        gui_managers_.insert({ agent_id, manager });
+
+        // Deactivate GUI manager
+        manager->deactivate();
+
+        // Add agent ID to list
+        agent_ids_.push_back(agent_id);
+
         // Select agent if no agent is selected
         if (selected_agent_id_ == "NONE")
         {
             selected_agent_id_ = agent_id;
-            onAgentSwitched();
+            onAgentSelected();
         }
     }
 
     void onRemoveAgent(const ID& agent_id) override
     {
-        std::lock_guard<std::mutex> lock(mutex_);
-        // Remove agent from GUI controller
-        gui_controllers_.erase(agent_id);
+        // Remove agent from GUI manager
+        gui_managers_.erase(agent_id);
+
+        // Remove agent ID from list
+        agent_ids_.erase(std::find(agent_ids_.begin(), agent_ids_.end(), agent_id));
+
         // Select new agent if it is the one being removed
         if (selected_agent_id_ == agent_id)
         {
             // Get first agent
-            auto it = gui_controllers_.begin();
+            auto it = gui_managers_.begin();
             selected_agent_id_ = it->first;
-            onAgentSwitched();
+            onAgentSelected();
         }
     }
 
-    void onAgentSwitched()
+    void onAgentSelected()
     {
         // Update tracking windows
         if (selected_agent_id_ != "NONE")
         {
-            auto controller = gui_controllers_[selected_agent_id_];
-            controller->setFixedWindows();
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
-            controller->setCentralWindow();
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            // Activate selected GUI manager and deactivate the rest
+            for (const auto& id : agent_ids_)
+            {
+                if (id == selected_agent_id_)
+                {
+                    gui_managers_[id]->activate();
+                }
+                else
+                {
+                    gui_managers_[id]->deactivate();
+                }
+            }
         }
     }
 
-private: // Components
-    // Selected agent to display
+private: // Parameters
+    float update_rate_;
+
+private: // Data
+    // Agent IDs
+    std::vector<ID> agent_ids_;
+    // Selected agent
     ID selected_agent_id_;
-    // GUI controller per agent
-    std::unordered_map<ID, GuiController::SharedPtr> gui_controllers_;
-    // Mutex for GUI controllers
-    std::mutex mutex_;
+
+private: // Components
+    // GUI manager per agent
+    std::unordered_map<ID, GuiManager::SharedPtr> gui_managers_;
     // Timer
     TimerPtr update_timer_;
 };
@@ -131,7 +137,7 @@ int main(int argc, char** argv)
     options.allow_undeclared_parameters(true);
     options.automatically_declare_parameters_from_overrides(true);
     // Create node
-    auto node = std::make_shared<GuiNode>("gui_node", options);
+    auto node = std::make_shared<GuiManagerNode>("gui_manager_node", options);
     node->init();
     // Spin node
     rclcpp::spin(node);

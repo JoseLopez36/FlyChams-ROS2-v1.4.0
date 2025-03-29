@@ -11,7 +11,7 @@ The `flychams_dashboard` package provides user interface and visualization tools
 
 ## Nodes
 
-### GUI
+### GUI Manager
 
 - Graphical user interface for system monitoring:
   - Manages windowing and display of system information

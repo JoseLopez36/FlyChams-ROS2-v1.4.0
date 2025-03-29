@@ -13,10 +13,7 @@ find_package(flychams_core REQUIRED)
 
 # Create dashboard library
 set(DASHBOARD_SRC
-  src/gui/gui_controller.cpp
-  src/visualization/visualization_factory.cpp
-  src/visualization/metrics_factory.cpp
-  src/visualization/markers_factory.cpp
+  src/gui/gui_manager.cpp
 )
 add_library(${PROJECT_NAME} SHARED ${DASHBOARD_SRC})
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -35,14 +32,9 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 # Create executable for GUI node
-add_executable(gui_node src/gui_node.cpp)
-target_link_libraries(gui_node ${PROJECT_NAME})
-ament_target_dependencies(gui_node rclcpp flychams_core)
-
-# Create executable for visualization node
-add_executable(visualization_node src/visualization_node.cpp)
-target_link_libraries(visualization_node ${PROJECT_NAME})
-ament_target_dependencies(visualization_node rclcpp flychams_core)
+add_executable(gui_manager_node src/gui_manager_node.cpp)
+target_link_libraries(gui_manager_node ${PROJECT_NAME})
+ament_target_dependencies(gui_manager_node rclcpp flychams_core)
 
 # Install targets and headers
 install(TARGETS ${PROJECT_NAME}
@@ -53,7 +45,7 @@ install(TARGETS ${PROJECT_NAME}
   INCLUDES DESTINATION include
 )
 
-install(TARGETS gui_node visualization_node
+install(TARGETS gui_manager_node
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 

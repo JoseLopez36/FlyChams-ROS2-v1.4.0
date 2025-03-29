@@ -2,8 +2,6 @@
 
 // Standard includes
 #include <regex>
-#include <unordered_set>
-#include <set>
 
 // Core includes
 #include "flychams_core/types/core_types.hpp"
@@ -235,32 +233,6 @@ namespace flychams::core
         }
 
         static bool removeFromSet(NodePtr node, std::unordered_set<ID>& set, const ID& id)
-        {
-            // Check if element exists
-            if (set.find(id) == set.end())
-            {
-                RCLCPP_INFO(node->get_logger(), "Element %s does not exist. Skipping removal", id.c_str());
-                return false;
-            }
-            // Remove element
-            set.erase(id);
-            return true;
-        }
-
-        static bool addToSet(NodePtr node, std::set<ID>& set, const ID& id)
-        {
-            // Check if element already exists
-            if (set.find(id) != set.end())
-            {
-                RCLCPP_INFO(node->get_logger(), "Element %s already exists. Skipping addition", id.c_str());
-                return false;
-            }
-            // Insert element
-            set.insert(id);
-            return true;
-        }
-
-        static bool removeFromSet(NodePtr node, std::set<ID>& set, const ID& id)
         {
             // Check if element exists
             if (set.find(id) == set.end())

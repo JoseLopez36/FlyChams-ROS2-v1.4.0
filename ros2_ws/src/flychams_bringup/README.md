@@ -53,11 +53,13 @@ Runtime nodes are launched by the `run.launch.py` file and perform the core func
    - `head_control:` Controls the heads of the agents
 
 2. **Perception Nodes** (from flychams_perception package):
-   - `clustering:` Processes sensor data to identify and cluster targets
+   - `target_clustering:` Groups targets into meaningful clusters
+   - `cluster_analysis:` Analyzes target cluster assignments
 
 3. **Coordination Nodes** (from flychams_coordination package):
-   - `agent_positioning:` Determines optimal agent positions
    - `agent_assignment:` Assigns agents to clusters
+   - `agent_analysis:` Analyzes agent cluster assignments
+   - `agent_positioning:` Determines optimal agent positions
    - `agent_tracking:` Manages tracking of clusters by agents
 
 4. **Target Nodes** (from flychams_targets package):
@@ -65,7 +67,7 @@ Runtime nodes are launched by the `run.launch.py` file and perform the core func
    - `target_control:` Manages target movement and behavior
 
 5. **Dashboard Nodes** (from flychams_dashboard package):
-   - `gui:` Provides user interface for system monitoring and control
+   - `gui_manager:` Provides user interface for system monitoring and control
    - `visualization:` Creates RViz2 visualizations and system metrics for plotting
 
 ## Usage

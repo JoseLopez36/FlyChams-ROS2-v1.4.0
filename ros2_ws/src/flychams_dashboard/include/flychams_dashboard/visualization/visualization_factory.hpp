@@ -1,8 +1,5 @@
 #pragma once
 
-// Standard includes
-#include <mutex>
-
 // Metrics factory include
 #include "flychams_dashboard/visualization/metrics_factory.hpp"
 

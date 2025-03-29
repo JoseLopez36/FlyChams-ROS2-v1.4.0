@@ -1,8 +1,5 @@
 #pragma once
 
-// Standard includes
-#include <mutex>
-
 // Base module include
 #include "flychams_core/base/base_module.hpp"
 

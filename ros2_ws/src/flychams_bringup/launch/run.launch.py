@@ -22,7 +22,7 @@ def generate_launch_description():
         'agent_positioning': 'info',
         'agent_tracking': 'info',
         # Dashboard nodes
-        'gui': 'info',
+        'gui_manager': 'info',
         'visualization': 'info',
         # Targets nodes
         'target_state': 'info',
@@ -38,7 +38,7 @@ def generate_launch_description():
     launch_agent_analysis = LaunchConfiguration('agent_analysis')
     launch_agent_positioning = LaunchConfiguration('agent_positioning')
     launch_agent_tracking = LaunchConfiguration('agent_tracking')
-    launch_gui = LaunchConfiguration('gui')
+    launch_gui_manager = LaunchConfiguration('gui_manager')
     launch_visualization = LaunchConfiguration('visualization')
     launch_target_state = LaunchConfiguration('target_state')
     launch_target_control = LaunchConfiguration('target_control')
@@ -52,7 +52,7 @@ def generate_launch_description():
     log_level_agent_analysis = LaunchConfiguration('log_agent_analysis')
     log_level_agent_positioning = LaunchConfiguration('log_agent_positioning')
     log_level_agent_tracking = LaunchConfiguration('log_agent_tracking')
-    log_level_gui = LaunchConfiguration('log_gui')
+    log_level_gui_manager = LaunchConfiguration('log_gui_manager')
     log_level_visualization = LaunchConfiguration('log_visualization')
     log_level_target_state = LaunchConfiguration('log_target_state')
     log_level_target_control = LaunchConfiguration('log_target_control')
@@ -154,9 +154,9 @@ def generate_launch_description():
         description='Flag to enable/disable the Agent Tracking node'))
     
     ld.append(DeclareLaunchArgument(
-        'gui',
+        'gui_manager',
         default_value='True',
-        description='Flag to enable/disable the GUI node'))
+        description='Flag to enable/disable the GUI Manager node'))
     
     ld.append(DeclareLaunchArgument(
         'visualization',
@@ -210,9 +210,9 @@ def generate_launch_description():
         description='Log level for the Agent Tracking node'))
     
     ld.append(DeclareLaunchArgument(
-        'log_gui',
+        'log_gui_manager',
         default_value='info',
-        description='Log level for the GUI node'))
+        description='Log level for the GUI Manager node'))
     
     ld.append(DeclareLaunchArgument(
         'log_visualization',
@@ -393,16 +393,16 @@ def generate_launch_description():
     )
 
     # ============= DASHBOARD NODES =============
-    # Conditionally add GUI node
+    # Conditionally add GUI Manager node
     ld.append(
         Node(
             package='flychams_dashboard',
-            executable='gui_node',
-            name='gui_node',
+            executable='gui_manager_node',
+            name='gui_manager_node',
             output='screen',
             namespace='flychams',
-            condition=IfCondition(launch_gui),
-            arguments=['--ros-args', '--log-level', log_level_gui],
+            condition=IfCondition(launch_gui_manager),
+            arguments=['--ros-args', '--log-level', log_level_gui_manager],
             parameters=[
                 system_path, 
                 topics_path, 
