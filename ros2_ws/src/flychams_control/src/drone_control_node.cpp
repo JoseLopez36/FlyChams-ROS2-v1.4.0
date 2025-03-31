@@ -66,25 +66,25 @@ private: // Element management
         while (drone_state->getStatus() != AgentStatus::ARMED)
         {
             drone_state->requestArm();
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         // Takeoff drone. Try each 100ms until success
         while (drone_state->getStatus() != AgentStatus::TAKEN_OFF)
         {
             drone_state->requestTakeoff();
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
         }
         // Hover drone. Try each 100ms until success
         while (drone_state->getStatus() != AgentStatus::HOVERED)
         {
             drone_state->requestHover();
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         // Transition to tracking state. Try each 100ms until success
         while (drone_state->getStatus() != AgentStatus::TRACKING)
         {
             drone_state->requestTracking();
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         // Now the drone is ready to move to the desired goal
     }

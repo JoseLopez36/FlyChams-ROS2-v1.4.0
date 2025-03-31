@@ -142,7 +142,9 @@ namespace flychams::control
 		float target_speed = speed_planner_.planSpeed(curr_position_.x, curr_position_.y, curr_position_.z, setpoint_position_.x, setpoint_position_.y, setpoint_position_.z, dt);
 
 		// Send command to move to goal position
-		framework_tools_->setPosition(agent_id_, setpoint_position_.x, setpoint_position_.y, setpoint_position_.z, target_speed, dt);
+		framework_tools_->enableControl(agent_id_, true);
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		framework_tools_->setPosition(agent_id_, setpoint_position_.x, setpoint_position_.y, setpoint_position_.z, target_speed, dt * 1000.0f);
 	}
 
 	void DroneMotion::handleVelocityMotion(const float& dt)

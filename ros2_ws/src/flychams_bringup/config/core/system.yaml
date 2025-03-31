@@ -14,8 +14,8 @@
       # Scenario view settings
       scenario_view_id: "SCENARIOVIEW"
       scenario_camera_id: "SCENARIOCAM"
-      scenario_camera_position: [-150.0, -150.0, 150.0]       # [x, y, z]
-      scenario_camera_orientation: [0.0, 25.0, 45.0]  # [roll, pitch, yaw]
+      scenario_camera_position: [-70.0, -70.0, 60.0]       # [x, y, z]
+      scenario_camera_orientation: [0.0, 20.0, 45.0]  # [roll, pitch, yaw]
       # Agent view settings
       agent_view_id: "AGENTVIEW"
       agent_camera_id: "AGENTCAM"

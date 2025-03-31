@@ -27,7 +27,7 @@ namespace flychams::control
 		central_cmd_.id = central_head_ptr->id;
 		const auto& central_head_rpy = Vector3r(central_head_ptr->orientation.x(), 0.0f, central_head_ptr->orientation.z());
 		RosUtils::toMsg(MathUtils::eulerToQuaternion(central_head_rpy), central_cmd_.ori);
-		central_cmd_.fov = MathUtils::computeFov(central_head_ptr->ref_focal, central_head_ptr->camera.sensor_width);
+		central_cmd_.fov = MathUtils::computeFov(central_head_ptr->ref_focal, central_head_ptr->camera.sensor_size(0));
 
 		// Subscribe to status and head setpoints topics
 		status_sub_ = topic_tools_->createAgentStatusSubscriber(agent_id_,

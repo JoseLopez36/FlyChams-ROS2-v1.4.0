@@ -770,13 +770,17 @@ namespace flychams::core
 							camera.resolution(1) = resolution_vec[1];
 						}
 
-						camera.sensor_width = getCellValue<float>(row.findCell(5)) / 1000.0f;
+						auto sensor_size_str = getCellValue<std::string>(row.findCell(5));
+						auto sensor_size_vec = parseVector<float>(sensor_size_str, 2, 'x');
+						if (sensor_size_vec.size() >= 2)
+						{
+							camera.sensor_size(0) = sensor_size_vec[0] / 1000.0f;
+							camera.sensor_size(1) = sensor_size_vec[1] / 1000.0f;
+						}
 
-						camera.sensor_height = getCellValue<float>(row.findCell(6)) / 1000.0f;
+						camera.enable_lens_distortion = getCellValue<bool>(row.findCell(6));
 
-						camera.enable_lens_distortion = getCellValue<bool>(row.findCell(7));
-
-						auto lens_distortion_str = getCellValue<std::string>(row.findCell(8));
+						auto lens_distortion_str = getCellValue<std::string>(row.findCell(7));
 						auto lens_distortion_vec = parseVector<float>(lens_distortion_str, 3, ',');
 						if (lens_distortion_vec.size() >= 3)
 						{
@@ -785,9 +789,9 @@ namespace flychams::core
 							camera.lens_distortion.area_falloff = lens_distortion_vec[2];
 						}
 
-						camera.enable_sensor_noise = getCellValue<bool>(row.findCell(9));
+						camera.enable_sensor_noise = getCellValue<bool>(row.findCell(8));
 
-						auto sensor_noise_str = getCellValue<std::string>(row.findCell(10));
+						auto sensor_noise_str = getCellValue<std::string>(row.findCell(9));
 						auto sensor_noise_vec = parseVector<float>(sensor_noise_str, 3, ',');
 						if (sensor_noise_vec.size() >= 3)
 						{
@@ -796,11 +800,11 @@ namespace flychams::core
 							camera.sensor_noise.rand_speed = sensor_noise_vec[2];
 						}
 
-						camera.weight = getCellValue<float>(row.findCell(11));
+						camera.weight = getCellValue<float>(row.findCell(10));
 
-						camera.idle_power = getCellValue<float>(row.findCell(12));
+						camera.idle_power = getCellValue<float>(row.findCell(11));
 
-						camera.active_power = getCellValue<float>(row.findCell(13));
+						camera.active_power = getCellValue<float>(row.findCell(12));
 
 						// Only first found camera is loaded
 						head_ptr->camera = camera;

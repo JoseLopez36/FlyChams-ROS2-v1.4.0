@@ -3,21 +3,21 @@
     # Drone state parameters
     drone_state:
       state_update_rate: 5.0    # (Hz)
-      takeoff_altitude: 0.5     # (m)
+      takeoff_altitude: 1.0     # (m)
       takeoff_timeout: 10.0     # (s)
       landing_altitude: 0.5     # (m)
       landing_timeout: 10.0     # (s)
-      hover_altitude: 0.5       # (m)
+      hover_altitude: 1.0       # (m)
       hover_timeout: 5.0        # (s)
     # Drone motion parameters
     drone_motion:
       motion_update_rate: 10.0  # (Hz)
       motion_mode: 0            # 0: position, 1: velocity
-      min_speed: 0.0            # (m/s)
-      max_speed: 10.0           # (m/s)
-      min_distance: 0.20        # (m)
-      max_distance: 50.0        # (m)
-      max_acceleration: 2.0     # (m/s^2)
+      min_speed: 0.5            # (m/s)
+      max_speed: 7.0            # (m/s)
+      min_distance: 0.10        # (m)
+      max_distance: 20.0        # (m)
+      max_acceleration: 1.5     # (m/s^2)
     # Head control parameters
     head_control:
       control_update_rate: 20.0 # (Hz)

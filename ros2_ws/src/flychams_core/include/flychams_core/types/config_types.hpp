@@ -119,8 +119,7 @@ namespace flychams::core
         // Internal config
         CameraType type;
         Vector2i resolution;
-        float sensor_width;
-        float sensor_height;
+        Vector2r sensor_size;
         bool enable_lens_distortion;
         LensDistortion lens_distortion;
         bool enable_sensor_noise;

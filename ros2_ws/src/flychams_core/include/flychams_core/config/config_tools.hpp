@@ -234,8 +234,8 @@ namespace flychams::core
             params.height = camera.resolution(1);
 
             // Camera sensor dimensions (m)
-            params.sensor_width = camera.sensor_width;
-            params.sensor_height = camera.sensor_height;
+            params.sensor_width = camera.sensor_size(0);
+            params.sensor_height = camera.sensor_size(1);
 
             // Regularized pixel size (m/pix)
             float rho_x = params.sensor_width / static_cast<float>(params.width);       // [m/pix]

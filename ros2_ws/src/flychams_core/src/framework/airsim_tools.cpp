@@ -359,7 +359,7 @@ namespace flychams::core
                 request->target_types.push_back("Human");
                 break;
             case TargetType::MetaHuman:
-                request->target_types.push_back("MetaHuman");
+                request->target_types.push_back("Human");
                 break;
             default:
                 RCLCPP_ERROR(node_->get_logger(), "Unknown target type: %d", static_cast<int>(target_types[i]));

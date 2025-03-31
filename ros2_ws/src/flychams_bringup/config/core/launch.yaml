@@ -23,5 +23,5 @@ target_control: [true, 'error']
 
 # Dashboard nodes
 gui_manager: [true, 'error']
-metrics_factory: [false, 'error']
+metrics_factory: [true, 'error']
 marker_factory: [true, 'error']

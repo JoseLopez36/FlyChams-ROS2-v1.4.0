@@ -198,7 +198,7 @@ namespace flychams::control
     bool DroneState::requestTracking()
     {
         // Check if we're in HOVERED state
-        if (curr_status_ != AgentStatus::HOVERED)
+        if (curr_status_ != AgentStatus::HOVERED && curr_status_ != AgentStatus::TRACKING)
         {
             RCLCPP_WARN(node_->get_logger(), "Drone state: Cannot move agent %s from state %d", agent_id_.c_str(), static_cast<int>(curr_status_));
             return false;
@@ -405,8 +405,8 @@ namespace flychams::control
             return to == AgentStatus::TRACKING || to == AgentStatus::LANDING || to == AgentStatus::ERROR;
 
         case AgentStatus::TRACKING:
-            // From TRACKING, we can go to HOVERING, LANDING, or ERROR
-            return to == AgentStatus::HOVERING || to == AgentStatus::LANDING || to == AgentStatus::ERROR;
+            // From TRACKING, we can go to HOVERING, TRACKING, LANDING, or ERROR
+            return to == AgentStatus::HOVERING || to == AgentStatus::TRACKING || to == AgentStatus::LANDING || to == AgentStatus::ERROR;
 
         case AgentStatus::LANDING:
             // From LANDING, we can go to LANDED, or ERROR
@@ -489,7 +489,7 @@ namespace flychams::control
 
     void DroneState::handleHovered()
     {
-        // Nothing to do in HOVERED state, waiting for move request
+        // Nothing to do in HOVERED state, other nodes handle the commands (such as drone motion)
     }
 
     void DroneState::handleTracking()
