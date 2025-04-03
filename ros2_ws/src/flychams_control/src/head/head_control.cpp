@@ -24,10 +24,13 @@ namespace flychams::control
 
 		// Compute central head command
 		const auto& central_head_ptr = config_tools_->getCentralHead(agent_id_);
-		central_cmd_.id = central_head_ptr->id;
 		const auto& central_head_rpy = Vector3r(central_head_ptr->orientation.x(), 0.0f, central_head_ptr->orientation.z());
-		RosUtils::toMsg(MathUtils::eulerToQuaternion(central_head_rpy), central_cmd_.ori);
-		central_cmd_.fov = MathUtils::computeFov(central_head_ptr->ref_focal, central_head_ptr->camera.sensor_size(0));
+		Vector3Msg central_head_rpy_msg;
+		RosUtils::toMsg(central_head_rpy, central_head_rpy_msg);
+		const auto& [central_cmd_fov, central_cmd_ori] = getCommand(central_head_ptr->ref_focal, central_head_ptr->camera.sensor_size(0), central_head_rpy_msg);
+		central_cmd_.id = central_head_ptr->id;
+		central_cmd_.fov = central_cmd_fov;
+		central_cmd_.ori = central_cmd_ori;
 
 		// Subscribe to status and head setpoints topics
 		status_sub_ = topic_tools_->createAgentStatusSubscriber(agent_id_,
@@ -100,16 +103,45 @@ namespace flychams::control
 			int n = static_cast<int>(head_setpoints_.head_ids.size());
 			for (int i = 0; i < n; i++)
 			{
-				// Add head setpoints to vectors
-				head_ids.push_back(head_setpoints_.head_ids[i]);
-				head_orientations.push_back(head_setpoints_.quat_setpoints[i]);
-				head_fovs.push_back(head_setpoints_.fov_setpoints[i]);
+				// Get head parameters
+				const auto& head_id = head_setpoints_.head_ids[i];
+				const auto& head_ptr = config_tools_->getHead(agent_id_, head_id);
+				const float& sensor_width = head_ptr->camera.sensor_size(0);
+
+				// Compute command for this head
+				const auto& [head_cmd_fov, head_cmd_ori] = getCommand(head_setpoints_.focal_setpoints[i], sensor_width, head_setpoints_.rpy_setpoints[i]);
+
+				// Add command to vectors
+				head_ids.push_back(head_id);
+				head_orientations.push_back(head_cmd_ori);
+				head_fovs.push_back(head_cmd_fov);
 			}
 		}
 
 		// Send commands to heads
 		framework_tools_->setGimbalOrientations(agent_id_, head_ids, head_orientations);
 		framework_tools_->setCameraFovs(agent_id_, head_ids, head_fovs);
+	}
+
+	// ════════════════════════════════════════════════════════════════════════════
+	// HEAD: Head methods
+	// ════════════════════════════════════════════════════════════════════════════
+
+	std::pair<float, core::QuaternionMsg> HeadControl::getCommand(const float& focal, const float& sensor_width, const core::Vector3Msg& rpy)
+	{
+		// Create output
+		float fov;
+		QuaternionMsg ori;
+
+		// Compute field of view
+		fov = MathUtils::computeFov(focal, sensor_width);
+
+		// Compute orientation
+		Vector3r rpy_vec = Vector3r(rpy.x, rpy.y, rpy.z);
+		RosUtils::toMsg(MathUtils::eulerToQuaternion(rpy_vec), ori);
+
+		// Return command
+		return std::make_pair(fov, ori);
 	}
 
 } // namespace flychams::control

@@ -4,6 +4,11 @@ std_msgs/Header header
 geometry_msgs/Point position
 geometry_msgs/Point setpoint
 
+# Tracking data
+float32[] focals                     # Associated tracking focal length for this cluster (only used if tracking_mode == 0)
+float32[] resolution_factors         # Associated tracking resolution factor for this cluster (only used if tracking_mode == 1)
+float32[] projected_sizes            # Associated tracking projected size for this cluster
+
 # Position and movement metrics
 float32 distance_traveled            # Total distance covered by the UAV (m)
 float32 speed                        # Current speed of the UAV (m/s)

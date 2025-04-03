@@ -14,7 +14,7 @@ namespace flychams::coordination
         data_ = Data();
     }
 
-    std::pair<float, Vector3r> TrackingSolver::runCamera(const Vector3r& z, const float& r, const Matrix4r& T, const CameraParameters& camera_params, const ProjectionParameters& projection_params)
+    std::pair<float, Vector3r> TrackingSolver::runCamera(const Vector3r& z, const float& r, const Matrix4r& T, const CameraParameters& camera_params, const ProjectionParameters& projection_params, float& s_proj_pix)
     {
         // Args:
         // z: Target position in world frame (m)
@@ -28,7 +28,7 @@ namespace flychams::coordination
         const Matrix3r R = T.block<3, 3>(0, 0);
 
         // Compute focal length
-        data_.focal = computeCameraFocal(z, r, x, camera_params, projection_params);
+        data_.focal = computeCameraFocal(z, r, x, camera_params, projection_params, s_proj_pix);
 
         // Compute camera orientation
         if (data_.is_first_update)
@@ -45,7 +45,7 @@ namespace flychams::coordination
         return std::make_pair(data_.focal, data_.rpy);
     }
 
-    std::pair<Vector2i, Vector2i> TrackingSolver::runWindow(const Vector3r& z, const float& r, const Matrix4r& T, const CameraParameters& central_params, const WindowParameters& window_params, const ProjectionParameters& projection_params)
+    std::pair<Vector2i, Vector2i> TrackingSolver::runWindow(const Vector3r& z, const float& r, const Matrix4r& T, const CameraParameters& central_params, const WindowParameters& window_params, const ProjectionParameters& projection_params, float& lambda, float& s_proj_pix)
     {
         // Args:
         // z: Target position in world frame (m)
@@ -62,7 +62,7 @@ namespace flychams::coordination
         p(0) = central_params.width - p(0); // Flip x-axis (TODO: Check why this is needed)
 
         // Compute window size
-        const Vector2i size = computeWindowSize(z, r, x, central_params, window_params, projection_params);
+        const Vector2i size = computeWindowSize(z, r, x, central_params, window_params, projection_params, lambda, s_proj_pix);
 
         // Compute window corner
         const Vector2i corner = computeWindowCorner(p, size);
@@ -75,7 +75,7 @@ namespace flychams::coordination
     // IMPLEMENTATION: MultiCamera tracking methods
     // ════════════════════════════════════════════════════════════════════════════
 
-    float TrackingSolver::computeCameraFocal(const Vector3r& z, const float& r, const Vector3r& x, const CameraParameters& camera_params, const ProjectionParameters& projection_params)
+    float TrackingSolver::computeCameraFocal(const Vector3r& z, const float& r, const Vector3r& x, const CameraParameters& camera_params, const ProjectionParameters& projection_params, float& s_proj_pix)
     {
         // Args:
         // z: Target position in world frame (m)
@@ -83,10 +83,12 @@ namespace flychams::coordination
         // x: Camera position in world frame (m)
         // camera_params: Camera parameters
         // projection_params: Projection parameters
+        // s_proj_pix: Projected size (pix)
 
         // Extract parameters
         const auto& f_min = camera_params.f_min;
         const auto& f_max = camera_params.f_max;
+        const auto& rho = camera_params.rho;
         const auto& s_ref = projection_params.s_ref;
 
         // Compute distance between target and camera
@@ -96,7 +98,12 @@ namespace flychams::coordination
         float f = (d / r) * s_ref;
 
         // Clamp the focal length within the camera's focal limits
-        return std::max(std::min(f, f_max), f_min);
+        f = std::max(std::min(f, f_max), f_min);
+
+        // Compute actual projected size after clamping
+        s_proj_pix = (r * f) / (d * rho);
+
+        return f;
     }
 
     Vector3r TrackingSolver::computeCameraOrientation(const Vector3r& z, const Vector3r& x, const Matrix3r& R, const Vector3r& prev_rpy, const bool& is_first_update)
@@ -182,13 +189,15 @@ namespace flychams::coordination
     // IMPLEMENTATION: MultiWindow tracking methods
     // ════════════════════════════════════════════════════════════════════════════
 
-    Vector2i TrackingSolver::computeWindowSize(const Vector3r& z, const float& r, const Vector3r& x, const CameraParameters& central_params, const WindowParameters& window_params, const ProjectionParameters& projection_params)
+    Vector2i TrackingSolver::computeWindowSize(const Vector3r& z, const float& r, const Vector3r& x, const CameraParameters& central_params, const WindowParameters& window_params, const ProjectionParameters& projection_params, float& lambda, float& s_proj_pix)
     {
         // Args:
         // z: Target position in world frame (m)
         // r: Equivalent radius of the target's area of interest (m)
         // x: Source camera position in world frame (m)
         // window_params: Window parameters
+        // lambda: Resolution factor (0-1)
+        // s_proj_pix: Projected size (pix)
         // projection_params: Projection parameters
 
         // Extract parameters
@@ -197,13 +206,14 @@ namespace flychams::coordination
         const auto& tracking_height = window_params.tracking_height;
         const auto& lambda_min = window_params.lambda_min;
         const auto& lambda_max = window_params.lambda_max;
+        const auto& rho = window_params.rho;
         const auto& s_ref = projection_params.s_ref;
 
         // Compute distance between target and camera
         float d = (x - z).norm();
 
         // Attempt to adjust the resolution factor to achieve the desired apparent size of the object
-        float lambda = (d * s_ref) / (r * f);
+        lambda = (d * s_ref) / (r * f);
 
         // Clamp the resolution factor within the camera's resolution limits
         lambda = std::max(std::min(lambda, lambda_max), lambda_min);
@@ -211,6 +221,9 @@ namespace flychams::coordination
         // Compute window size using the resolution factor
         const float width = static_cast<float>(tracking_width) / lambda;
         const float height = static_cast<float>(tracking_height) / lambda;
+
+        // Compute actual projected size after clamping
+        s_proj_pix = (lambda * r * f) / (d * rho);
 
         return {
             static_cast<int>(std::round(width)),

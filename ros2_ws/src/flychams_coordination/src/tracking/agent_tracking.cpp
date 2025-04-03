@@ -25,8 +25,9 @@ namespace flychams::coordination
         for (const auto& camera : tracking_params_.camera_params)
         {
             agent_.head_setpoints.head_ids.push_back(camera.id);
-            agent_.head_setpoints.quat_setpoints.push_back(QuaternionMsg());
-            agent_.head_setpoints.fov_setpoints.push_back(0.0f);
+            agent_.head_setpoints.focal_setpoints.push_back(0.0f);
+            agent_.head_setpoints.rpy_setpoints.push_back(Vector3Msg());
+            agent_.head_setpoints.projected_sizes.push_back(0.0f);
         }
 
         // Initialize window setpoint message
@@ -35,6 +36,8 @@ namespace flychams::coordination
         for (const auto& window : tracking_params_.window_params)
         {
             agent_.window_setpoints.crop_setpoints.push_back(CropMsg());
+            agent_.window_setpoints.resolution_factors.push_back(0.0f);
+            agent_.window_setpoints.projected_sizes.push_back(0.0f);
         }
 
         // Initialize solvers
@@ -174,11 +177,13 @@ namespace flychams::coordination
             const Matrix4r& T = RosUtils::fromMsg(world_to_optical);
 
             // Solve tracking for this camera
-            const auto& [focal, rpy] = solvers_[i].runCamera(z, r, T, camera_params, projection_params);
+            float s_proj_pix;
+            const auto& [focal, rpy] = solvers_[i].runCamera(z, r, T, camera_params, projection_params, s_proj_pix);
 
             // Update tracking setpoint
-            RosUtils::toMsg(MathUtils::eulerToQuaternion(rpy), setpoints.quat_setpoints[i]);
-            setpoints.fov_setpoints[i] = MathUtils::computeFov(focal, camera_params.sensor_width);
+            RosUtils::toMsg(rpy, setpoints.rpy_setpoints[i]);
+            setpoints.focal_setpoints[i] = focal;
+            setpoints.projected_sizes[i] = s_proj_pix;
         }
     }
 
@@ -205,7 +210,8 @@ namespace flychams::coordination
             const auto& r = tab_r(i);
 
             // Solve tracking for this window
-            const auto& [size, corner] = solvers_[i].runWindow(z, r, T, central_params, window_params, projection_params);
+            float lambda, s_proj_pix;
+            const auto& [size, corner] = solvers_[i].runWindow(z, r, T, central_params, window_params, projection_params, lambda, s_proj_pix);
 
             // Check if crop is out of bounds (i.e. if the crop is completely outside the image)
             bool is_out_of_bounds =
@@ -221,6 +227,8 @@ namespace flychams::coordination
             crop.w = size(0);
             crop.h = size(1);
             crop.is_out_of_bounds = is_out_of_bounds;
+            setpoints.resolution_factors[i] = lambda;
+            setpoints.projected_sizes[i] = s_proj_pix;
         }
     }
 

@@ -63,6 +63,9 @@ namespace flychams::control
 		// Update
 		void update();
 
+	private: // Head methods
+		std::pair<float, core::QuaternionMsg> getCommand(const float& focal, const float& sensor_width, const core::Vector3Msg& rpy);
+
 	private:
 		// Subscribers
 		core::SubscriberPtr<core::AgentStatusMsg> status_sub_;
