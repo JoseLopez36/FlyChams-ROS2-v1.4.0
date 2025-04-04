@@ -5,11 +5,9 @@ import os
 
 def generate_launch_description():
     # Define constant IDs to be recorded
-    AGENT_IDS = ['AGENT04']
-    TARGET_IDS = ['GROUP02_TARGET00', 'GROUP02_TARGET01', 'GROUP02_TARGET02', 'GROUP02_TARGET03', 'GROUP02_TARGET04',
-                  'GROUP02_TARGET05', 'GROUP02_TARGET06', 'GROUP02_TARGET07', 'GROUP02_TARGET08', 'GROUP02_TARGET09', 
-                  'GROUP02_TARGET10', 'GROUP02_TARGET11', 'GROUP02_TARGET12', 'GROUP02_TARGET13', 'GROUP02_TARGET14', 
-                  'GROUP02_TARGET15']
+    AGENT_IDS = ['AGENT02']
+    TARGET_IDS = ['TARGET02COUNT00', 'TARGET02COUNT01', 'TARGET02COUNT02', 'TARGET02COUNT03', 'TARGET02COUNT04',
+                  'TARGET02COUNT05', 'TARGET02COUNT06', 'TARGET02COUNT07']
     CLUSTER_IDS = ['CLUSTER00', 'CLUSTER01', 'CLUSTER02', 'CLUSTER03']
 
     # Build list of topics to record
@@ -17,22 +15,22 @@ def generate_launch_description():
 
     # Loop over agent IDs to add agent metrics topics
     for agent in AGENT_IDS:
-        topics.append(f'/flychams/{agent}/metrics')
+        topics.append(f'/flychams/dashboard/{agent}/metrics')
 
     # Loop over target IDs to add target metrics topics
     for target in TARGET_IDS:
-        topics.append(f'/flychams/{target}/metrics')
+        topics.append(f'/flychams/dashboard/{target}/metrics')
 
     # Loop over cluster IDs to add cluster metrics topics
     for cluster in CLUSTER_IDS:
-        topics.append(f'/flychams/{cluster}/metrics')
+        topics.append(f'/flychams/dashboard/{cluster}/metrics')
 
     # Append the global metrics topic
-    topics.append('/flychams/global_metrics')
+    topics.append('/flychams/dashboard/global/metrics')
 
     # Generate a unique output directory name using an index
     # Check existing directories to find the next available index
-    base_dir = '/home/testuser/FlyingChameleons/experiments/rosbags'
+    base_dir = '/home/testuser/FlyChams-ROS2/experiments/rosbags'
     index = 0
     
     # Find the highest existing index
