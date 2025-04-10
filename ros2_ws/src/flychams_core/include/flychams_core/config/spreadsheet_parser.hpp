@@ -481,7 +481,7 @@ namespace flychams::core
 						head->camera_id = getCellValue<std::string>(row.findCell(5));
 
 						const std::string& role_str = getCellValue<std::string>(row.findCell(6));
-						head->role = headRoleFromString(role_str);
+						head->role = trackingRoleFromString(role_str);
 
 						auto position_str = getCellValue<std::string>(row.findCell(7));
 						auto position_vec = parseVector<float>(position_str, 3, ',');
@@ -557,19 +557,22 @@ namespace flychams::core
 
 						window->window_set_id = FK;
 
-						window->min_lambda = getCellValue<float>(row.findCell(4));
+						const std::string& role_str = getCellValue<std::string>(row.findCell(4));
+						window->role = trackingRoleFromString(role_str);
 
-						window->max_lambda = getCellValue<float>(row.findCell(5));
-
-						window->ref_lambda = getCellValue<float>(row.findCell(6));
-
-						auto resolution_str = getCellValue<std::string>(row.findCell(7));
+						auto resolution_str = getCellValue<std::string>(row.findCell(5));
 						auto resolution_vec = parseVector<int>(resolution_str, 2, 'x');
 						if (resolution_vec.size() >= 2)
 						{
 							window->resolution(0) = resolution_vec[0];
 							window->resolution(1) = resolution_vec[1];
 						}
+
+						window->min_lambda = getCellValue<float>(row.findCell(6));
+
+						window->max_lambda = getCellValue<float>(row.findCell(7));
+
+						window->ref_lambda = getCellValue<float>(row.findCell(8));
 
 						// Store setting
 						agent_ptr->window_set.insert({ window->id, window });

@@ -184,10 +184,11 @@ namespace flychams::core
         ID window_set_id;
 
         // Internal config
+        TrackingRole role;
+        Vector2i resolution;
         float min_lambda;
         float max_lambda;
         float ref_lambda;
-        Vector2i resolution;
     };
     using WindowConfigPtr = std::shared_ptr<WindowConfig>;
     using WindowSetConfig = std::unordered_map<ID, WindowConfigPtr>;
@@ -202,7 +203,7 @@ namespace flychams::core
         // Internal config
         ID gimbal_id;
         ID camera_id;
-        HeadRole role;
+        TrackingRole role;
         Vector3r position;
         Vector3r orientation;
         float min_focal;

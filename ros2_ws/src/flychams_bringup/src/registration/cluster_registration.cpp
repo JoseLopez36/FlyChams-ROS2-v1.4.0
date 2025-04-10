@@ -15,11 +15,11 @@ namespace flychams::bringup
 		int cluster_index = 0;
 		for (const auto& [agent_id, agent_ptr] : config_tools_->getAgentTeam())
 		{
-			// Get maximum number of assignments per agent
-			const int max_assign = config_tools_->getMaxAssignments(agent_id);
+			// Get assignment count per agent
+			const int assignment_count = config_tools_->getTrackingParameters(agent_id).n;
 
 			// Iterate over all assignments and register clusters
-			for (int i = 0; i < max_assign; i++)
+			for (int i = 0; i < assignment_count; i++)
 			{
 				// Generate cluster ID
 				std::stringstream ss;

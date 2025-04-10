@@ -47,8 +47,8 @@ namespace flychams::coordination
         // Create and add agent
         agents_.insert({ agent_id, Agent() });
 
-        // Get maximum number of assignments
-        agents_[agent_id].max_assignments = config_tools_->getMaxAssignments(agent_id);
+        // Get assignment count
+        agents_[agent_id].max_assignments = config_tools_->getTrackingParameters(agent_id).n;
 
         // Create agent status subscriber
         agents_[agent_id].status_sub = topic_tools_->createAgentStatusSubscriber(agent_id,
