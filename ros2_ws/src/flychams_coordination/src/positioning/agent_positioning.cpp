@@ -167,16 +167,16 @@ namespace flychams::coordination
 
         // Cost function weights
         // Psi
-        params.tau0 = 0.0f;
-        params.tau1 = 0.0f;
+        params.tau0 = 1.0f;
+        params.tau1 = 2.0f;
         params.tau2 = 10.0f;
         // Lambda
-        params.sigma0 = 0.0f;
-        params.sigma1 = 0.0f;
+        params.sigma0 = 1.0f;
+        params.sigma1 = 2.0f;
         params.sigma2 = 10.0f;
         // Gamma
-        params.mu = 0.0f;
-        params.nu = 0.0f;
+        params.mu = 1.0f;
+        params.nu = 1.0f;
 
         return params;
     }

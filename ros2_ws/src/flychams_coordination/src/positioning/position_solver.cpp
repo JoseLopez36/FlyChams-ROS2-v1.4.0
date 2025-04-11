@@ -171,13 +171,16 @@ namespace flychams::coordination
         // Account for the central window cost to ensure targets are inside the bounds of the central window
         // We use the mean of the centers and the largest possible radius
         Vector3r z_mean = Vector3r::Zero();
-        float r_max = 0.0f;
         for (int i = 0; i < cost_data->n; i++)
         {
             z_mean += cost_data->tab_P.col(i);
-            r_max = std::max(r_max, (z_mean - cost_data->tab_P.col(i)).norm() + cost_data->tab_r(i));
         }
         z_mean /= static_cast<float>(cost_data->n);
+        float r_max = 0.0f;
+        for (int i = 0; i < cost_data->n; i++)
+        {
+            r_max = std::max(r_max, (z_mean - cost_data->tab_P.col(i)).norm() + cost_data->tab_r(i));
+        }
         J1 += calculateWindowJ1(z_mean, r_max, xVec, cost_data->central_params);
 
         // Return the value of J1
@@ -219,13 +222,16 @@ namespace flychams::coordination
         // Account for the central window cost to ensure targets are inside the bounds of the central window
         // We use the mean of the centers and the largest possible radius
         Vector3r z_mean = Vector3r::Zero();
-        float r_max = 0.0f;
         for (int i = 0; i < cost_data->n; i++)
         {
             z_mean += cost_data->tab_P.col(i);
-            r_max = std::max(r_max, (z_mean - cost_data->tab_P.col(i)).norm() + cost_data->tab_r(i));
         }
         z_mean /= static_cast<float>(cost_data->n);
+        float r_max = 0.0f;
+        for (int i = 0; i < cost_data->n; i++)
+        {
+            r_max = std::max(r_max, (z_mean - cost_data->tab_P.col(i)).norm() + cost_data->tab_r(i));
+        }
         J2 += calculateWindowJ2(z_mean, r_max, xVec, cost_data->xHat, cost_data->central_params);
 
         // Return the value of J2

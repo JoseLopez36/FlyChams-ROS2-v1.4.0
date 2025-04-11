@@ -107,7 +107,7 @@ namespace flychams::simulation
             central_draw_cmds_.rectangle_color = rectangle_color;
             central_draw_cmds_.rectangle_thickness = rectangle_thickness;
             central_draw_cmds_.string_positions.push_back(start_position);
-            central_draw_cmds_.string_texts.push_back("TW" + std::to_string(i));
+            central_draw_cmds_.string_texts.push_back("TW" + std::to_string(i + 1));
             central_draw_cmds_.string_color = string_color;
             central_draw_cmds_.string_scale = string_scale;
         }
