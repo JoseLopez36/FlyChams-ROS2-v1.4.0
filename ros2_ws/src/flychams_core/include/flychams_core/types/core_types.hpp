@@ -368,14 +368,13 @@ namespace flychams::core
 
     struct Barometer
     {
-        float pressure_factor_sigma;    // Pressure factor sigma
-        float uncorrelated_noise_sigma; // Uncorrelated noise sigma
+        float white_noise_sigma;        // White noise sigma
     };
 
     struct Imu
     {
-        float gyro_noise;        // Angular random walk
-        float accel_noise;       // Velocity random walk
+        float angular_white_noise_sigma;    // Angular white noise sigma
+        float velocity_white_noise_sigma;   // Velocity white noise sigma
     };
 
     struct Gps
@@ -388,9 +387,8 @@ namespace flychams::core
 
     struct Magnetometer
     {
-        float noise_sigma;       // Sensor noise sigma
-        float scale_factor;      // Scale factor for readings
-        float noise_bias;        // Noise bias
+        float white_noise_sigma;       // White noise sigma
+        float white_noise_bias;        // White noise bias
     };
 
     struct Link

@@ -187,15 +187,15 @@ namespace flychams::core
                 {"Barometer", {
                     {"SensorType", 1},
                         {"Enabled", drone.enable_barometer},
-                        {"PressureFactorSigma", std::max(drone.barometer.pressure_factor_sigma, 0.0001825f)}, // More than 0.0001825 can generate problem with PX4
-                        {"UncorrelatedNoiseSigma", drone.barometer.uncorrelated_noise_sigma}
+                        {"PressureFactorSigma", 0.0001825f}, // More than 0.0001825 can generate problems with PX4
+                        {"UncorrelatedNoiseSigma", drone.barometer.white_noise_sigma}
                     }},
                     {"Imu", {
                         {"SensorType", 2},
                         {"Enabled", drone.enable_imu},
                         {"GenerateNoise", true},
-                        {"AngularRandomWalk", drone.imu.gyro_noise},
-                        {"VelocityRandomWalk", drone.imu.accel_noise}
+                        {"AngularRandomWalk", drone.imu.angular_white_noise_sigma},
+                        {"VelocityRandomWalk", drone.imu.velocity_white_noise_sigma}
                     }},
                     {"Gps", {
                         {"SensorType", 3},
@@ -208,9 +208,8 @@ namespace flychams::core
                     {"Magnetometer", {
                         {"SensorType", 4},
                         {"Enabled", drone.enable_magnetometer},
-                        {"NoiseSigma", drone.magnetometer.noise_sigma},
-                        {"ScaleFactor", drone.magnetometer.scale_factor},
-                        {"NoiseBias", drone.magnetometer.noise_bias}
+                        {"NoiseSigma", drone.magnetometer.white_noise_sigma},
+                        {"NoiseBias", drone.magnetometer.white_noise_bias}
                 }}
             };
         }

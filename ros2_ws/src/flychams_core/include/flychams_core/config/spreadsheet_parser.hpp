@@ -628,11 +628,10 @@ namespace flychams::core
 						drone.enable_barometer = getCellValue<bool>(row.findCell(6));
 
 						auto barometer_str = getCellValue<std::string>(row.findCell(7));
-						auto barometer_vec = parseVector<float>(barometer_str, 2, ',');
-						if (barometer_vec.size() >= 2)
+						auto barometer_vec = parseVector<float>(barometer_str, 1, ',');
+						if (barometer_vec.size() >= 1)
 						{
-							drone.barometer.pressure_factor_sigma = barometer_vec[0];
-							drone.barometer.uncorrelated_noise_sigma = barometer_vec[1];
+							drone.barometer.white_noise_sigma = barometer_vec[0];
 						}
 
 						drone.enable_imu = getCellValue<bool>(row.findCell(8));
@@ -641,8 +640,8 @@ namespace flychams::core
 						auto imu_vec = parseVector<float>(imu_str, 2, ',');
 						if (imu_vec.size() >= 2)
 						{
-							drone.imu.gyro_noise = imu_vec[0];
-							drone.imu.accel_noise = imu_vec[1];
+							drone.imu.angular_white_noise_sigma = imu_vec[0];
+							drone.imu.velocity_white_noise_sigma = imu_vec[1];
 						}
 
 						drone.enable_gps = getCellValue<bool>(row.findCell(10));
@@ -660,12 +659,11 @@ namespace flychams::core
 						drone.enable_magnetometer = getCellValue<bool>(row.findCell(12));
 
 						auto magnetometer_str = getCellValue<std::string>(row.findCell(13));
-						auto magnetometer_vec = parseVector<float>(magnetometer_str, 3, ',');
-						if (magnetometer_vec.size() >= 3)
+						auto magnetometer_vec = parseVector<float>(magnetometer_str, 2, ',');
+						if (magnetometer_vec.size() >= 2)
 						{
-							drone.magnetometer.noise_sigma = magnetometer_vec[0];
-							drone.magnetometer.scale_factor = magnetometer_vec[1];
-							drone.magnetometer.noise_bias = magnetometer_vec[2];
+							drone.magnetometer.white_noise_sigma = magnetometer_vec[0];
+							drone.magnetometer.white_noise_bias = magnetometer_vec[1];
 						}
 
 						drone.base_weight = getCellValue<float>(row.findCell(14));

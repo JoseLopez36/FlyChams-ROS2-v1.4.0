@@ -79,29 +79,28 @@
                     "SensorType": 1,
                     "Enabled": true,
                     "PressureFactorSigma": 0.00018250000721309334,
-                    "UncorrelatedNoiseSigma": 3.0
+                    "UncorrelatedNoiseSigma": 2.700000047683716
                 },
                 "Imu": {
                     "SensorType": 2,
                     "Enabled": true,
                     "GenerateNoise": true,
-                    "AngularRandomWalk": 0.4000000059604645,
-                    "VelocityRandomWalk": 0.20000000298023224
+                    "AngularRandomWalk": 0.30000001192092896,
+                    "VelocityRandomWalk": 0.23999999463558197
                 },
                 "Gps": {
                     "SensorType": 3,
                     "Enabled": true,
-                    "EphInitial": 30.0,
-                    "EpvInitial": 40.0,
-                    "EphFinal": 1.0,
-                    "EpvFinal": 2.0
+                    "EphInitial": 25.0,
+                    "EpvInitial": 25.0,
+                    "EphFinal": 0.10000000149011612,
+                    "EpvFinal": 0.10000000149011612
                 },
                 "Magnetometer": {
                     "SensorType": 4,
                     "Enabled": true,
-                    "NoiseSigma": 0.029999999329447746,
-                    "ScaleFactor": 1.0199999809265137,
-                    "NoiseBias": 0.05000000074505806
+                    "NoiseSigma": 0.004999999888241291,
+                    "NoiseBias": 0.0
                 }
             },
             "Cameras": {
