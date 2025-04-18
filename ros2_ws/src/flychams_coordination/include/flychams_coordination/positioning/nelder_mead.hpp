@@ -91,7 +91,7 @@ namespace flychams::coordination
                 nlopt_destroy(opt_);
             }
         }
-        core::Vector3r run(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const core::Vector3r& x0)
+        core::Vector3r run(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const core::Vector3r& x0, float& J)
         {
             // Check if NLopt optimizer is initialized
             if (!opt_)
@@ -117,30 +117,40 @@ namespace flychams::coordination
             data_.x_hat = core::Vector3r::Zero();
 
             // First optimization (solve for initial position)
-            core::Vector3r x_opt_1 = preOptimization(x0_clipped);
+            core::Vector3r x_opt_1;
+            float J_1 = preOptimization(x0_clipped, x_opt_1);
 
             // Iterative optimization (solve for optimal position)
-            return iterativeOptimization(x_opt_1);
+            core::Vector3r x_opt_2;
+            float J_2 = iterativeOptimization(x_opt_1, x_opt_2);
+
+            // Return the optimal position and the cost function value
+            J = J_2;
+            return x_opt_2;
         }
 
     private: // Optimization stages
-        core::Vector3r preOptimization(const core::Vector3r& x0)
+        float preOptimization(const core::Vector3r& x0, core::Vector3r& x_opt)
         {
+            float J = 0.0f;
+
             // Set the objective cost function J1 along with the data
             nlopt_set_min_objective(opt_, funJ1, &data_);
 
             // Optimize for J1
-            core::Vector3r x_opt = x0; // Start from initial position
-            optimize(x_opt);
+            x_opt = x0; // Start from initial position
+            J = optimize(x_opt);
 
-            return x_opt;
+            return J;
         }
 
-        core::Vector3r iterativeOptimization(const core::Vector3r& x0)
+        float iterativeOptimization(const core::Vector3r& x0, core::Vector3r& x_opt)
         {
+            float J = 0.0f;
+
             // Initialize with the previous solution
             core::Vector3r x_opt_prev = x0;
-            core::Vector3r x_opt = x_opt_prev;
+            x_opt = x_opt_prev;
 
             // Iteratively call the optimization algorithm that implements the convex relaxation (J2)
             float x_diff = HUGE_VALF;
@@ -153,7 +163,7 @@ namespace flychams::coordination
                 nlopt_set_min_objective(opt_, funJ2, &data_);
 
                 // Optimize for J2
-                optimize(x_opt);
+                J = optimize(x_opt);
 
                 // Compute the norm of difference
                 x_diff = (x_opt - x_opt_prev).norm();
@@ -162,7 +172,7 @@ namespace flychams::coordination
                 x_opt_prev = x_opt;
             }
 
-            return x_opt;
+            return J;
         }
 
     private: // Optimization methods

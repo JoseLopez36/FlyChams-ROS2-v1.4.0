@@ -66,7 +66,7 @@ namespace flychams::coordination
         void init(const SolverMode& mode, const Parameters& params);
         void destroy();
         // Optimization
-        core::Vector3r run(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const core::Vector3r& x0);
+        core::Vector3r run(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const core::Vector3r& x0, float& J);
     };
 
 } // namespace flychams::coordination

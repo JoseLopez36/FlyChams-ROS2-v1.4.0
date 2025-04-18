@@ -73,19 +73,19 @@ namespace flychams::coordination
         }
     }
 
-    Vector3r PositionSolver::run(const Matrix3Xr& tab_P, const RowVectorXr& tab_r, const Vector3r& x0)
+    Vector3r PositionSolver::run(const Matrix3Xr& tab_P, const RowVectorXr& tab_r, const Vector3r& x0, float& J)
     {
         // Run the optimization based on the mode
         switch (mode_)
         {
             case SolverMode::NELDER_MEAD:
             {
-                return nelder_mead_.run(tab_P, tab_r, x0);
+                return nelder_mead_.run(tab_P, tab_r, x0, J);
             }
 
             case SolverMode::ELLIPSOID_METHOD:
             {
-                return ellipsoid_method_.run(tab_P, tab_r, x0);
+                return ellipsoid_method_.run(tab_P, tab_r, x0, J);
             }
 
             default:

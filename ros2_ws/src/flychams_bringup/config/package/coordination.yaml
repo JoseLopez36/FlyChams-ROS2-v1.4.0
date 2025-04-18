@@ -13,7 +13,7 @@
     agent_positioning:
       positioning_rate: 10.0 # (Hz)
       # Solver parameters
-      solver_mode: 0                      # 0: NELDER_MEAD, 1: ELLIPSOID_METHOD
+      solver_mode: 1                      # 0: NELDER_MEAD, 1: ELLIPSOID_METHOD
       eps: 1.0e-1                         # Threshold difference between solutions of successive iterations to terminate the algorithm
       convergence_tolerance: 1.0e-5       # Solver convergence tolerance
       max_iterations: 100                 # Maximum number of iterations
