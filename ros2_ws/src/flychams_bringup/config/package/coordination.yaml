@@ -4,17 +4,20 @@
     agent_assignment:
       assignment_rate: 1.0    # (Hz)
       mode: 0                 # 0: greedy, 1: suboptimal
+
     # Agent analysis parameters
     agent_analysis:
       analysis_rate: 20.0       # (Hz)
+      
     # Agent positioning parameters
     agent_positioning:
       positioning_rate: 10.0 # (Hz)
       # Solver parameters
-      solver_mode: 0                    # 0: NELDER_MEAD, 1: ELLIPSOID_METHOD
-      eps: 1.0e-1                       # Threshold difference between solutions of successive iterations to terminate the algorithm
-      convergence_tolerance: 1.0e-5     # Solver convergence tolerance
-      max_iterations: 100               # Maximum number of iterations
+      solver_mode: 0                      # 0: NELDER_MEAD, 1: ELLIPSOID_METHOD
+      eps: 1.0e-1                         # Threshold difference between solutions of successive iterations to terminate the algorithm
+      convergence_tolerance: 1.0e-5       # Solver convergence tolerance
+      max_iterations: 100                 # Maximum number of iterations
+
     # Agent tracking parameters
     agent_tracking:
       tracking_rate: 20.0 # (Hz)

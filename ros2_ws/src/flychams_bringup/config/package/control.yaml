@@ -9,6 +9,7 @@
       landing_timeout: 10.0     # (s)
       hover_altitude: 1.0       # (m)
       hover_timeout: 5.0        # (s)
+
     # Drone motion parameters
     drone_control:
       update_rate: 10.0         # (Hz)
@@ -18,6 +19,7 @@
       min_distance: 0.10        # (m)
       max_distance: 20.0        # (m)
       max_acceleration: 0.5     # (m/s^2)
+      
     # Head control parameters
     head_control:
       update_rate: 20.0 # (Hz)

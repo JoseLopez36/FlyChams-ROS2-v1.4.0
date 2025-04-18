@@ -3,15 +3,19 @@
     # GUI manager parameters
     gui_manager:
       update_rate: 20.0 # (Hz)
+
     # Metrics factory parameters
     metrics_factory:
       update_rate: 10.0 # (Hz)
+
     # Marker factory parameters
     marker_factory:
       update_rate: 10.0 # (Hz)
+
     # Target state parameters
     target_state:
       update_rate: 20.0 # (Hz)
+      
     # Target control parameters
     target_control:
       update_rate: 20.0 # (Hz)

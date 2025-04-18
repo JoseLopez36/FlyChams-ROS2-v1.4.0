@@ -146,7 +146,7 @@ namespace flychams::coordination
 
         // Solve agent positioning
         Vector3r optimal_position = solver_->run(tab_P, tab_r, x0);
-
+        
         // Publish position
         agent_.setpoint.header.stamp = RosUtils::now(node_);
         RosUtils::toMsg(optimal_position, agent_.setpoint.point);
