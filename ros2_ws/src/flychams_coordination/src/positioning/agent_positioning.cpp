@@ -145,6 +145,7 @@ namespace flychams::coordination
         }
 
         // Solve agent positioning
+        float J;
         Vector3r optimal_position = solver_->run(tab_P, tab_r, x0, J);
         
         // Publish position
