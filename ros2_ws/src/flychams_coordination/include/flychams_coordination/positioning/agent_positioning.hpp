@@ -1,6 +1,7 @@
 #pragma once
 
 // Position solver include
+#include "flychams_coordination/positioning/cost_functions.hpp"
 #include "flychams_coordination/positioning/position_solver.hpp"
 
 // Base module include
@@ -67,17 +68,12 @@ namespace flychams::coordination
     private: // Parameters
         core::ID agent_id_;
         float update_rate_;
-        // Cost parameters
-        float min_height_;
-        float max_height_;
-        PositionSolver::CostParameters central_cost_params_;
-        std::vector<PositionSolver::CostParameters> tracking_cost_params_;
 
     private: // Data
         // Agent
         Agent agent_;
         // Position solver
-        PositionSolver solver_;
+        PositionSolver::SharedPtr solver_;
 
     private: // Callbacks
         void statusCallback(const core::AgentStatusMsg::SharedPtr msg);
@@ -88,8 +84,8 @@ namespace flychams::coordination
         void update();
 
     private: // Positioning methods
-        PositionSolver::CostParameters createCentralCostParameters(const core::TrackingParameters& tracking_params);
-        std::vector<PositionSolver::CostParameters> createTrackingCostParameters(const core::TrackingParameters& tracking_params);
+        CostFunctions::TrackingUnit centralUnitParameters(const core::TrackingParameters& tracking_params);
+        std::vector<CostFunctions::TrackingUnit> trackingUnitParameters(const core::TrackingParameters& tracking_params);
 
     private: // ROS components
         // Timer

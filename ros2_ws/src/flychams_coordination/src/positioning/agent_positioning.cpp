@@ -15,10 +15,10 @@ namespace flychams::coordination
         update_rate_ = RosUtils::getParameterOr<float>(node_, "agent_positioning.positioning_rate", 1.0f);
         // Get solver parameters
         PositionSolver::SolverMode solver_mode = static_cast<PositionSolver::SolverMode>(RosUtils::getParameterOr<uint8_t>(node_, "agent_positioning.solver_mode", 0));
-        float convergence_tolerance = RosUtils::getParameterOr<float>(node_, "agent_positioning.convergence_tolerance", 1.0e-6f);
+        float eps = RosUtils::getParameterOr<float>(node_, "agent_positioning.eps", 1.0e-1f);
+        float convergence_tolerance = RosUtils::getParameterOr<float>(node_, "agent_positioning.convergence_tolerance", 1.0e-5f);
         int max_iterations = RosUtils::getParameterOr<int>(node_, "agent_positioning.max_iterations", 100);
-        float eps = RosUtils::getParameterOr<float>(node_, "agent_positioning.eps", 1.0f);
-
+        
         // Initialize data
         agent_ = Agent();
 
@@ -28,20 +28,35 @@ namespace flychams::coordination
         agent_.setpoint.point.y = 0.0;
         agent_.setpoint.point.z = 0.0;
 
-        // Initialize solver
-        solver_.reset();
-        solver_.setMode(solver_mode);
-        solver_.setParameters(convergence_tolerance, max_iterations, eps);
-        solver_.init();
-
         // Get positioning parameters
         const auto& config_ptr = config_tools_->getConfig();
         const auto& agent_ptr = config_tools_->getAgent(agent_id_);
         const auto& tracking_params = config_tools_->getTrackingParameters(agent_id_);
-        min_height_ = config_ptr->altitude_constraint(0);
-        max_height_ = std::min(config_ptr->altitude_constraint(1), agent_ptr->max_altitude);
-        central_cost_params_ = createCentralCostParameters(tracking_params);
-        tracking_cost_params_ = createTrackingCostParameters(tracking_params);
+        float min_horizontal = config_ptr->horizontal_constraint(0);
+        float max_horizontal = config_ptr->horizontal_constraint(1);
+        float min_vertical = config_ptr->vertical_constraint(0);
+        float max_vertical = std::min(config_ptr->vertical_constraint(1), agent_ptr->max_altitude);
+
+        // Calculate space constraints
+        Vector3r x_min = Vector3r(min_horizontal, min_horizontal, min_vertical);
+        Vector3r x_max = Vector3r(max_horizontal, max_horizontal, max_vertical);
+
+        // Create cost parameters for each tracking unit
+        CostFunctions::Parameters cost_params;
+        cost_params.n = tracking_params.n;
+        cost_params.central = centralUnitParameters(tracking_params);
+        cost_params.tracking = trackingUnitParameters(tracking_params);
+
+        // Create and initialize solver
+        solver_ = std::make_shared<PositionSolver>();
+        PositionSolver::Parameters solver_params;
+        solver_params.cost_params = cost_params;
+        solver_params.x_min = x_min;
+        solver_params.x_max = x_max;
+        solver_params.eps = eps;
+        solver_params.tol = convergence_tolerance;
+        solver_params.max_iter = max_iterations;
+        solver_->init(solver_mode, solver_params);
 
         // Create subscribers for agent status, position and clusters
         agent_.status_sub = topic_tools_->createAgentStatusSubscriber(agent_id_,
@@ -62,7 +77,7 @@ namespace flychams::coordination
     void AgentPositioning::onShutdown()
     {
         // Destroy solver
-        solver_.destroy();
+        solver_->destroy();
         // Destroy agent data
         agent_.status_sub.reset();
         agent_.position_sub.reset();
@@ -130,7 +145,7 @@ namespace flychams::coordination
         }
 
         // Solve agent positioning
-        Vector3r optimal_position = solver_.run(tab_P, tab_r, x0, min_height_, max_height_, central_cost_params_, tracking_cost_params_);
+        Vector3r optimal_position = solver_->run(tab_P, tab_r, x0);
 
         // Publish position
         agent_.setpoint.header.stamp = RosUtils::now(node_);
@@ -142,9 +157,9 @@ namespace flychams::coordination
     // POSITIONING: Positioning methods
     // ════════════════════════════════════════════════════════════════════════════
 
-    PositionSolver::CostParameters AgentPositioning::createCentralCostParameters(const TrackingParameters& tracking_params)
+    CostFunctions::TrackingUnit AgentPositioning::centralUnitParameters(const TrackingParameters& tracking_params)
     {
-        PositionSolver::CostParameters params;
+        CostFunctions::TrackingUnit params;
 
         // Tracking mode
         params.mode = tracking_params.mode;
@@ -181,12 +196,12 @@ namespace flychams::coordination
         return params;
     }
 
-    std::vector<PositionSolver::CostParameters> AgentPositioning::createTrackingCostParameters(const TrackingParameters& tracking_params)
+    std::vector<CostFunctions::TrackingUnit> AgentPositioning::trackingUnitParameters(const TrackingParameters& tracking_params)
     {
-        std::vector<PositionSolver::CostParameters> params_vector;
+        std::vector<CostFunctions::TrackingUnit> params_vector;
         for (size_t i = 0; i < tracking_params.n; i++)
         {
-            PositionSolver::CostParameters params;
+            CostFunctions::TrackingUnit params;
 
             // Tracking mode
             params.mode = tracking_params.mode;

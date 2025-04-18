@@ -19,7 +19,7 @@ agent_positioning: [true, 'info']
 agent_tracking: [true, 'error']
 
 # Simulation nodes
-gui_manager: [true, 'error']
+gui_manager: [false, 'error']
 metrics_factory: [true, 'error']
 marker_factory: [true, 'error']
 target_state: [true, 'error']

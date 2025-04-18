@@ -124,18 +124,26 @@ namespace flychams::core
 
 						config_ptr->agent_team_id = getCellValue<std::string>(row.findCell(6));
 
-						auto altitude_constraint_str = getCellValue<std::string>(row.findCell(7));
-						auto altitude_constraint_vec = parseVector<float>(altitude_constraint_str, 2, ',');
-						if (altitude_constraint_vec.size() >= 2)
+						auto horizontal_constraint_str = getCellValue<std::string>(row.findCell(7));
+						auto horizontal_constraint_vec = parseVector<float>(horizontal_constraint_str, 2, ',');
+						if (horizontal_constraint_vec.size() >= 2)
 						{
-							config_ptr->altitude_constraint(0) = altitude_constraint_vec[0];
-							config_ptr->altitude_constraint(1) = altitude_constraint_vec[1];
+							config_ptr->horizontal_constraint(0) = horizontal_constraint_vec[0];
+							config_ptr->horizontal_constraint(1) = horizontal_constraint_vec[1];
 						}
 
-						const std::string& autopilot_str = getCellValue<std::string>(row.findCell(8));
+						auto vertical_constraint_str = getCellValue<std::string>(row.findCell(8));
+						auto vertical_constraint_vec = parseVector<float>(vertical_constraint_str, 2, ',');
+						if (vertical_constraint_vec.size() >= 2)
+						{
+							config_ptr->vertical_constraint(0) = vertical_constraint_vec[0];
+							config_ptr->vertical_constraint(1) = vertical_constraint_vec[1];
+						}
+
+						const std::string& autopilot_str = getCellValue<std::string>(row.findCell(9));
 						config_ptr->autopilot = autopilotFromString(autopilot_str);
 
-						auto start_date_str = getCellValue<std::string>(row.findCell(9));
+						auto start_date_str = getCellValue<std::string>(row.findCell(10));
 						auto start_date_vec = parseVector<int>(start_date_str, 3, '/');
 						if (start_date_vec.size() >= 3)
 						{
@@ -144,7 +152,7 @@ namespace flychams::core
 							config_ptr->start_date.day = start_date_vec[0];
 						}
 
-						auto start_hour_str = getCellValue<std::string>(row.findCell(10));
+						auto start_hour_str = getCellValue<std::string>(row.findCell(11));
 						auto start_hour_vec = parseVector<int>(start_hour_str, 3, ':');
 						if (start_hour_vec.size() >= 3)
 						{

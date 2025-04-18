@@ -298,7 +298,8 @@ namespace flychams::core
         ID environment_id;
         ID target_group_id;
         ID agent_team_id;
-        Vector2r altitude_constraint;
+        Vector2r horizontal_constraint;
+        Vector2r vertical_constraint;
         Autopilot autopilot;
         DateTime start_date;
         HourTime start_hour;
