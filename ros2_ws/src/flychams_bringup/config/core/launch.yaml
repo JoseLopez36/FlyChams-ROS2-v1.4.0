@@ -15,11 +15,11 @@ cluster_analysis: [true, 'error']
 # Coordination nodes
 agent_assignment: [true, 'error']
 agent_analysis: [true, 'error']
-agent_positioning: [true, 'info']
+agent_positioning: [true, 'error']
 agent_tracking: [true, 'error']
 
 # Simulation nodes
-gui_manager: [false, 'error']
+gui_manager: [true, 'error']
 metrics_factory: [true, 'error']
 marker_factory: [true, 'error']
 target_state: [true, 'error']
