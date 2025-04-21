@@ -114,21 +114,17 @@ namespace flychams::coordination
         // prev_rpy: Previous orientation in RPY format (rad)
         // is_first_update: Whether it is the first update
 
-        // Transform target to camera frame
-        const Vector3r cPt = R.transpose() * (z - x);
+        Vector3r rpy = Vector3r::Zero(); // roll, pitch, yaw
 
         // Determine aiming mode
         const AimingMode mode = is_first_update ? AimingMode::INITIAL : AimingMode::CONTINUOUS;
 
-        // Compute tracking angles
-        Vector3r rpy = Vector3r::Zero(); // roll, pitch, yaw
-        // If it is the first iteration, we don't have a previous reference angle to establish
-        // aiming mode CONTINUOUS (continuity in movement). We opt for mode INITIAL (non-inverted image).
-        // Normalize target direction vector
-        Vector3r dir = cPt.normalized();
+        // Compute direction vector
+        const Vector3r t = z - x;
+        const Vector3r v = t.normalized();
 
         // Handle vertical downward case
-        if (1.0f - std::abs(dir.z()) < 1e-6f)
+        if (1.0f - std::abs(v.z()) < 1e-6f)
         {
             // In CONTINUOUS mode, take the previous yaw
             rpy(2) = (mode == AimingMode::CONTINUOUS) ? prev_rpy(2) : 0.0f;
@@ -136,36 +132,42 @@ namespace flychams::coordination
         }
 
         // Calculate base solutions
-        const auto [yaw1, pitch1] = calculateCameraBaseSolution(dir);
-        const auto [yaw2, pitch2] = calculateCameraInvertedSolution(dir);
+        const auto [yaw1, pitch1] = calculateCameraBaseSolution(v);
+        const auto [yaw2, pitch2] = calculateCameraInvertedSolution(v);
 
         // Select solution based on mode
+        // If it is the first iteration, we don't have a previous reference angle to establish
+        // aiming mode CONTINUOUS (continuity in movement). We opt for mode INITIAL (non-inverted image).
+        // Normalize target direction vector
         switch (mode)
         {
         case AimingMode::INITIAL:
             return Vector3r(0.0f, pitch1, yaw1);
 
         case AimingMode::CONTINUOUS:
+        {
             return calculateCameraContinuousSolution(yaw1, pitch1, yaw2, pitch2, prev_rpy);
+        }
 
         default:
             throw std::invalid_argument("Invalid aiming mode");
         }
     }
 
-    std::pair<float, float> TrackingSolver::calculateCameraBaseSolution(const Vector3r& dir)
+    std::pair<float, float> TrackingSolver::calculateCameraBaseSolution(const Vector3r& v)
     {
         return {
-            std::atan2(dir.y(), dir.x()),           // Yaw (Z-axis rotation)
-            std::acos(dir.z())                      // Pitch (Y-axis rotation)
+            std::atan2(v.y(), v.x()),     // Yaw (Z-axis rotation)
+            -std::asin(v.z())             // Pitch (Y-axis rotation)
         };
     }
 
-    std::pair<float, float> TrackingSolver::calculateCameraInvertedSolution(const Vector3r& dir)
+    std::pair<float, float> TrackingSolver::calculateCameraInvertedSolution(const Vector3r& v)
     {
+        const auto& base = calculateCameraBaseSolution(v);
         return {
-            std::atan2(-dir.y(), -dir.x()),         // Inverted yaw
-            -std::acos(dir.z())                     // Negative pitch
+            base.first + M_PIf,
+            M_PIf - base.second      
         };
     }
 

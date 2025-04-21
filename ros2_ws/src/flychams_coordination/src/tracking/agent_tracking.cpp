@@ -175,7 +175,10 @@ namespace flychams::coordination
             // Get the transform between world and head optical frame
             const std::string& optical_frame = transform_tools_->getCameraOpticalFrame(agent_id_, head_params.id);
             const TransformMsg& world_to_optical = transform_tools_->getTransform(world_frame, optical_frame);
-            const Matrix4r& T = RosUtils::fromMsg(world_to_optical);
+            Matrix4r T = RosUtils::fromMsg(world_to_optical);
+
+            // We use world rotation
+            T.block<3, 3>(0, 0) = Matrix3r::Identity();
 
             // Solve tracking for this head
             const auto& [focal, rpy, s_proj_pix] = solvers_[i].runCamera(z, r, T, head_params);
