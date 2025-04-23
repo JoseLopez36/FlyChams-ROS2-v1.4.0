@@ -2,16 +2,19 @@
   ros__parameters:
     # Agent assignment parameters
     agent_assignment:
-      assignment_rate: 1.0    # (Hz)
-      mode: 0                 # 0: greedy, 1: suboptimal
+      assignment_rate: 1.0                # (Hz)
+      solver_mode: 0                      # 0: SUBOPTIMAL_COMBINATORIAL
+      observation_weight: 1.0             # Observation weight
+      distance_weight: 10.0               # Distance weight
+      switch_weight: 5000.0               # Switch weight
 
     # Agent analysis parameters
     agent_analysis:
-      analysis_rate: 20.0       # (Hz)
+      analysis_rate: 20.0                 # (Hz)
       
     # Agent positioning parameters
     agent_positioning:
-      positioning_rate: 10.0 # (Hz)
+      positioning_rate: 10.0              # (Hz)
       # Solver parameters
       solver_mode: 1                      # 0: NELDER_MEAD, 1: ELLIPSOID_METHOD
       eps: 1.0e-1                         # Threshold difference between solutions of successive iterations to terminate the algorithm
@@ -20,4 +23,4 @@
 
     # Agent tracking parameters
     agent_tracking:
-      tracking_rate: 20.0 # (Hz)
+      tracking_rate: 20.0                 # (Hz)

@@ -14,15 +14,32 @@ namespace flychams::coordination
         // Get update rate
         update_rate_ = RosUtils::getParameterOr<float>(node_, "agent_assignment.update_rate", 1.0f);
         // Get assignment mode
-        assignment_mode_ = static_cast<AssignmentSolver::AssignmentMode>(RosUtils::getParameterOr<int>(node_, "agent_assignment.mode", 0));
+        AssignmentSolver::SolverMode assignment_solver_mode = static_cast<AssignmentSolver::SolverMode>(RosUtils::getParameterOr<uint8_t>(node_, "agent_assignment.solver_mode", 0));
+        // Get assignment parameters
+        float observation_weight = RosUtils::getParameterOr<float>(node_, "agent_assignment.observation_weight", 1.0f);
+        float distance_weight = RosUtils::getParameterOr<float>(node_, "agent_assignment.distance_weight", 10.0f);
+        float switch_weight = RosUtils::getParameterOr<float>(node_, "agent_assignment.switch_weight", 5000.0f);
+        // Get position solver parameters
+        position_solver_mode_ = static_cast<PositionSolver::SolverMode>(RosUtils::getParameterOr<uint8_t>(node_, "agent_positioning.solver_mode", 0));
+        eps_ = RosUtils::getParameterOr<float>(node_, "agent_positioning.eps", 1.0e-1f);
+        convergence_tolerance_ = RosUtils::getParameterOr<float>(node_, "agent_positioning.convergence_tolerance", 1.0e-5f);
+        max_iterations_ = RosUtils::getParameterOr<int>(node_, "agent_positioning.max_iterations", 100);
 
         // Initialize data
-        clusters_.clear();
         agents_.clear();
+        A.clear();
+        clusters_.clear();
+        T.clear();
+        X_prev_.resize(0);
 
-        // Initialize solver
-        solver_.reset();
-        solver_.setMode(assignment_mode_);
+        // Create and initialize assignment solver
+        // Note: Position solvers will be created when adding agents
+        solver_ = std::make_shared<AssignmentSolver>();
+        AssignmentSolver::Parameters solver_params;
+        solver_params.observation_weight = observation_weight;
+        solver_params.distance_weight = distance_weight;
+        solver_params.switch_weight = switch_weight;
+        solver_->init(assignment_solver_mode, solver_params);
 
         // Set update timer
         update_timer_ = RosUtils::createTimer(node_, update_rate_,
@@ -31,9 +48,11 @@ namespace flychams::coordination
 
     void AgentAssignment::onShutdown()
     {
-        // Destroy clusters and agents
-        clusters_.clear();
+        // Destroy assignment solver
+        solver_->destroy();
+        // Destroy agents and clusters
         agents_.clear();
+        clusters_.clear();        
         // Destroy update timer
         update_timer_.reset();
     }
@@ -46,9 +65,14 @@ namespace flychams::coordination
     {
         // Create and add agent
         agents_.insert({ agent_id, Agent() });
+        A.insert(agent_id); // Add agent to ordered set
 
-        // Get assignment count
-        agents_[agent_id].max_assignments = config_tools_->getTrackingParameters(agent_id).n;
+        // Create and initialize position solver
+        createPositionSolver(agents_[agent_id].position_solver, agent_id);
+
+        // Add tracking units to previous assignments
+        X_prev_.resize(X_prev_.size() + agents_[agent_id].position_solver->getParams().cost_params.n);
+        X_prev_.setConstant(-1);
 
         // Create agent status subscriber
         agents_[agent_id].status_sub = topic_tools_->createAgentStatusSubscriber(agent_id,
@@ -63,18 +87,23 @@ namespace flychams::coordination
             {
                 this->agentPositionCallback(agent_id, msg);
             }, sub_options_with_module_cb_group_);
+
+        // Create agent assignment publisher
+        agents_[agent_id].assignment_pub = topic_tools_->createAgentAssignmentPublisher(agent_id);
     }
 
     void AgentAssignment::removeAgent(const ID& agent_id)
     {
         // Remove agent from map
         agents_.erase(agent_id);
+        A.erase(agent_id); // Remove agent from ordered set
     }
 
     void AgentAssignment::addCluster(const ID& cluster_id)
     {
         // Create and add cluster
         clusters_.insert({ cluster_id, Cluster() });
+        T.insert(cluster_id); // Add cluster to ordered set
 
         // Create cluster geometry subscriber
         clusters_[cluster_id].geometry_sub = topic_tools_->createClusterGeometrySubscriber(cluster_id,
@@ -82,15 +111,13 @@ namespace flychams::coordination
             {
                 this->clusterGeometryCallback(cluster_id, msg);
             }, sub_options_with_module_cb_group_);
-
-        // Create cluster assignment publisher
-        clusters_[cluster_id].assignment_pub = topic_tools_->createClusterAssignmentPublisher(cluster_id);
     }
 
     void AgentAssignment::removeCluster(const ID& cluster_id)
     {
         // Remove cluster from map
         clusters_.erase(cluster_id);
+        T.erase(cluster_id); // Remove cluster from ordered set
     }
 
     // ════════════════════════════════════════════════════════════════════════════
@@ -151,46 +178,208 @@ namespace flychams::coordination
             }
         }
 
-        // Create points map
-        AssignmentSolver::Clusters clusters;
-        for (const auto& [cluster_id, cluster] : clusters_)
+        // Get vectors of agent and cluster data with ordered data
+        // It is important that the data is ordered according to the ordered sets A and T,
+        // since the assignment solver assumes that the data follows the same order always.
+        // Agents
+        int n_agents = static_cast<int>(A.size());
+        Matrix3Xr tab_x(3, n_agents);
+        std::vector<PositionSolver::SharedPtr> solvers(n_agents);
+        int k = 0;
+        for (const auto& agent_id : A)
         {
-            clusters.insert({ cluster_id, {RosUtils::fromMsg(cluster.center), cluster.radius} });
+            const auto& agent = agents_[agent_id];
+            tab_x.col(k) = RosUtils::fromMsg(agent.position);
+            solvers[k] = agent.position_solver;
+            k++;
         }
-        AssignmentSolver::Agents agents;
-        for (const auto& [agent_id, agent] : agents_)
+        // Clusters
+        int n_clusters = static_cast<int>(T.size());
+        Matrix3Xr tab_P(3, n_clusters);
+        RowVectorXr tab_r(n_clusters);
+        int i = 0;
+        for (const auto& cluster_id : T)
         {
-            agents.insert({ agent_id, {RosUtils::fromMsg(agent.position), agent.max_assignments} });
+            const auto& cluster = clusters_[cluster_id];
+            tab_P.col(i) = RosUtils::fromMsg(cluster.center);
+            tab_r(i) = cluster.radius;
+            i++;
         }
 
-        // Perform agent assignment based on assignment mode
-        AssignmentSolver::Assignments assignments;
-        switch (assignment_mode_)
+        // Perform agent assignment
+        RCLCPP_INFO(node_->get_logger(), "Agent assignment: Performing agent assignment...");
+        RowVectorXi X = solver_->run(tab_x, tab_P, tab_r, X_prev_, solvers);
+        RCLCPP_INFO(node_->get_logger(), "Agent assignment: Assignment done");
+
+        // Update previous assignment
+        X_prev_ = X;
+
+        // Create and publish an assignment message for each agent
+        k = 0;
+        int t = 0;
+        for (const auto& agent_id : A)
         {
-        case AssignmentSolver::AssignmentMode::GREEDY:
-        {
-            assignments = solver_.runGreedy(clusters, agents);
-            break;
-        }
+            // Create message
+            AgentAssignmentMsg msg;
+            msg.header.stamp = node_->get_clock()->now();
 
-        default:
-            RCLCPP_ERROR(node_->get_logger(), "Agent assignment: Invalid assignment mode");
-            return;
-        }
+            // Get assignment following the order
+            int n = solvers[k]->getParams().cost_params.n;
+            for (int i = 0; i < n; i++)
+            {
+                const int& cluster_index = X(t);
+                const std::string cluster_id = *std::next(T.begin(), cluster_index);
+                msg.cluster_ids.push_back(cluster_id);
+                t++;
+            }
 
-        // Publish assignments
-        for (const auto& [cluster_id, agent_id] : assignments)
-        {
-            // Create assignment message
-            StringMsg assignment_msg;
-            assignment_msg.data = agent_id;
-
-            // Publish assignment
-            clusters_[cluster_id].assignment_pub->publish(assignment_msg);
-
+            // Publish
+            agents_[agent_id].assignment_pub->publish(msg);
+            
             // Log assignment
-            RCLCPP_INFO(node_->get_logger(), "Agent assignment: Cluster %s assigned to agent %s", cluster_id.c_str(), agent_id.c_str());
+            RCLCPP_INFO(node_->get_logger(), "Agent assignment: Agent %s assigned to %d clusters", agent_id.c_str(), n);
+            for (int i = 0; i < n; i++)
+            {
+                RCLCPP_INFO(node_->get_logger(), "Agent assignment:     - Cluster %s", msg.cluster_ids[i].c_str());
+            }
+
+            k++;
         }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════════
+    // UTILITY METHODS
+    // ════════════════════════════════════════════════════════════════════════════
+
+    void AgentAssignment::createPositionSolver(PositionSolver::SharedPtr& solver, const ID& agent_id)
+    {
+        // Get positioning parameters
+        const auto& config_ptr = config_tools_->getConfig();
+        const auto& agent_ptr = config_tools_->getAgent(agent_id);
+        const auto& tracking_params = config_tools_->getTrackingParameters(agent_id);
+        float min_horizontal = config_ptr->horizontal_constraint(0);
+        float max_horizontal = config_ptr->horizontal_constraint(1);
+        float min_vertical = config_ptr->vertical_constraint(0);
+        float max_vertical = std::min(config_ptr->vertical_constraint(1), agent_ptr->max_altitude);
+
+        // Calculate space constraints
+        Vector3r x_min = Vector3r(min_horizontal, min_horizontal, min_vertical);
+        Vector3r x_max = Vector3r(max_horizontal, max_horizontal, max_vertical);
+
+        // Create cost parameters for each tracking unit
+        CostFunctions::Parameters cost_params;
+        cost_params.n = tracking_params.n;
+        cost_params.central = centralUnitParameters(tracking_params);
+        cost_params.tracking = trackingUnitParameters(tracking_params);
+
+        // Create and initialize position solver
+        solver = std::make_shared<PositionSolver>();
+        PositionSolver::Parameters solver_params;
+        solver_params.cost_params = cost_params;
+        solver_params.x_min = x_min;
+        solver_params.x_max = x_max;
+        solver_params.eps = eps_;
+        solver_params.tol = convergence_tolerance_;
+        solver_params.max_iter = max_iterations_;
+        solver->init(position_solver_mode_, solver_params);
+    }
+
+    CostFunctions::TrackingUnit AgentAssignment::centralUnitParameters(const TrackingParameters& tracking_params)
+    {
+        CostFunctions::TrackingUnit params;
+
+        // Tracking mode
+        params.mode = tracking_params.mode;
+
+        // Camera parameters
+        if (params.mode == TrackingMode::MultiCamera)
+        {
+            params.f_min = tracking_params.central_head_params.f_min;
+            params.f_max = tracking_params.central_head_params.f_max;
+            params.f_ref = tracking_params.central_head_params.f_ref;
+            params.s_min = tracking_params.central_head_params.s_min;
+            params.s_max = tracking_params.central_head_params.s_max;
+            params.s_ref = tracking_params.central_head_params.s_ref;
+        }
+
+        // Window parameters
+        if (params.mode == TrackingMode::MultiWindow)
+        {
+            params.central_f = tracking_params.central_head_params.f_ref;
+            params.lambda_min = tracking_params.central_window_params.lambda_min;
+            params.lambda_max = tracking_params.central_window_params.lambda_max;
+            params.lambda_ref = tracking_params.central_window_params.lambda_ref;
+            params.s_min = tracking_params.central_window_params.s_min;
+            params.s_max = tracking_params.central_window_params.s_max;
+            params.s_ref = tracking_params.central_window_params.s_ref;
+        }
+
+        // Cost function weights
+        // Psi
+        params.tau0 = 1.0f;
+        params.tau1 = 2.0f;
+        params.tau2 = 10.0f;
+        // Lambda
+        params.sigma0 = 1.0f;
+        params.sigma1 = 2.0f;
+        params.sigma2 = 10.0f;
+        // Gamma
+        params.mu = 1.0f;
+        params.nu = 1.0f;
+
+        return params;
+    }
+
+    std::vector<CostFunctions::TrackingUnit> AgentAssignment::trackingUnitParameters(const TrackingParameters& tracking_params)
+    {
+        std::vector<CostFunctions::TrackingUnit> params_vector;
+        for (size_t i = 0; i < tracking_params.n; i++)
+        {
+            CostFunctions::TrackingUnit params;
+
+            // Tracking mode
+            params.mode = tracking_params.mode;
+
+            // Camera parameters
+            if (params.mode == TrackingMode::MultiCamera)
+            {
+                params.f_min = tracking_params.tracking_head_params[i].f_min;
+                params.f_max = tracking_params.tracking_head_params[i].f_max;
+                params.f_ref = tracking_params.tracking_head_params[i].f_ref;
+                params.s_min = tracking_params.tracking_head_params[i].s_min;
+                params.s_max = tracking_params.tracking_head_params[i].s_max;
+                params.s_ref = tracking_params.tracking_head_params[i].s_ref;
+            }
+
+            // Window parameters
+            if (params.mode == TrackingMode::MultiWindow)
+            {
+                params.central_f = tracking_params.central_head_params.f_ref;
+                params.lambda_min = tracking_params.tracking_window_params[i].lambda_min;
+                params.lambda_max = tracking_params.tracking_window_params[i].lambda_max;
+                params.lambda_ref = tracking_params.tracking_window_params[i].lambda_ref;
+                params.s_min = tracking_params.tracking_window_params[i].s_min;
+                params.s_max = tracking_params.tracking_window_params[i].s_max;
+                params.s_ref = tracking_params.tracking_window_params[i].s_ref;
+            }
+
+            // Cost function weights
+            // Psi
+            params.tau0 = 1.0f;
+            params.tau1 = 2.0f;
+            params.tau2 = 10.0f;
+            // Lambda
+            params.sigma0 = 1.0f;
+            params.sigma1 = 2.0f;
+            params.sigma2 = 10.0f;
+            // Gamma
+            params.mu = 1.0f;
+            params.nu = 1.0f;
+
+            params_vector.push_back(params);
+        }
+
+        return params_vector;
     }
 
 } // namespace flychams::coordination

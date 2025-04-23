@@ -22,6 +22,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/GlobalMetrics.msg"
   # Agent messages
   "msg/AgentStatus.msg"
+  "msg/AgentAssignment.msg"
   "msg/AgentClusters.msg"
   "msg/AgentHeadSetpoints.msg"
   "msg/AgentWindowSetpoints.msg"

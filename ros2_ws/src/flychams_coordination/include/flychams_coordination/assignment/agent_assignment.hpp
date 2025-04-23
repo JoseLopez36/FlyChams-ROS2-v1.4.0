@@ -45,11 +45,9 @@ namespace flychams::coordination
             bool has_geometry;
             // Subscriber
             core::SubscriberPtr<core::ClusterGeometryMsg> geometry_sub;
-            // Publisher
-            core::PublisherPtr<core::StringMsg> assignment_pub;
             // Constructor
             Cluster()
-                : center(), radius(), has_geometry(false), geometry_sub(), assignment_pub()
+                : center(), radius(), has_geometry(false), geometry_sub()
             {
             }
         };
@@ -58,33 +56,50 @@ namespace flychams::coordination
             // Status data
             core::AgentStatus status;
             bool has_status;
-            // Maximum assignments
-            int max_assignments;
             // Position data
             core::PointMsg position;
             bool has_position;
             // Subscribers
             core::SubscriberPtr<core::AgentStatusMsg> status_sub;
             core::SubscriberPtr<core::PointStampedMsg> position_sub;
+            // Publisher
+            core::PublisherPtr<core::AgentAssignmentMsg> assignment_pub;
+            // Position solver
+            PositionSolver::SharedPtr position_solver;
             // Constructor
             Agent()
-                : status(), has_status(false), max_assignments(0), position(), has_position(false), status_sub(), position_sub()
+                : status(), has_status(false), position(), has_position(false), status_sub(), position_sub(), assignment_pub(), position_solver()
             {
+            }
+            // Destructor
+            ~Agent()
+            {
+                if (position_solver)
+                {
+                    position_solver->destroy();
+                }
             }
         };
 
     private: // Parameters
         float update_rate_;
-        // Assignment mode
-        AssignmentSolver::AssignmentMode assignment_mode_;
+        // Position solver parameters
+        PositionSolver::SolverMode position_solver_mode_;
+        float eps_;
+        float convergence_tolerance_;
+        int max_iterations_;
 
     private: // Data
-        // Clusters
-        std::unordered_map<core::ID, Cluster> clusters_;
         // Agents
         std::unordered_map<core::ID, Agent> agents_;
+        std::set<core::ID> A;
+        // Clusters
+        std::unordered_map<core::ID, Cluster> clusters_;
+        std::set<core::ID> T;
+        // Assignment data
+        core::RowVectorXi X_prev_;
         // Assignment solver
-        AssignmentSolver solver_;
+        AssignmentSolver::SharedPtr solver_;
 
     public: // Public methods
         void addAgent(const core::ID& agent_id);
@@ -99,6 +114,11 @@ namespace flychams::coordination
 
     private: // Assignment management
         void update();
+
+    private: // Utility methods
+        void createPositionSolver(PositionSolver::SharedPtr& solver, const core::ID& agent_id);
+        CostFunctions::TrackingUnit centralUnitParameters(const core::TrackingParameters& tracking_params);
+        std::vector<CostFunctions::TrackingUnit> trackingUnitParameters(const core::TrackingParameters& tracking_params);
 
     private: // ROS components
         // Timer

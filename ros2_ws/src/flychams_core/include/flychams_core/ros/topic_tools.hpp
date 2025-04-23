@@ -32,6 +32,7 @@ namespace flychams::core
             // Get agent topics
             agent_topics_.status_pattern = topic_config.agent_status;
             agent_topics_.position_pattern = topic_config.agent_position;
+            agent_topics_.assignment_pattern = topic_config.agent_assignment;
             agent_topics_.clusters_pattern = topic_config.agent_clusters;
             agent_topics_.position_setpoint_pattern = topic_config.agent_position_setpoint;
             agent_topics_.head_setpoints_pattern = topic_config.agent_head_setpoints;
@@ -48,7 +49,6 @@ namespace flychams::core
 
             // Get cluster topics
             cluster_topics_.geometry_pattern = topic_config.cluster_geometry;
-            cluster_topics_.assignment_pattern = topic_config.cluster_assignment;
             cluster_topics_.metrics_pattern = topic_config.cluster_metrics;
             cluster_topics_.markers_pattern = topic_config.cluster_markers;
         }
@@ -79,6 +79,7 @@ namespace flychams::core
         {
             std::string status_pattern;
             std::string position_pattern;
+            std::string assignment_pattern;
             std::string clusters_pattern;
             std::string position_setpoint_pattern;
             std::string head_setpoints_pattern;
@@ -99,7 +100,6 @@ namespace flychams::core
         struct ClusterTopics
         {
             std::string geometry_pattern;
-            std::string assignment_pattern;
             std::string metrics_pattern;
             std::string markers_pattern;
         };
@@ -136,6 +136,10 @@ namespace flychams::core
         std::string getAgentPositionTopic(const ID& agent_id)
         {
             return RosUtils::replace(agent_topics_.position_pattern, "AGENTID", agent_id);
+        }
+        std::string getAgentAssignmentTopic(const ID& agent_id)
+        {
+            return RosUtils::replace(agent_topics_.assignment_pattern, "AGENTID", agent_id);
         }
         std::string getAgentClustersTopic(const ID& agent_id)
         {
@@ -189,10 +193,6 @@ namespace flychams::core
         {
             return RosUtils::replace(cluster_topics_.geometry_pattern, "CLUSTERID", cluster_id);
         }
-        std::string getClusterAssignmentTopic(const ID& cluster_id)
-        {
-            return RosUtils::replace(cluster_topics_.assignment_pattern, "CLUSTERID", cluster_id);
-        }
         std::string getClusterMetricsTopic(const ID& cluster_id)
         {
             return RosUtils::replace(cluster_topics_.metrics_pattern, "CLUSTERID", cluster_id);
@@ -224,6 +224,11 @@ namespace flychams::core
         PublisherPtr<PointStampedMsg> createAgentPositionPublisher(const ID& agent_id)
         {
             return node_->create_publisher<PointStampedMsg>(getAgentPositionTopic(agent_id), 10);
+        }
+        PublisherPtr<AgentAssignmentMsg> createAgentAssignmentPublisher(const ID& agent_id)
+        {
+            rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
+            return node_->create_publisher<AgentAssignmentMsg>(getAgentAssignmentTopic(agent_id), qos);
         }
         PublisherPtr<AgentClustersMsg> createAgentClustersPublisher(const ID& agent_id)
         {
@@ -278,11 +283,6 @@ namespace flychams::core
         {
             return node_->create_publisher<ClusterGeometryMsg>(getClusterGeometryTopic(cluster_id), 10);
         }
-        PublisherPtr<StringMsg> createClusterAssignmentPublisher(const ID& cluster_id)
-        {
-            rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
-            return node_->create_publisher<StringMsg>(getClusterAssignmentTopic(cluster_id), qos);
-        }
         PublisherPtr<ClusterMetricsMsg> createClusterMetricsPublisher(const ID& cluster_id)
         {
             return node_->create_publisher<ClusterMetricsMsg>(getClusterMetricsTopic(cluster_id), 10);
@@ -313,6 +313,11 @@ namespace flychams::core
         SubscriberPtr<PointStampedMsg> createAgentPositionSubscriber(const ID& agent_id, const std::function<void(const PointStampedMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
             return node_->create_subscription<PointStampedMsg>(getAgentPositionTopic(agent_id), 10, callback, options);
+        }
+        SubscriberPtr<AgentAssignmentMsg> createAgentAssignmentSubscriber(const ID& agent_id, const std::function<void(const AgentAssignmentMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
+        {
+            rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
+            return node_->create_subscription<AgentAssignmentMsg>(getAgentAssignmentTopic(agent_id), qos, callback, options);
         }
         SubscriberPtr<AgentClustersMsg> createAgentClustersSubscriber(const ID& agent_id, const std::function<void(const AgentClustersMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
@@ -366,11 +371,6 @@ namespace flychams::core
         SubscriberPtr<ClusterGeometryMsg> createClusterGeometrySubscriber(const ID& cluster_id, const std::function<void(const ClusterGeometryMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
             return node_->create_subscription<ClusterGeometryMsg>(getClusterGeometryTopic(cluster_id), 10, callback, options);
-        }
-        SubscriberPtr<StringMsg> createClusterAssignmentSubscriber(const ID& cluster_id, const std::function<void(const StringMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
-        {
-            rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
-            return node_->create_subscription<StringMsg>(getClusterAssignmentTopic(cluster_id), qos, callback, options);
         }
         SubscriberPtr<ClusterMetricsMsg> createClusterMetricsSubscriber(const ID& cluster_id, const std::function<void(const ClusterMetricsMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {

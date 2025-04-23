@@ -8,90 +8,61 @@ namespace flychams::coordination
     // PUBLIC METHODS: Public methods for configuration and control
     // ════════════════════════════════════════════════════════════════════════════
 
-    void AssignmentSolver::reset()
+    void AssignmentSolver::init(const SolverMode& mode, const Parameters& params)
     {
-        // Nothing to do
-    }
-
-    void AssignmentSolver::setMode(const AssignmentMode& mode)
-    {
+        // Set mode
         mode_ = mode;
-    }
 
-    AssignmentSolver::Assignments AssignmentSolver::runGreedy(const Clusters& C, const Agents& A)
-    {
-        // Initialize empty assignment
-        Assignments assignments;
-
-        // If no clusters, return empty assignment
-        if (C.empty())
+        // Initialize the solver algorithms
+        switch (mode_)
         {
-            return assignments;
-        }
-
-        // Create a list of unassigned clusters
-        Clusters U;
-        for (const auto& Cj : C)
-        {
-            U.insert(Cj);
-        }
-
-        // Create a map to track how many clusters are assigned to each agent
-        std::unordered_map<core::ID, int> n;
-        for (const auto& [Ai_id, _] : A)
-        {
-            n[Ai_id] = 0;
-        }
-
-        // Assign clusters to agents greedily based on distance
-        while (!U.empty())
-        {
-            float min_dist = HUGE_VALF;
-            core::ID best_A_id = "";
-            core::ID best_U_id = "";
-
-            // Find the best agent-cluster pair based on distance
-            for (const auto& [Uj_id, Uj] : U)
+            case SolverMode::SUBOPTIMAL_COMBINATORIAL:
             {
-                for (const auto& [Ai_id, Ai] : A)
-                {
-                    // Skip if agent has reached maximum assignments
-                    if (n[Ai_id] >= Ai.second)
-                        continue;
+                // Get Suboptimal Combinatorial parameters
+                SuboptimalCombinatorial::Parameters suboptimal_combinatorial_params;
+                suboptimal_combinatorial_params.observation_weight = params.observation_weight;
+                suboptimal_combinatorial_params.distance_weight = params.distance_weight;
+                suboptimal_combinatorial_params.switch_weight = params.switch_weight;
 
-                    // Calculate distance
-                    float dist = (Ai.first - Uj.first).norm();
-
-                    // Update best assignment if this is better
-                    if (dist < min_dist)
-                    {
-                        min_dist = dist;
-                        best_A_id = Ai_id;
-                        best_U_id = Uj_id;
-                    }
-                }
-            }
-
-            // If we found a valid assignment
-            if (min_dist < HUGE_VALF)
-            {
-                // Add to assignments
-                assignments[best_U_id] = best_A_id;
-
-                // Increment agent assignment count
-                n[best_A_id]++;
-
-                // Remove the assigned cluster from unassigned list
-                U.erase(best_U_id);
-            }
-            else
-            {
-                // No valid assignment found for remaining clusters
+                // Initialize the Suboptimal Combinatorial solver with the parameters
+                suboptimal_combinatorial_.init(suboptimal_combinatorial_params);
                 break;
             }
-        }
 
-        return assignments;
+            default:
+                throw std::invalid_argument("Invalid solver mode");
+        }
+    }
+
+    void AssignmentSolver::destroy()
+    {
+        // Destroy the solver algorithms
+        switch (mode_)
+        {
+            case SolverMode::SUBOPTIMAL_COMBINATORIAL:
+            {
+                suboptimal_combinatorial_.destroy();
+                break;
+            }
+
+            default:
+                throw std::invalid_argument("Invalid solver mode");
+        }
+    }
+
+    core::RowVectorXi AssignmentSolver::run(const core::Matrix3Xr& tab_x, const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const core::RowVectorXi& X_prev, std::vector<PositionSolver::SharedPtr>& solvers)
+    {
+        // Run the assignment based on the mode
+        switch (mode_)
+        {
+            case SolverMode::SUBOPTIMAL_COMBINATORIAL:
+            {
+                return suboptimal_combinatorial_.run(tab_x, tab_P, tab_r, X_prev, solvers);
+            }
+
+            default:
+                throw std::invalid_argument("Invalid solver mode");
+        }
     }
 
 } // namespace flychams::coordination

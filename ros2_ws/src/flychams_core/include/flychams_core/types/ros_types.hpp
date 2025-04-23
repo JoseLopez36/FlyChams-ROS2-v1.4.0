@@ -42,6 +42,7 @@
 #include "flychams_interfaces/msg/global_metrics.hpp"
 // Agent messages
 #include "flychams_interfaces/msg/agent_status.hpp"
+#include "flychams_interfaces/msg/agent_assignment.hpp"
 #include "flychams_interfaces/msg/agent_clusters.hpp"
 #include "flychams_interfaces/msg/agent_head_setpoints.hpp"
 #include "flychams_interfaces/msg/agent_window_setpoints.hpp"
@@ -144,6 +145,7 @@ namespace flychams::core
     using GlobalMetricsMsg = flychams_interfaces::msg::GlobalMetrics;
     // Agent messages
     using AgentStatusMsg = flychams_interfaces::msg::AgentStatus;
+    using AgentAssignmentMsg = flychams_interfaces::msg::AgentAssignment;
     using AgentClustersMsg = flychams_interfaces::msg::AgentClusters;
     using AgentHeadSetpointsMsg = flychams_interfaces::msg::AgentHeadSetpoints;
     using AgentWindowSetpointsMsg = flychams_interfaces::msg::AgentWindowSetpoints;

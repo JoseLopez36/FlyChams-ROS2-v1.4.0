@@ -38,15 +38,11 @@ namespace flychams::coordination
             core::PointMsg center;
             float radius;
             bool has_geometry;
-            // Assignment data
-            core::ID assignment;
-            bool has_assignment;
             // Subscribers
             core::SubscriberPtr<core::ClusterGeometryMsg> geometry_sub;
-            core::SubscriberPtr<core::StringMsg> assignment_sub;
             // Constructor
             Cluster()
-                : center(), radius(), has_geometry(false), assignment(), has_assignment(false), geometry_sub(), assignment_sub()
+                : center(), radius(), has_geometry(false), geometry_sub()
             {
             }
         };
@@ -55,15 +51,17 @@ namespace flychams::coordination
             // Status data
             core::AgentStatus status;
             bool has_status;
-            // Clusters message
-            core::AgentClustersMsg clusters;
+            // Assignment data
+            std::vector<core::ID> assignment;
+            bool has_assignment;
             // Subscriber
             core::SubscriberPtr<core::AgentStatusMsg> status_sub;
+            core::SubscriberPtr<core::AgentAssignmentMsg> assignment_sub;
             // Publisher
             core::PublisherPtr<core::AgentClustersMsg> clusters_pub;
             // Constructor
             Agent()
-                : status(), has_status(false), status_sub(), clusters_pub()
+                : status(), has_status(false), assignment(), has_assignment(false), status_sub(), assignment_sub(), clusters_pub()
             {
             }
         };
@@ -85,14 +83,11 @@ namespace flychams::coordination
 
     private: // Callbacks
         void clusterGeometryCallback(const core::ID& cluster_id, const core::ClusterGeometryMsg::SharedPtr msg);
-        void clusterAssignmentCallback(const core::ID& cluster_id, const core::StringMsg::SharedPtr msg);
         void agentStatusCallback(const core::ID& agent_id, const core::AgentStatusMsg::SharedPtr msg);
+        void agentAssignmentCallback(const core::ID& agent_id, const core::AgentAssignmentMsg::SharedPtr msg);
 
     private: // Analysis management
         void update();
-
-    private: // Implementation
-        std::vector<core::ID> ensureOrder(const std::vector<core::ID>& previous_clusters, const std::unordered_set<core::ID>& new_clusters);
 
     private: // ROS components
         // Timer

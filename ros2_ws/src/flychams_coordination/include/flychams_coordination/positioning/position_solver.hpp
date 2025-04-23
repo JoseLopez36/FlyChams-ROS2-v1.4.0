@@ -55,6 +55,7 @@ namespace flychams::coordination
 
     private: // Parameters
         SolverMode mode_;
+        Parameters params_;
 
     private: // Data
         // Solver algorithms
@@ -65,6 +66,8 @@ namespace flychams::coordination
         // Configuration
         void init(const SolverMode& mode, const Parameters& params);
         void destroy();
+        // Getters
+        const Parameters& getParams() const { return params_; }
         // Optimization
         core::Vector3r run(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const core::Vector3r& x0, float& J);
     };

@@ -542,6 +542,7 @@ namespace flychams::core
             // Agent topics
             config_ptr->topics.agent_status = RosUtils::getParameter<std::string>(node_, "agent_topics.status");
             config_ptr->topics.agent_position = RosUtils::getParameter<std::string>(node_, "agent_topics.position");
+            config_ptr->topics.agent_assignment = RosUtils::getParameter<std::string>(node_, "agent_topics.assignment");
             config_ptr->topics.agent_clusters = RosUtils::getParameter<std::string>(node_, "agent_topics.clusters");
             config_ptr->topics.agent_position_setpoint = RosUtils::getParameter<std::string>(node_, "agent_topics.position_setpoint");
             config_ptr->topics.agent_head_setpoints = RosUtils::getParameter<std::string>(node_, "agent_topics.head_setpoints");
@@ -558,7 +559,6 @@ namespace flychams::core
 
             // Cluster topics
             config_ptr->topics.cluster_geometry = RosUtils::getParameter<std::string>(node_, "cluster_topics.geometry");
-            config_ptr->topics.cluster_assignment = RosUtils::getParameter<std::string>(node_, "cluster_topics.assignment");
             config_ptr->topics.cluster_metrics = RosUtils::getParameter<std::string>(node_, "cluster_topics.metrics");
             config_ptr->topics.cluster_markers = RosUtils::getParameter<std::string>(node_, "cluster_topics.markers");
         }

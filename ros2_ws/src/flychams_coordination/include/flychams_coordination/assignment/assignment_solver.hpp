@@ -1,8 +1,13 @@
 #pragma once
 
+// Position solver
+#include "flychams_coordination/positioning/position_solver.hpp"
+
+// Solver algorithms
+#include "flychams_coordination/assignment/suboptimal_combinatorial.hpp"
+
 // Utilities
 #include "flychams_core/types/core_types.hpp"
-#include "flychams_core/utils/math_utils.hpp"
 
 namespace flychams::coordination
 {
@@ -13,41 +18,45 @@ namespace flychams::coordination
      * @details
      * This class implements different algorithms for solving the
      * cluster-agent assignment problem. It supports multiple assignment
-     * modes including greedy coordination and sub-optimal coordination,
+     * modes such as sub-optimal combinatorial assignment,
      * with configurable parameters for optimization.
      *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
      * @date 2025-01-31
      * ════════════════════════════════════════════════════════════════
-     * Assignment coordination modes:
-     * - GreedyCoordination: Assigns clusters to agents based on distance
-     * - SubOptimalCoordination: Advanced coordination algorithm (TODO)
-     * ════════════════════════════════════════════════════════════════
      */
     class AssignmentSolver
     {
     public: // Types
+        using SharedPtr = std::shared_ptr<AssignmentSolver>;
         // Modes
-        enum class AssignmentMode
+        enum class SolverMode
         {
-            GREEDY,     // Distance-based greedy assignment. Default
-            SUBOPTIMAL  // Advanced coordination (TODO)
+            SUBOPTIMAL_COMBINATORIAL
         };
-        // Data
-        using Agents = std::unordered_map<core::ID, std::pair<core::Vector3r, int>>;        // Agent ID -> (Position, Max assignments)
-        using Clusters = std::unordered_map<core::ID, std::pair<core::Vector3r, float>>;    // Cluster ID -> (Center, Radius)
-        using Assignments = std::unordered_map<core::ID, core::ID>; 	                    // Agent ID -> Cluster ID
+        // Parameters
+        struct Parameters
+        {
+            // Optimization weights
+            float observation_weight;
+            float distance_weight;
+            float switch_weight;
+        };
 
     private: // Parameters
-        AssignmentMode mode_;
+        SolverMode mode_;
+
+    private: // Data
+        // Solver algorithms
+        SuboptimalCombinatorial suboptimal_combinatorial_;
 
     public: // Public methods
         // Configuration
-        void reset();
-        void setMode(const AssignmentMode& mode);
-        // Control
-        Assignments runGreedy(const Clusters& C, const Agents& A);
+        void init(const SolverMode& mode, const Parameters& params);
+        void destroy();
+        // Optimization
+        core::RowVectorXi run(const core::Matrix3Xr& tab_x, const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const core::RowVectorXi& X_prev, std::vector<PositionSolver::SharedPtr>& solvers);
     };
 
 } // namespace flychams::coordination

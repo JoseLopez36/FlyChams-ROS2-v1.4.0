@@ -124,7 +124,7 @@ namespace flychams::coordination
 
         // Convert messages to Eigen types
         Vector3r x = RosUtils::fromMsg(agent_.position);
-        int n = static_cast<int>(agent_.clusters.cluster_ids.size());
+        int n = static_cast<int>(agent_.clusters.centers.size());
         Matrix3Xr tab_P = Matrix3Xr::Zero(3, n);
         RowVectorXr tab_r = RowVectorXr::Zero(n);
         for (size_t i = 0; i < n; i++)

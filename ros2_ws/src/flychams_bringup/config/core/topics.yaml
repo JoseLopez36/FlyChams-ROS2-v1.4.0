@@ -8,6 +8,7 @@
     agent_topics:
       status: "control/AGENTID/status"                              # AgentStatus.msg (custom)
       position: "control/AGENTID/position"                          # PointStamped.msg
+      assignment: "coordination/AGENTID/assignment"                 # AgentAssignment.msg (custom)
       clusters: "coordination/AGENTID/clusters"                     # AgentClusters.msg (custom)
       position_setpoint: "coordination/AGENTID/setpoint/position"   # PointStamped.msg
       head_setpoints: "coordination/AGENTID/setpoint/head"          # AgentHeadSetpoints.msg (custom)
@@ -24,6 +25,5 @@
     # Cluster topics
     cluster_topics:
       geometry: "perception/CLUSTERID/geometry"                     # ClusterGeometry.msg (custom)
-      assignment: "coordination/CLUSTERID/assignment"               # String.msg
       metrics: "dashboard/CLUSTERID/metrics"                        # ClusterMetrics.msg (custom)
       markers: "dashboard/CLUSTERID/markers"                        # MarkerArray.msg

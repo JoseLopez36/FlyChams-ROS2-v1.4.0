@@ -73,6 +73,7 @@ namespace flychams::core
         // Agent topics
         std::string agent_status;
         std::string agent_position;
+        std::string agent_assignment;
         std::string agent_clusters;
         std::string agent_position_setpoint;
         std::string agent_head_setpoints;
@@ -89,7 +90,6 @@ namespace flychams::core
 
         // Cluster topics
         std::string cluster_geometry;
-        std::string cluster_assignment;
         std::string cluster_metrics;
         std::string cluster_markers;
     };

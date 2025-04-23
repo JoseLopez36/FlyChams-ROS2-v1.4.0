@@ -13,6 +13,9 @@ namespace flychams::coordination
         // Set mode
         mode_ = mode;
 
+        // Store parameters
+        params_ = params;
+
         // Initialize the solver algorithms
         switch (mode_)
         {
