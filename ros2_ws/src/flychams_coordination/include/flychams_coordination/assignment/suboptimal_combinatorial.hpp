@@ -72,36 +72,34 @@ namespace flychams::coordination
             const core::RowVectorXi& X_prev, std::vector<PositionSolver::SharedPtr>& solvers)
         {
             // Get number of agents and tracking units
-            int n_agents = static_cast<int>(tab_x.cols());
-            core::RowVectorXi n_tracking_units = core::RowVectorXi::Zero(n_agents);
-            for (int k = 0; k < n_agents; k++)
+            int m = tab_x.cols();
+            core::RowVectorXi nk = core::RowVectorXi::Zero(m);
+            for (int k = 0; k < m; k++)
             {
-                n_tracking_units(k) = solvers[k]->getParams().cost_params.n;
+                nk(k) = solvers[k]->n();
             }
 
             // Create agent vector
-            std::vector<Agent> A(n_agents);
-            int offset = 0;
-            for (int k = 0; k < n_agents; k++)
+            std::vector<Agent> A(m);
+            int t = 0;
+            for (int k = 0; k < m; k++)
             {
-                int nk = n_tracking_units(k);
-
                 A[k].k = k;
                 A[k].x = tab_x.col(k);
-                A[k].X.resize(nk);
-                for (int u = 0; u < nk; u++)
+                A[k].X.resize(nk(k));
+                for (int u = 0; u < nk(k); u++)
                 {
-                    A[k].X(u) = X_prev(offset);
-                    offset++;
+                    A[k].X(u) = X_prev(t);
+                    t++;
                 }
                 A[k].J_hist = core::VectorXr::Zero(0);
-                A[k].X_hist = core::MatrixXi::Zero(0, nk);
+                A[k].X_hist = core::MatrixXi::Zero(0, nk(k));
             }
             
             // Create cluster vector
-            int n_clusters = static_cast<int>(tab_P.cols());
-            std::vector<Cluster> T(n_clusters);
-            for (int i = 0; i < n_clusters; i++)
+            int n = tab_P.cols();
+            std::vector<Cluster> T(n);
+            for (int i = 0; i < n; i++)
             {
                 T[i].i = i;
                 T[i].C = tab_P.col(i);
@@ -111,7 +109,7 @@ namespace flychams::coordination
             // Compute minimum global cost using recursive function
             float J = 0.0f, J_min = HUGE_VALF;
             core::RowVectorXi X = core::RowVectorXi::Zero(0), X_min = core::RowVectorXi::Zero(0);
-            globalCost(A, T, J, X, J_min, X_min, n_tracking_units, solvers);
+            globalCost(A, T, J, X, J_min, X_min, nk, solvers);
 
             // Return assignment vector
             return X_min;
@@ -121,19 +119,22 @@ namespace flychams::coordination
         void globalCost(std::vector<Agent>& A, const std::vector<Cluster>& T, 
             const float& J, const core::RowVectorXi& X,
             float& J_min, core::RowVectorXi& X_min, 
-            const core::RowVectorXi& n, std::vector<PositionSolver::SharedPtr>& solvers)
+            const core::RowVectorXi& nk, std::vector<PositionSolver::SharedPtr>& solvers)
         {
             std::cout << "---------------> Global cost: " << J << std::endl;
+
+            // Get number of agents and clusters
+            int m = static_cast<int>(A.size());
+            int n = static_cast<int>(T.size());
             
-            // If there are no remaining drones, it is understood that we are at the end of a branch,
+            // If there are no remaining agents, it is understood that we are at the end of a branch,
             // so the cost is considered as a final cost. We check if J is lower than the minimum found so far,
             // in which case we update the value.
-            if (A.empty())
+            if (m == 0)
             {
                 if (J < J_min)
                 {
                     J_min = J;
-                    X_min.resize(X.size());
                     X_min = X;
                     std::cout << "New minimum cost found: " << J_min << std::endl;
                     std::cout << "New minimum assignment: " << X_min << std::endl;
@@ -143,23 +144,20 @@ namespace flychams::coordination
             }
 
             // Iterate through all agents
-            for (int a = 0; a < static_cast<int>(A.size()); a++)
+            for (int a = 0; a < m; a++)
             {
                 // Get current agent
                 auto& Ak = A[a];
                 int k = Ak.k;
 
-                // Get number of tracking units for this agent
-                int nk = n(k);
-                
                 // Calculate all possible permutations with available clusters
-                core::RowVectorXi T_array(T.size());
-                for (int i = 0; i < T.size(); i++)
+                core::RowVectorXi T_array(n);
+                for (int i = 0; i < n; i++)
                 {
                     T_array(i) = T[i].i;
                 }
-                std::cout << "Calculating permutations for: " << T_array << " taking " << nk << " clusters" << std::endl;
-                const core::MatrixXi P = calculatePermutations(T_array, nk);
+                std::cout << "Calculating permutations for: " << T_array << " taking " << nk(k) << " clusters" << std::endl;
+                const core::MatrixXi P = calculatePermutations(T_array, nk(k));
                 int n_perms = P.rows();
                 std::cout << "Calculated " << n_perms << " permutations:" << std::endl;
                 std::cout << P << std::endl;
@@ -168,8 +166,8 @@ namespace flychams::coordination
                 for (int p = 0; p < n_perms; p++)
                 {
                     // Get current permutation
-                    std::vector<Cluster> Tk(nk);
-                    for (int t = 0; t < nk; t++)
+                    std::vector<Cluster> Tk(nk(k));
+                    for (int t = 0; t < nk(k); t++)
                     {
                         // Find the cluster in T that matches the current permutation
                         for (const auto& Ti : T)
@@ -186,7 +184,7 @@ namespace flychams::coordination
                     float Jk;
                     core::RowVectorXi Xk;
                     std::cout << "Calculating agent cost for agent " << k << std::endl;
-                    agentCost(Ak, Tk, Jk, Xk, nk, solvers[k]);
+                    agentCost(Ak, Tk, Jk, Xk, nk(k), solvers[k]);
                     std::cout << "Agent cost: " << Jk << std::endl;
                     std::cout << "Agent assignment: " << Xk << std::endl;
                                        
@@ -213,7 +211,7 @@ namespace flychams::coordination
                         {
                             // Check if Tin.i is not in Xk
                             bool is_assigned = false;
-                            for (int j = 0; j < nk; j++)
+                            for (int j = 0; j < nk(k); j++)
                             {
                                 if (Tin.i == Xk(j))
                                 {
@@ -232,23 +230,22 @@ namespace flychams::coordination
                         core::RowVectorXi Xn;
                         if (X.size() > 0)
                         {
-                            Xn.resize(X.size() + nk);
+                            Xn.resize(X.size() + nk(k));
                             Xn.head(X.size()) = X;
-                            Xn.tail(nk) = Xk;
+                            Xn.tail(nk(k)) = Xk;
                         }
                         else
                         {
-                            Xn.resize(nk);
                             Xn = Xk;
                         }
                         
                         // Recursive call to continue branch exploration
-                        globalCost(An, Tn, J + Jk, Xn, J_min, X_min, n, solvers);
+                        globalCost(An, Tn, J + Jk, Xn, J_min, X_min, nk, solvers);
                     }
                 }
             }
 
-            // The process is finished, we print a separator
+            // The process is finished
             std::cout << "----------------" << std::endl;
         }
 
@@ -257,9 +254,6 @@ namespace flychams::coordination
             const int& nk,
             PositionSolver::SharedPtr solver)
         {
-            // Prepare output
-            Xk.resize(nk);
-
             // Check if solver is valid
             if (!solver)
             {
@@ -276,8 +270,8 @@ namespace flychams::coordination
             const core::RowVectorXi& X_prev = Ak.X;
 
             // Get target array
-            core::RowVectorXi Tk_array(Tk.size());
-            for (int i = 0; i < Tk.size(); i++)
+            core::RowVectorXi Tk_array(nk);
+            for (int i = 0; i < nk; i++)
             {
                 Tk_array(i) = Tk[i].i;
             }
@@ -306,7 +300,6 @@ namespace flychams::coordination
                     {
                         calculated = true;
                         J_calculated = Ak.J_hist(row);
-                        X_calculated.resize(nk);
                         X_calculated = Ak.X_hist.row(row);
                         break;
                     }
@@ -373,8 +366,6 @@ namespace flychams::coordination
                 J_hist_new(n_hist) = Jk;
                 
                 // Replace old with new
-                Ak.X_hist.resize(X_hist_new.rows(), X_hist_new.cols());
-                Ak.J_hist.resize(J_hist_new.size());
                 Ak.X_hist = X_hist_new;
                 Ak.J_hist = J_hist_new;
             }

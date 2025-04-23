@@ -71,7 +71,7 @@ namespace flychams::coordination
         createPositionSolver(agents_[agent_id].position_solver, agent_id);
 
         // Add tracking units to previous assignments
-        X_prev_.resize(X_prev_.size() + agents_[agent_id].position_solver->getParams().cost_params.n);
+        X_prev_.resize(X_prev_.size() + agents_[agent_id].position_solver->n());
         X_prev_.setConstant(-1);
 
         // Create agent status subscriber
@@ -209,7 +209,6 @@ namespace flychams::coordination
         // Perform agent assignment
         RCLCPP_INFO(node_->get_logger(), "Agent assignment: Performing agent assignment...");
         RowVectorXi X = solver_->run(tab_x, tab_P, tab_r, X_prev_, solvers);
-        RCLCPP_INFO(node_->get_logger(), "Agent assignment: Assignment done");
 
         // Update previous assignment
         X_prev_ = X;
@@ -224,7 +223,7 @@ namespace flychams::coordination
             msg.header.stamp = node_->get_clock()->now();
 
             // Get assignment following the order
-            int n = solvers[k]->getParams().cost_params.n;
+            int n = solvers[k]->n();
             for (int i = 0; i < n; i++)
             {
                 const int& cluster_index = X(t);
