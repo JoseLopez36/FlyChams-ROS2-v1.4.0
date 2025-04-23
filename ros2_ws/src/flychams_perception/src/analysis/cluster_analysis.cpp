@@ -18,8 +18,8 @@ namespace flychams::perception
 		margin_circle_radius_ = RosUtils::getParameterOr<float>(node_, "cluster_analysis.margin_circle_radius", 0.05f);
 
 		// Initialize data
-		targets_.clear();
 		clusters_.clear();
+		targets_.clear();
 
 		// Set update timer
 		update_timer_ = RosUtils::createTimer(node_, update_rate_,
@@ -28,9 +28,9 @@ namespace flychams::perception
 
 	void ClusterAnalysis::onShutdown()
 	{
-		// Destroy target and cluster maps
-		targets_.clear();
+		// Destroy clusters and targets
 		clusters_.clear();
+		targets_.clear();
 		// Destroy update timer
 		update_timer_.reset();
 	}
@@ -43,6 +43,13 @@ namespace flychams::perception
 	{
 		// Create and add cluster
 		clusters_.insert({ cluster_id, Cluster() });
+
+		// Create cluster assignment subscriber
+		clusters_[cluster_id].assignment_sub = topic_tools_->createClusterAssignmentSubscriber(cluster_id,
+			[this, cluster_id](const ClusterAssignmentMsg::SharedPtr msg)
+			{
+				this->clusterAssignmentCallback(cluster_id, msg);
+			}, sub_options_with_module_cb_group_);
 
 		// Create cluster geometry publisher
 		clusters_[cluster_id].geometry_pub = topic_tools_->createClusterGeometryPublisher(cluster_id);
@@ -58,13 +65,6 @@ namespace flychams::perception
 	{
 		// Create and add target
 		targets_.insert({ target_id, Target() });
-
-		// Create target assignment subscriber
-		targets_[target_id].assignment_sub = topic_tools_->createTargetAssignmentSubscriber(target_id,
-			[this, target_id](const StringMsg::SharedPtr msg)
-			{
-				this->targetAssignmentCallback(target_id, msg);
-			}, sub_options_with_module_cb_group_);
 
 		// Create target true position subscriber
 		targets_[target_id].position_sub = topic_tools_->createTargetTruePositionSubscriber(target_id,
@@ -84,11 +84,11 @@ namespace flychams::perception
 	// CALLBACKS: Callback functions
 	// ════════════════════════════════════════════════════════════════════════════
 
-	void ClusterAnalysis::targetAssignmentCallback(const core::ID& target_id, const core::StringMsg::SharedPtr msg)
+	void ClusterAnalysis::clusterAssignmentCallback(const core::ID& cluster_id, const core::ClusterAssignmentMsg::SharedPtr msg)
 	{
-		// Update target assignment
-		targets_[target_id].assigned_id = msg->data;
-		targets_[target_id].has_assignment = true;
+		// Update cluster assignment
+		clusters_[cluster_id].assignment = msg->target_ids;
+		clusters_[cluster_id].has_assignment = true;
 	}
 
 	void ClusterAnalysis::targetPositionCallback(const core::ID& target_id, const core::PointStampedMsg::SharedPtr msg)
@@ -104,32 +104,49 @@ namespace flychams::perception
 
 	void ClusterAnalysis::update()
 	{
-		// Check if we have a valid target assignments and positions
+		// Check if we have a valid assignment and position for each target and cluster
+        for (const auto& [cluster_id, cluster] : clusters_)
+        {
+            if (!cluster.has_assignment)
+            {
+                RCLCPP_WARN(node_->get_logger(), "Cluster analysis: Cluster %s has no assignment", cluster_id.c_str());
+                return; // Skip updating if we don't have a valid cluster assignment
+            }
+        }
 		for (const auto& [target_id, target] : targets_)
 		{
-			if (!target.has_assignment || !target.has_position)
+			if (!target.has_position)
 			{
-				RCLCPP_WARN(node_->get_logger(), "Cluster analysis: Target %s has no assignment or position", target_id.c_str());
-				return; // Skip analysis if we don't have a valid target assignment and position
+				RCLCPP_WARN(node_->get_logger(), "Cluster analysis: Target %s has no position", target_id.c_str());
+				return; // Skip analysis if we don't have a valid target position
 			}
 		}
 
-		// Iterate over all clusters
+		// Compute cluster geometry and publish
 		for (auto& [cluster_id, cluster] : clusters_)
 		{
-			// Assign targets to each cluster
-			const auto& points = assignCluster(cluster_id, targets_);
+            // Iterate over the assignment and get the points
+            int n = static_cast<int>(cluster.assignment.size());
+			Matrix3Xr tab_P(3, n);
+            for (int i = 0; i < n; i++)
+            {
+                const auto& target = targets_[cluster.assignment[i]];
+                tab_P.col(i) = RosUtils::fromMsg(target.position);
+            }
 
 			// Calculate enclosing circle (minimum enclosing circle with enforced limits)
-			const auto& [center, radius] = calculateEnclosingCircle(points, min_circle_radius_, margin_circle_radius_);
+			const auto& [center, radius] = calculateEnclosingCircle(tab_P, min_circle_radius_, margin_circle_radius_);
 
-			// Update cluster geometry
-			cluster.geometry.center.x = center.x();
-			cluster.geometry.center.y = center.y();
-			cluster.geometry.radius = radius;
+			// Create geometry message with calculated center and radius
+            ClusterGeometryMsg msg;
+            msg.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
+			msg.center.x = center.x();
+			msg.center.y = center.y();
+			msg.center.z = 0.0f;
+			msg.radius = radius;
 
 			// Publish cluster geometry
-			cluster.geometry_pub->publish(cluster.geometry);
+			cluster.geometry_pub->publish(msg);
 		}
 	}
 
@@ -137,37 +154,23 @@ namespace flychams::perception
 	// ANALYSIS: Analysis methods
 	// ════════════════════════════════════════════════════════════════════════════
 
-	std::vector<core::PointMsg> ClusterAnalysis::assignCluster(const core::ID& cluster_id, const std::unordered_map<core::ID, Target>& targets)
+	std::pair<core::Vector2r, float> ClusterAnalysis::calculateEnclosingCircle(const core::Matrix3Xr& tab_P, const float& min_radius, const float& margin_radius)
 	{
-		std::vector<core::PointMsg> points;
-		for (const auto& [target_id, target] : targets)
-		{
-			if (target.assigned_id == cluster_id)
-			{
-				points.push_back(target.position);
-			}
-		}
-
-		return points;
-	}
-
-	std::pair<core::Vector2r, float> ClusterAnalysis::calculateEnclosingCircle(const std::vector<core::PointMsg>& points, const float& min_radius, const float& margin_radius)
-	{
-		// Get target count
-		int n = static_cast<int>(points.size());
+		// Get number of points
+		int n = tab_P.cols();
 
 		// Handle edge cases
 		if (n == 0)
 			return { {0.0f, 0.0f}, min_radius + margin_radius };
 		if (n == 1)
-			return { {points[0].x, points[0].y}, min_radius + margin_radius };
+			return { {tab_P(0, 0), tab_P(1, 0)}, min_radius + margin_radius };
 
 		// Minimal enclosing circle (Welzl's algorithm)
 		std::vector<WelzlsCircle::Point2D> points_welzl;
 		points_welzl.reserve(n);
 		for (int i = 0; i < n; i++)
 		{
-			points_welzl.push_back({ static_cast<float>(points[i].x), static_cast<float>(points[i].y) });
+			points_welzl.push_back({ tab_P(0, i), tab_P(1, i) });
 		}
 		WelzlsCircle::Circle mec = WelzlsCircle::welzl(points_welzl);
 

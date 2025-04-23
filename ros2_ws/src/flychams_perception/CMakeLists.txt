@@ -15,7 +15,6 @@ find_package(flychams_core REQUIRED)
 set(PERCEPTION_SRC
   src/clustering/target_clustering.cpp
   src/analysis/cluster_analysis.cpp
-  src/clustering/k_means_mod.cpp
   external/hungarian-algorithm-cpp/Hungarian.cpp
 )
 add_library(${PROJECT_NAME} SHARED ${PERCEPTION_SRC})

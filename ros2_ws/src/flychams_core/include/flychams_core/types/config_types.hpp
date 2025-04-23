@@ -84,11 +84,11 @@ namespace flychams::core
         // Target topics
         std::string target_true_position;
         std::string target_est_position;
-        std::string target_assignment;
         std::string target_metrics;
         std::string target_markers;
 
         // Cluster topics
+        std::string cluster_assignment;
         std::string cluster_geometry;
         std::string cluster_metrics;
         std::string cluster_markers;

@@ -37,20 +37,6 @@ namespace flychams::coordination
 
     public: // Types
         using SharedPtr = std::shared_ptr<AgentAssignment>;
-        struct Cluster
-        {
-            // Geometric data
-            core::PointMsg center;
-            float radius;
-            bool has_geometry;
-            // Subscriber
-            core::SubscriberPtr<core::ClusterGeometryMsg> geometry_sub;
-            // Constructor
-            Cluster()
-                : center(), radius(), has_geometry(false), geometry_sub()
-            {
-            }
-        };
         struct Agent
         {
             // Status data
@@ -80,6 +66,20 @@ namespace flychams::coordination
                 }
             }
         };
+        struct Cluster
+        {
+            // Geometric data
+            core::PointMsg center;
+            float radius;
+            bool has_geometry;
+            // Subscriber
+            core::SubscriberPtr<core::ClusterGeometryMsg> geometry_sub;
+            // Constructor
+            Cluster()
+                : center(), radius(), has_geometry(false), geometry_sub()
+            {
+            }
+        };
 
     private: // Parameters
         float update_rate_;
@@ -92,10 +92,10 @@ namespace flychams::coordination
     private: // Data
         // Agents
         std::unordered_map<core::ID, Agent> agents_;
-        std::set<core::ID> A;
+        std::set<core::ID> A_;
         // Clusters
         std::unordered_map<core::ID, Cluster> clusters_;
-        std::set<core::ID> T;
+        std::set<core::ID> T_;
         // Assignment data
         core::RowVectorXi X_prev_;
         // Assignment solver

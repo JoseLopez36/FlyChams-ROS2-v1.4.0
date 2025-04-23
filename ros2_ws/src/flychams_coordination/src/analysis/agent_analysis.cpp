@@ -15,8 +15,8 @@ namespace flychams::coordination
         update_rate_ = RosUtils::getParameterOr<float>(node_, "agent_analysis.analysis_rate", 20.0f);
 
         // Initialize data
-        clusters_.clear();
         agents_.clear();
+        clusters_.clear();
 
         // Set update timer
         update_timer_ = RosUtils::createTimer(node_, update_rate_,
@@ -25,9 +25,9 @@ namespace flychams::coordination
 
     void AgentAnalysis::onShutdown()
     {
-        // Destroy clusters and agents
-        clusters_.clear();
+        // Destroy agents and clusters
         agents_.clear();
+        clusters_.clear();
         // Destroy update timer
         update_timer_.reset();
     }
@@ -88,14 +88,6 @@ namespace flychams::coordination
     // CALLBACKS: Callback functions
     // ════════════════════════════════════════════════════════════════════════════
 
-    void AgentAnalysis::clusterGeometryCallback(const ID& cluster_id, const ClusterGeometryMsg::SharedPtr msg)
-    {
-        // Update cluster geometry
-        clusters_[cluster_id].center = msg->center;
-        clusters_[cluster_id].radius = msg->radius;
-        clusters_[cluster_id].has_geometry = true;
-    }
-
     void AgentAnalysis::agentStatusCallback(const ID& agent_id, const AgentStatusMsg::SharedPtr msg)
     {
         // Update agent status
@@ -108,6 +100,14 @@ namespace flychams::coordination
         // Update agent assignment
         agents_[agent_id].assignment = msg->cluster_ids;
         agents_[agent_id].has_assignment = true;
+    }
+
+    void AgentAnalysis::clusterGeometryCallback(const ID& cluster_id, const ClusterGeometryMsg::SharedPtr msg)
+    {
+        // Update cluster geometry
+        clusters_[cluster_id].center = msg->center;
+        clusters_[cluster_id].radius = msg->radius;
+        clusters_[cluster_id].has_geometry = true;
     }
 
     // ════════════════════════════════════════════════════════════════════════════

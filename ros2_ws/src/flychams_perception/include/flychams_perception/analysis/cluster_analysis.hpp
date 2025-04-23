@@ -37,46 +37,46 @@ namespace flychams::perception
 
 	public: // Types
 		using SharedPtr = std::shared_ptr<ClusterAnalysis>;
-		struct Target
-		{
-			// Assignment data
-			core::ID assigned_id;
-			bool has_assignment;
-			// Position data
-			core::PointMsg position;
-			bool has_position;
-			// Subscribers
-			core::SubscriberPtr<core::StringMsg> assignment_sub;
-			core::SubscriberPtr<core::PointStampedMsg> position_sub;
-			// Constructor
-			Target()
-				: assigned_id(), has_assignment(false), position(), has_position(false), assignment_sub(), position_sub()
-			{
-			}
-		};
 		struct Cluster
 		{
-			// Geometry data
-			core::ClusterGeometryMsg geometry;
+			// Assignment data
+			std::vector<core::ID> assignment;
+			bool has_assignment;
+			// Subscriber
+			core::SubscriberPtr<core::ClusterAssignmentMsg> assignment_sub;
 			// Publisher
 			core::PublisherPtr<core::ClusterGeometryMsg> geometry_pub;
 			// Constructor
 			Cluster()
-				: geometry(), geometry_pub()
+				: assignment(), has_assignment(false), assignment_sub(), geometry_pub()
+			{
+			}
+		};
+		struct Target
+		{
+			// Position data
+			core::PointMsg position;
+			bool has_position;
+			// Subscriber
+			core::SubscriberPtr<core::PointStampedMsg> position_sub;
+			// Constructor
+			Target()
+				: position(), has_position(false), position_sub()
 			{
 			}
 		};
 
 	private: // Parameters
 		float update_rate_;
+		// Enclosing circle parameters
 		float min_circle_radius_;
 		float margin_circle_radius_;
 
 	private: // Data
-		// Targets
-		std::unordered_map<core::ID, Target> targets_;
 		// Clusters
 		std::unordered_map<core::ID, Cluster> clusters_;
+		// Targets
+		std::unordered_map<core::ID, Target> targets_;
 
 	public: // Public methods
 		void addCluster(const core::ID& cluster_id);
@@ -85,15 +85,14 @@ namespace flychams::perception
 		void removeTarget(const core::ID& target_id);
 
 	private: // Callbacks
-		void targetAssignmentCallback(const core::ID& target_id, const core::StringMsg::SharedPtr msg);
+		void clusterAssignmentCallback(const core::ID& cluster_id, const core::ClusterAssignmentMsg::SharedPtr msg);
 		void targetPositionCallback(const core::ID& target_id, const core::PointStampedMsg::SharedPtr msg);
 
 	private: // Analysis management
 		void update();
 
 	private: // Analysis methods
-		std::vector<core::PointMsg> assignCluster(const core::ID& cluster_id, const std::unordered_map<core::ID, Target>& targets);
-		std::pair<core::Vector2r, float> calculateEnclosingCircle(const std::vector<core::PointMsg>& points, const float& min_radius, const float& margin_radius);
+		std::pair<core::Vector2r, float> calculateEnclosingCircle(const core::Matrix3Xr& tab_P, const float& min_radius, const float& margin_radius);
 
 	private: // ROS components
 		// Timer

@@ -43,11 +43,11 @@ namespace flychams::core
             // Get target topics
             target_topics_.true_position_pattern = topic_config.target_true_position;
             target_topics_.est_position_pattern = topic_config.target_est_position;
-            target_topics_.assignment_pattern = topic_config.target_assignment;
             target_topics_.metrics_pattern = topic_config.target_metrics;
             target_topics_.markers_pattern = topic_config.target_markers;
 
             // Get cluster topics
+            cluster_topics_.assignment_pattern = topic_config.cluster_assignment;
             cluster_topics_.geometry_pattern = topic_config.cluster_geometry;
             cluster_topics_.metrics_pattern = topic_config.cluster_metrics;
             cluster_topics_.markers_pattern = topic_config.cluster_markers;
@@ -92,13 +92,13 @@ namespace flychams::core
         {
             std::string true_position_pattern;
             std::string est_position_pattern;
-            std::string assignment_pattern;
             std::string metrics_pattern;
             std::string markers_pattern;
         };
         // Cluster topics
         struct ClusterTopics
         {
+            std::string assignment_pattern;
             std::string geometry_pattern;
             std::string metrics_pattern;
             std::string markers_pattern;
@@ -175,10 +175,6 @@ namespace flychams::core
         {
             return RosUtils::replace(target_topics_.est_position_pattern, "TARGETID", target_id);
         }
-        std::string getTargetAssignmentTopic(const ID& target_id)
-        {
-            return RosUtils::replace(target_topics_.assignment_pattern, "TARGETID", target_id);
-        }
         std::string getTargetMetricsTopic(const ID& target_id)
         {
             return RosUtils::replace(target_topics_.metrics_pattern, "TARGETID", target_id);
@@ -189,6 +185,10 @@ namespace flychams::core
         }
 
         // Cluster topics
+        std::string getClusterAssignmentTopic(const ID& cluster_id)
+        {
+            return RosUtils::replace(cluster_topics_.assignment_pattern, "CLUSTERID", cluster_id);
+        }
         std::string getClusterGeometryTopic(const ID& cluster_id)
         {
             return RosUtils::replace(cluster_topics_.geometry_pattern, "CLUSTERID", cluster_id);
@@ -264,11 +264,6 @@ namespace flychams::core
         {
             return node_->create_publisher<PointStampedMsg>(getTargetEstPositionTopic(target_id), 10);
         }
-        PublisherPtr<StringMsg> createTargetAssignmentPublisher(const ID& target_id)
-        {
-            rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
-            return node_->create_publisher<StringMsg>(getTargetAssignmentTopic(target_id), qos);
-        }
         PublisherPtr<TargetMetricsMsg> createTargetMetricsPublisher(const ID& target_id)
         {
             return node_->create_publisher<TargetMetricsMsg>(getTargetMetricsTopic(target_id), 10);
@@ -279,6 +274,11 @@ namespace flychams::core
         }
 
         // Cluster publishers
+        PublisherPtr<ClusterAssignmentMsg> createClusterAssignmentPublisher(const ID& cluster_id)
+        {
+            rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
+            return node_->create_publisher<ClusterAssignmentMsg>(getClusterAssignmentTopic(cluster_id), qos);
+        }
         PublisherPtr<ClusterGeometryMsg> createClusterGeometryPublisher(const ID& cluster_id)
         {
             return node_->create_publisher<ClusterGeometryMsg>(getClusterGeometryTopic(cluster_id), 10);
@@ -353,11 +353,6 @@ namespace flychams::core
         {
             return node_->create_subscription<PointStampedMsg>(getTargetEstPositionTopic(target_id), 10, callback, options);
         }
-        SubscriberPtr<StringMsg> createTargetAssignmentSubscriber(const ID& target_id, const std::function<void(const StringMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
-        {
-            rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
-            return node_->create_subscription<StringMsg>(getTargetAssignmentTopic(target_id), qos, callback, options);
-        }
         SubscriberPtr<TargetMetricsMsg> createTargetMetricsSubscriber(const ID& target_id, const std::function<void(const TargetMetricsMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
             return node_->create_subscription<TargetMetricsMsg>(getTargetMetricsTopic(target_id), 10, callback, options);
@@ -368,6 +363,11 @@ namespace flychams::core
         }
 
         // Cluster subscribers
+        SubscriberPtr<ClusterAssignmentMsg> createClusterAssignmentSubscriber(const ID& cluster_id, const std::function<void(const ClusterAssignmentMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
+        {
+            rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
+            return node_->create_subscription<ClusterAssignmentMsg>(getClusterAssignmentTopic(cluster_id), qos, callback, options);
+        }
         SubscriberPtr<ClusterGeometryMsg> createClusterGeometrySubscriber(const ID& cluster_id, const std::function<void(const ClusterGeometryMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
             return node_->create_subscription<ClusterGeometryMsg>(getClusterGeometryTopic(cluster_id), 10, callback, options);

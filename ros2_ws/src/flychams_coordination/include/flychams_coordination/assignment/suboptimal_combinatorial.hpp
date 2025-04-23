@@ -121,7 +121,7 @@ namespace flychams::coordination
             float& J_min, core::RowVectorXi& X_min, 
             const core::RowVectorXi& nk, std::vector<PositionSolver::SharedPtr>& solvers)
         {
-            std::cout << "---------------> Global cost: " << J << std::endl;
+            //std::cout << "---------------> Global cost: " << J << std::endl;
 
             // Get number of agents and clusters
             int m = static_cast<int>(A.size());
@@ -136,9 +136,9 @@ namespace flychams::coordination
                 {
                     J_min = J;
                     X_min = X;
-                    std::cout << "New minimum cost found: " << J_min << std::endl;
-                    std::cout << "New minimum assignment: " << X_min << std::endl;
-                    std::cout << "----------------" << std::endl;
+                    //std::cout << "New minimum cost found: " << J_min << std::endl;
+                    //std::cout << "New minimum assignment: " << X_min << std::endl;
+                    //std::cout << "----------------" << std::endl;
                 }
                 return;
             }
@@ -156,11 +156,11 @@ namespace flychams::coordination
                 {
                     T_array(i) = T[i].i;
                 }
-                std::cout << "Calculating permutations for: " << T_array << " taking " << nk(k) << " clusters" << std::endl;
+                //std::cout << "Calculating permutations for: " << T_array << " taking " << nk(k) << " clusters" << std::endl;
                 const core::MatrixXi P = calculatePermutations(T_array, nk(k));
                 int n_perms = P.rows();
-                std::cout << "Calculated " << n_perms << " permutations:" << std::endl;
-                std::cout << P << std::endl;
+                //std::cout << "Calculated " << n_perms << " permutations:" << std::endl;
+                //std::cout << P << std::endl;
 
                 // Iterate through all permutations
                 for (int p = 0; p < n_perms; p++)
@@ -183,16 +183,16 @@ namespace flychams::coordination
                     // Calculate agent cost with current permutation
                     float Jk;
                     core::RowVectorXi Xk;
-                    std::cout << "Calculating agent cost for agent " << k << std::endl;
+                    //std::cout << "Calculating agent cost for agent " << k << std::endl;
                     agentCost(Ak, Tk, Jk, Xk, nk(k), solvers[k]);
-                    std::cout << "Agent cost: " << Jk << std::endl;
-                    std::cout << "Agent assignment: " << Xk << std::endl;
+                    //std::cout << "Agent cost: " << Jk << std::endl;
+                    //std::cout << "Agent assignment: " << Xk << std::endl;
                                        
                     // If current cost plus new cost is less than minimum found so far, continue down this branch,
                     // else, break and backtrack to avoid losing time.
                     if (J + Jk < J_min)
                     {
-                        std::cout << "Continuing down branch" << std::endl;
+                        //std::cout << "Continuing down branch" << std::endl;
 
                         // Create a copy of the agent vector without the current agent
                         std::vector<Agent> An;
@@ -246,7 +246,7 @@ namespace flychams::coordination
             }
 
             // The process is finished
-            std::cout << "----------------" << std::endl;
+            //std::cout << "----------------" << std::endl;
         }
 
         void agentCost(Agent& Ak, const std::vector<Cluster>& Tk, 

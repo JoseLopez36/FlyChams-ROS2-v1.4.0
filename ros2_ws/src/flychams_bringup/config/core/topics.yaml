@@ -19,11 +19,11 @@
     target_topics:
       true_position: "targets/TARGETID/true_position"               # PointStamped.msg
       est_position: "perception/TARGETID/est_position"              # PointStamped.msg
-      assignment: "perception/TARGETID/assignment"                  # String.msg
       metrics: "dashboard/TARGETID/metrics"                         # TargetMetrics.msg (custom)
       markers: "dashboard/TARGETID/markers"                         # MarkerArray.msg
     # Cluster topics
     cluster_topics:
+      assignment: "perception/CLUSTERID/assignment"                 # ClusterAssignment.msg (custom)
       geometry: "perception/CLUSTERID/geometry"                     # ClusterGeometry.msg (custom)
       metrics: "dashboard/CLUSTERID/metrics"                        # ClusterMetrics.msg (custom)
       markers: "dashboard/CLUSTERID/markers"                        # MarkerArray.msg

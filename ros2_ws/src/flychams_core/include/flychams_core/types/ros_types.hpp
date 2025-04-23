@@ -50,9 +50,9 @@
 // Target messages
 #include "flychams_interfaces/msg/target_metrics.hpp"
 // Cluster messages
+#include "flychams_interfaces/msg/cluster_assignment.hpp"
 #include "flychams_interfaces/msg/cluster_geometry.hpp"
 #include "flychams_interfaces/msg/cluster_metrics.hpp"
-
 
 namespace flychams::core
 {
@@ -153,6 +153,7 @@ namespace flychams::core
     // Target messages
     using TargetMetricsMsg = flychams_interfaces::msg::TargetMetrics;
     // Cluster messages
+    using ClusterAssignmentMsg = flychams_interfaces::msg::ClusterAssignment;
     using ClusterGeometryMsg = flychams_interfaces::msg::ClusterGeometry;
     using ClusterMetricsMsg = flychams_interfaces::msg::ClusterMetrics;
 

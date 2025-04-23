@@ -37,6 +37,16 @@ namespace flychams::perception
 
 	public: // Types
 		using SharedPtr = std::shared_ptr<TargetClustering>;
+		struct Cluster
+		{
+			// Publisher
+			core::PublisherPtr<core::ClusterAssignmentMsg> assignment_pub;
+			// Constructor
+			Cluster()
+				: assignment_pub()
+			{
+			}
+		};
 		struct Target
 		{
 			// Position data
@@ -44,11 +54,9 @@ namespace flychams::perception
 			bool has_position;
 			// Subscriber
 			core::SubscriberPtr<core::PointStampedMsg> position_sub;
-			// Publisher
-			core::PublisherPtr<core::StringMsg> assignment_pub;
 			// Constructor
 			Target()
-				: position(), has_position(false), position_sub(), assignment_pub()
+				: position(), has_position(false), position_sub()
 			{
 			}
 		};
@@ -59,12 +67,17 @@ namespace flychams::perception
 		float cmd_timeout_;
 
 	private: // Data
+		// Clusters
+		std::unordered_map<core::ID, Cluster> clusters_;
+		std::set<core::ID> C_;
 		// Targets
 		std::unordered_map<core::ID, Target> targets_;
-		// Clusters
-		std::unordered_set<core::ID> clusters_;
-		// K-Means clustering
-		KMeansMod k_means_;
+		std::set<core::ID> T_;
+		// K-Means clustering data
+		core::RowVectorXi assignments_prev_;
+		bool is_first_run_;
+		// K-Means clustering solver
+		KMeansMod::SharedPtr k_means_solver_;
 		// Time step
 		core::Time last_update_time_;
 

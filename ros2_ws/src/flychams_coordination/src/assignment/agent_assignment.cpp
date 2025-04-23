@@ -27,9 +27,9 @@ namespace flychams::coordination
 
         // Initialize data
         agents_.clear();
-        A.clear();
+        A_.clear();
         clusters_.clear();
-        T.clear();
+        T_.clear();
         X_prev_.resize(0);
 
         // Create and initialize assignment solver
@@ -52,7 +52,9 @@ namespace flychams::coordination
         solver_->destroy();
         // Destroy agents and clusters
         agents_.clear();
-        clusters_.clear();        
+        A_.clear();
+        clusters_.clear();
+        T_.clear();
         // Destroy update timer
         update_timer_.reset();
     }
@@ -65,7 +67,7 @@ namespace flychams::coordination
     {
         // Create and add agent
         agents_.insert({ agent_id, Agent() });
-        A.insert(agent_id); // Add agent to ordered set
+        A_.insert(agent_id); // Add agent to ordered set
 
         // Create and initialize position solver
         createPositionSolver(agents_[agent_id].position_solver, agent_id);
@@ -96,14 +98,14 @@ namespace flychams::coordination
     {
         // Remove agent from map
         agents_.erase(agent_id);
-        A.erase(agent_id); // Remove agent from ordered set
+        A_.erase(agent_id); // Remove agent from ordered set
     }
 
     void AgentAssignment::addCluster(const ID& cluster_id)
     {
         // Create and add cluster
         clusters_.insert({ cluster_id, Cluster() });
-        T.insert(cluster_id); // Add cluster to ordered set
+        T_.insert(cluster_id); // Add cluster to ordered set
 
         // Create cluster geometry subscriber
         clusters_[cluster_id].geometry_sub = topic_tools_->createClusterGeometrySubscriber(cluster_id,
@@ -117,7 +119,7 @@ namespace flychams::coordination
     {
         // Remove cluster from map
         clusters_.erase(cluster_id);
-        T.erase(cluster_id); // Remove cluster from ordered set
+        T_.erase(cluster_id); // Remove cluster from ordered set
     }
 
     // ════════════════════════════════════════════════════════════════════════════
@@ -179,14 +181,14 @@ namespace flychams::coordination
         }
 
         // Get vectors of agent and cluster data with ordered data
-        // It is important that the data is ordered according to the ordered sets A and T,
+        // It is important that the data is ordered according to the ordered sets A_ and T_,
         // since the assignment solver assumes that the data follows the same order always.
         // Agents
-        int n_agents = static_cast<int>(A.size());
+        int n_agents = static_cast<int>(A_.size());
         Matrix3Xr tab_x(3, n_agents);
         std::vector<PositionSolver::SharedPtr> solvers(n_agents);
         int k = 0;
-        for (const auto& agent_id : A)
+        for (const auto& agent_id : A_)
         {
             const auto& agent = agents_[agent_id];
             tab_x.col(k) = RosUtils::fromMsg(agent.position);
@@ -194,11 +196,11 @@ namespace flychams::coordination
             k++;
         }
         // Clusters
-        int n_clusters = static_cast<int>(T.size());
+        int n_clusters = static_cast<int>(T_.size());
         Matrix3Xr tab_P(3, n_clusters);
         RowVectorXr tab_r(n_clusters);
         int i = 0;
-        for (const auto& cluster_id : T)
+        for (const auto& cluster_id : T_)
         {
             const auto& cluster = clusters_[cluster_id];
             tab_P.col(i) = RosUtils::fromMsg(cluster.center);
@@ -216,18 +218,18 @@ namespace flychams::coordination
         // Create and publish an assignment message for each agent
         k = 0;
         int t = 0;
-        for (const auto& agent_id : A)
+        for (const auto& agent_id : A_)
         {
             // Create message
             AgentAssignmentMsg msg;
             msg.header.stamp = node_->get_clock()->now();
 
-            // Get assignment following the order
+            // Get assignment
             int n = solvers[k]->n();
             for (int i = 0; i < n; i++)
             {
                 const int& cluster_index = X(t);
-                const std::string cluster_id = *std::next(T.begin(), cluster_index);
+                const std::string cluster_id = *std::next(T_.begin(), cluster_index);
                 msg.cluster_ids.push_back(cluster_id);
                 t++;
             }

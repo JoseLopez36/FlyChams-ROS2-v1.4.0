@@ -553,11 +553,11 @@ namespace flychams::core
             // Target topics
             config_ptr->topics.target_true_position = RosUtils::getParameter<std::string>(node_, "target_topics.true_position");
             config_ptr->topics.target_est_position = RosUtils::getParameter<std::string>(node_, "target_topics.est_position");
-            config_ptr->topics.target_assignment = RosUtils::getParameter<std::string>(node_, "target_topics.assignment");
             config_ptr->topics.target_metrics = RosUtils::getParameter<std::string>(node_, "target_topics.metrics");
             config_ptr->topics.target_markers = RosUtils::getParameter<std::string>(node_, "target_topics.markers");
 
             // Cluster topics
+            config_ptr->topics.cluster_assignment = RosUtils::getParameter<std::string>(node_, "cluster_topics.assignment");
             config_ptr->topics.cluster_geometry = RosUtils::getParameter<std::string>(node_, "cluster_topics.geometry");
             config_ptr->topics.cluster_metrics = RosUtils::getParameter<std::string>(node_, "cluster_topics.metrics");
             config_ptr->topics.cluster_markers = RosUtils::getParameter<std::string>(node_, "cluster_topics.markers");

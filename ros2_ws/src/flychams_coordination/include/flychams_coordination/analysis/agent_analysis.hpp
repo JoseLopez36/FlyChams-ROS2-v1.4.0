@@ -32,20 +32,6 @@ namespace flychams::coordination
 
     public: // Types
         using SharedPtr = std::shared_ptr<AgentAnalysis>;
-        struct Cluster
-        {
-            // Geometric data
-            core::PointMsg center;
-            float radius;
-            bool has_geometry;
-            // Subscribers
-            core::SubscriberPtr<core::ClusterGeometryMsg> geometry_sub;
-            // Constructor
-            Cluster()
-                : center(), radius(), has_geometry(false), geometry_sub()
-            {
-            }
-        };
         struct Agent
         {
             // Status data
@@ -65,15 +51,29 @@ namespace flychams::coordination
             {
             }
         };
+        struct Cluster
+        {
+            // Geometric data
+            core::PointMsg center;
+            float radius;
+            bool has_geometry;
+            // Subscribers
+            core::SubscriberPtr<core::ClusterGeometryMsg> geometry_sub;
+            // Constructor
+            Cluster()
+                : center(), radius(), has_geometry(false), geometry_sub()
+            {
+            }
+        };
 
     private: // Parameters
         float update_rate_;
 
     private: // Data
-        // Clusters
-        std::unordered_map<core::ID, Cluster> clusters_;
         // Agents
         std::unordered_map<core::ID, Agent> agents_;
+        // Clusters
+        std::unordered_map<core::ID, Cluster> clusters_;
 
     public: // Public methods
         void addAgent(const core::ID& agent_id);
@@ -82,9 +82,9 @@ namespace flychams::coordination
         void removeCluster(const core::ID& cluster_id);
 
     private: // Callbacks
-        void clusterGeometryCallback(const core::ID& cluster_id, const core::ClusterGeometryMsg::SharedPtr msg);
         void agentStatusCallback(const core::ID& agent_id, const core::AgentStatusMsg::SharedPtr msg);
         void agentAssignmentCallback(const core::ID& agent_id, const core::AgentAssignmentMsg::SharedPtr msg);
+        void clusterGeometryCallback(const core::ID& cluster_id, const core::ClusterGeometryMsg::SharedPtr msg);
 
     private: // Analysis management
         void update();
