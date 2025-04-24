@@ -10,10 +10,11 @@ namespace flychams::coordination
 {
     /**
      * ════════════════════════════════════════════════════════════════
-     * @brief Solver for agent positioning using ACL-PSO algorithm
+     * @brief Solver for agent positioning using Aging Leader Challenger
+     * PSO algorithm
      *
      * @details
-     * This class implements the ACL-PSO algorithm for finding the minimum
+     * This class implements the ALC-PSO algorithm for finding the minimum
      * of a cost function. It is used to find the optimal position of the
      * agent.
      *
@@ -22,7 +23,7 @@ namespace flychams::coordination
      * @date 2025-04-24
      * ════════════════════════════════════════════════════════════════
      */
-    class ACLPSOAlgorithm
+    class ALCPSOAlgorithm
     {
     public: // Types
         // Parameters
@@ -44,7 +45,7 @@ namespace flychams::coordination
             float c2 = 1.0f;                // Social parameter
             int stagnation_limit = 5;       // Stagnation limit
 
-            // ACL-PSO parameters
+            // ALC-PSO parameters
             int max_lifespan = 60;          // Maximum lifespan of the leader particle
             int num_challenger_tests = 10;  // Number of challenger tests
         };

@@ -69,25 +69,25 @@ namespace flychams::coordination
                 break;
             }        
 
-            case SolverMode::ACL_PSO_ALGORITHM:
+            case SolverMode::ALC_PSO_ALGORITHM:
             {
-                // Get ACL-PSO Algorithm parameters
-                ACLPSOAlgorithm::Parameters acl_pso_algorithm_params;
-                acl_pso_algorithm_params.x_min = params.x_min;
-                acl_pso_algorithm_params.x_max = params.x_max;
-                acl_pso_algorithm_params.tol = params.tol;
-                acl_pso_algorithm_params.max_iter = params.max_iter;
-                acl_pso_algorithm_params.num_particles = params.num_particles;
-                acl_pso_algorithm_params.w_max = params.w_max;
-                acl_pso_algorithm_params.w_min = params.w_min;
-                acl_pso_algorithm_params.c1 = params.c1;
-                acl_pso_algorithm_params.c2 = params.c2;
-                acl_pso_algorithm_params.stagnation_limit = params.stagnation_limit;
-                acl_pso_algorithm_params.max_lifespan = params.max_lifespan;
-                acl_pso_algorithm_params.num_challenger_tests = params.num_challenger_tests;
+                // Get ALC-PSO Algorithm parameters
+                ALCPSOAlgorithm::Parameters alc_pso_algorithm_params;
+                alc_pso_algorithm_params.x_min = params.x_min;
+                alc_pso_algorithm_params.x_max = params.x_max;
+                alc_pso_algorithm_params.tol = params.tol;
+                alc_pso_algorithm_params.max_iter = params.max_iter;
+                alc_pso_algorithm_params.num_particles = params.num_particles;
+                alc_pso_algorithm_params.w_max = params.w_max;
+                alc_pso_algorithm_params.w_min = params.w_min;
+                alc_pso_algorithm_params.c1 = params.c1;
+                alc_pso_algorithm_params.c2 = params.c2;
+                alc_pso_algorithm_params.stagnation_limit = params.stagnation_limit;
+                alc_pso_algorithm_params.max_lifespan = params.max_lifespan;
+                alc_pso_algorithm_params.num_challenger_tests = params.num_challenger_tests;
 
-                // Initialize the ACL-PSO Algorithm solver with the parameters
-                acl_pso_algorithm_.init(acl_pso_algorithm_params, params.cost_params);
+                // Initialize the ALC-PSO Algorithm solver with the parameters
+                alc_pso_algorithm_.init(alc_pso_algorithm_params, params.cost_params);
                 break;
             }        
 
@@ -119,9 +119,9 @@ namespace flychams::coordination
                 break;
             }
 
-            case SolverMode::ACL_PSO_ALGORITHM:
+            case SolverMode::ALC_PSO_ALGORITHM:
             {
-                acl_pso_algorithm_.destroy();
+                alc_pso_algorithm_.destroy();
                 break;
             }
 
@@ -150,9 +150,9 @@ namespace flychams::coordination
                 return pso_algorithm_.run(tab_P, tab_r, J);
             }
 
-            case SolverMode::ACL_PSO_ALGORITHM:
+            case SolverMode::ALC_PSO_ALGORITHM:
             {
-                return acl_pso_algorithm_.run(tab_P, tab_r, J);
+                return alc_pso_algorithm_.run(tab_P, tab_r, J);
             }
 
             default:
