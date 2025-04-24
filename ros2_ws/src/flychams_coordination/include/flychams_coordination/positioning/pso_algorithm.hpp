@@ -131,8 +131,7 @@ namespace flychams::coordination
             for (int k = 0; k < params_.num_particles; k++)
             {
                 // Generate random position
-                core::Vector3r r = core::Vector3r::Random();
-                r = r.array().abs(); // Random vector with values in [0, 1]
+                core::Vector3r r = randomVector();
 
                 // Initialize particle position and best score
                 particles_[k].position = params_.x_min + ((params_.x_max - params_.x_min).array() * r.array()).matrix();
@@ -170,9 +169,8 @@ namespace flychams::coordination
                 for (int k = 0; k < params_.num_particles; k++)
                 {
                     // Generate random coefficients
-                    core::Vector2r r = core::Vector2r::Random().array().abs();
-                    float r1 = r(0);
-                    float r2 = r(1);
+                    float r1 = random();
+                    float r2 = random();
 
                     // Update velocity
                     particles_[k].velocity = w * particles_[k].velocity + params_.c1 * r1 * (particles_[k].best_position - particles_[k].position) + params_.c2 * r2 * (global_best_position - particles_[k].position);
@@ -203,6 +201,20 @@ namespace flychams::coordination
             // Return the global best score and position
             x_opt = global_best_position;
             return global_best_score;
+        }
+
+        float random()
+        {
+            // Generate a random number between 0 and 1
+            return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+        }
+
+        core::Vector3r randomVector()
+        {
+            // Generate a random vector with values in [0, 1]
+            core::Vector3r r = core::Vector3r::Random();
+            r = r.array().abs();
+            return r;
         }
     };
 

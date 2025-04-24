@@ -32,6 +32,9 @@ namespace flychams::coordination
         position_solver_params_.c1 = RosUtils::getParameterOr<float>(node_, "agent_positioning.c1", 1.0f);
         position_solver_params_.c2 = RosUtils::getParameterOr<float>(node_, "agent_positioning.c2", 1.0f);
         position_solver_params_.stagnation_limit = RosUtils::getParameterOr<int>(node_, "agent_positioning.stagnation_limit", 5);
+        // Get ACL-PSO parameters
+        position_solver_params_.max_lifespan = RosUtils::getParameterOr<int>(node_, "agent_positioning.max_lifespan", 60);
+        position_solver_params_.num_challenger_tests = RosUtils::getParameterOr<int>(node_, "agent_positioning.num_challenger_tests", 10);
 
         // Initialize data
         agents_.clear();
@@ -299,6 +302,9 @@ namespace flychams::coordination
         solver_params.c1 = position_solver_params_.c1;
         solver_params.c2 = position_solver_params_.c2;
         solver_params.stagnation_limit = position_solver_params_.stagnation_limit;
+        // ACL-PSO parameters
+        solver_params.max_lifespan = position_solver_params_.max_lifespan;
+        solver_params.num_challenger_tests = position_solver_params_.num_challenger_tests;
         // Initialize position solver
         solver->init(position_solver_mode_, solver_params);
     }

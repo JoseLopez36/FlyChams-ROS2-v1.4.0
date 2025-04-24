@@ -7,6 +7,7 @@
 #include "flychams_coordination/positioning/nelder_mead.hpp"
 #include "flychams_coordination/positioning/ellipsoid_method.hpp"
 #include "flychams_coordination/positioning/pso_algorithm.hpp"
+#include "flychams_coordination/positioning/acl_pso_algorithm.hpp"
 
 // Utilities
 #include "flychams_core/types/core_types.hpp"
@@ -37,7 +38,8 @@ namespace flychams::coordination
         {
             NELDER_MEAD,
             ELLIPSOID_METHOD,
-            PSO_ALGORITHM
+            PSO_ALGORITHM,
+            ACL_PSO_ALGORITHM
         };
         // Parameters
         struct Parameters
@@ -61,6 +63,10 @@ namespace flychams::coordination
             float c1 = 1.0f;
             float c2 = 1.0f;
             int stagnation_limit = 5;
+
+            // ACL-PSO parameters
+            int max_lifespan = 60;
+            int num_challenger_tests = 10;
         };   
 
     private: // Parameters
@@ -72,6 +78,7 @@ namespace flychams::coordination
         NelderMead nelder_mead_;
         EllipsoidMethod ellipsoid_method_;
         PSOAlgorithm pso_algorithm_;
+        ACLPSOAlgorithm acl_pso_algorithm_;
 
     public: // Public methods
         // Configuration

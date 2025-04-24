@@ -67,7 +67,29 @@ namespace flychams::coordination
                 // Initialize the PSO Algorithm solver with the parameters
                 pso_algorithm_.init(pso_algorithm_params, params.cost_params);
                 break;
-            }          
+            }        
+
+            case SolverMode::ACL_PSO_ALGORITHM:
+            {
+                // Get ACL-PSO Algorithm parameters
+                ACLPSOAlgorithm::Parameters acl_pso_algorithm_params;
+                acl_pso_algorithm_params.x_min = params.x_min;
+                acl_pso_algorithm_params.x_max = params.x_max;
+                acl_pso_algorithm_params.tol = params.tol;
+                acl_pso_algorithm_params.max_iter = params.max_iter;
+                acl_pso_algorithm_params.num_particles = params.num_particles;
+                acl_pso_algorithm_params.w_max = params.w_max;
+                acl_pso_algorithm_params.w_min = params.w_min;
+                acl_pso_algorithm_params.c1 = params.c1;
+                acl_pso_algorithm_params.c2 = params.c2;
+                acl_pso_algorithm_params.stagnation_limit = params.stagnation_limit;
+                acl_pso_algorithm_params.max_lifespan = params.max_lifespan;
+                acl_pso_algorithm_params.num_challenger_tests = params.num_challenger_tests;
+
+                // Initialize the ACL-PSO Algorithm solver with the parameters
+                acl_pso_algorithm_.init(acl_pso_algorithm_params, params.cost_params);
+                break;
+            }        
 
             default:
                 throw std::invalid_argument("Invalid solver mode");
@@ -97,6 +119,12 @@ namespace flychams::coordination
                 break;
             }
 
+            case SolverMode::ACL_PSO_ALGORITHM:
+            {
+                acl_pso_algorithm_.destroy();
+                break;
+            }
+
             default:
                 throw std::invalid_argument("Invalid solver mode");
         }
@@ -120,6 +148,11 @@ namespace flychams::coordination
             case SolverMode::PSO_ALGORITHM:
             {
                 return pso_algorithm_.run(tab_P, tab_r, J);
+            }
+
+            case SolverMode::ACL_PSO_ALGORITHM:
+            {
+                return acl_pso_algorithm_.run(tab_P, tab_r, J);
             }
 
             default:
