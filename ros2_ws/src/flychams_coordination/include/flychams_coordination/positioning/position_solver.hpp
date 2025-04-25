@@ -92,6 +92,7 @@ namespace flychams::coordination
         void destroy();
         // Getters
         int n() const { return params_.cost_params.n; }
+        SolverMode getMode() const { return mode_; }
         // Optimization
         core::Vector3r run(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const core::Vector3r& x0, float& J);
     };

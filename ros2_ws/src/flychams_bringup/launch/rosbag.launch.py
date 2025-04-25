@@ -28,6 +28,10 @@ def generate_launch_description():
     # Append the global metrics topic
     topics.append('/flychams/dashboard/global/metrics')
 
+    # Append the solver debug topic
+    for agent in AGENT_IDS:
+        topics.append(f'/flychams/coordination/{agent}/debug/solvers')
+
     # Generate a unique output directory name using an index
     # Check existing directories to find the next available index
     base_dir = '/home/testuser/FlyChams-ROS2/experiments/rosbags'

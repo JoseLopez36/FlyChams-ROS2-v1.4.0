@@ -33,6 +33,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ClusterAssignment.msg"
   "msg/ClusterGeometry.msg"
   "msg/ClusterMetrics.msg"
+  # Debug
+  "msg/SolverDebug.msg"
   DEPENDENCIES std_msgs geometry_msgs
 )
 

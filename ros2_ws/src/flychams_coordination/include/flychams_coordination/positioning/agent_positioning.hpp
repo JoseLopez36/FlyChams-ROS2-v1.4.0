@@ -1,5 +1,8 @@
 #pragma once
 
+// Debug message include
+#include "flychams_interfaces/msg/solver_debug.hpp"
+
 // Position solver include
 #include "flychams_coordination/positioning/cost_functions.hpp"
 #include "flychams_coordination/positioning/position_solver.hpp"
@@ -56,11 +59,12 @@ namespace flychams::coordination
             core::SubscriberPtr<core::AgentClustersMsg> clusters_sub;
             // Publisher
             core::PublisherPtr<core::PointStampedMsg> setpoint_pub;
+            core::PublisherPtr<flychams_interfaces::msg::SolverDebug> solver_debug_pub;
             // Constructor
             Agent()
                 : status(), has_status(false), position(), has_position(false), clusters(),
                 has_clusters(false), setpoint(), status_sub(), position_sub(), clusters_sub(),
-                setpoint_pub()
+                setpoint_pub(), solver_debug_pub()
             {
             }
         };
@@ -68,12 +72,21 @@ namespace flychams::coordination
     private: // Parameters
         core::ID agent_id_;
         float update_rate_;
+        // Solver modes
+        std::vector<PositionSolver::SolverMode> modes_ = {
+            PositionSolver::SolverMode::ELLIPSOID_METHOD,
+            PositionSolver::SolverMode::PSO_ALGORITHM,
+            PositionSolver::SolverMode::ALC_PSO_ALGORITHM,
+            PositionSolver::SolverMode::NESTEROV_ALGORITHM,
+            PositionSolver::SolverMode::NELDER_MEAD
+        };
 
     private: // Data
         // Agent
         Agent agent_;
-        // Position solver
-        PositionSolver::SharedPtr solver_;
+        // Position solvers
+        std::vector<PositionSolver::SharedPtr>  solvers_;
+
 
     private: // Callbacks
         void statusCallback(const core::AgentStatusMsg::SharedPtr msg);

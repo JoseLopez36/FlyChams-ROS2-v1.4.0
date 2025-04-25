@@ -14,7 +14,7 @@ namespace flychams::coordination
         // Get update rate
         update_rate_ = RosUtils::getParameterOr<float>(node_, "agent_positioning.positioning_rate", 1.0f);
         // Get solver parameters
-        PositionSolver::SolverMode solver_mode = static_cast<PositionSolver::SolverMode>(RosUtils::getParameterOr<uint8_t>(node_, "agent_positioning.solver_mode", 0));
+        //PositionSolver::SolverMode solver_mode = static_cast<PositionSolver::SolverMode>(RosUtils::getParameterOr<uint8_t>(node_, "agent_positioning.solver_mode", 0));
         // Get generic solver parameters
         float eps = RosUtils::getParameterOr<float>(node_, "agent_positioning.eps", 1.0e-1f);
         float convergence_tolerance = RosUtils::getParameterOr<float>(node_, "agent_positioning.convergence_tolerance", 1.0e-5f);
@@ -60,8 +60,6 @@ namespace flychams::coordination
         cost_params.central = centralUnitParameters(tracking_params);
         cost_params.tracking = trackingUnitParameters(tracking_params);
 
-        // Create and initialize solver
-        solver_ = std::make_shared<PositionSolver>();
         // Create solver parameters
         PositionSolver::Parameters solver_params;
         solver_params.cost_params = cost_params;
@@ -83,8 +81,14 @@ namespace flychams::coordination
         solver_params.num_challenger_tests = num_challenger_tests;
         // Nesterov parameters
         solver_params.lipschitz_constant = lipschitz_constant;
-        // Initialize solver
-        solver_->init(solver_mode, solver_params);
+
+        // Initialize solver array with several modes
+        for (const auto& mode : modes_)
+        {
+            PositionSolver::SharedPtr solver = std::make_shared<PositionSolver>();
+            solver->init(mode, solver_params);
+            solvers_.push_back(solver);
+        }
 
         // Create subscribers for agent status, position and clusters
         agent_.status_sub = topic_tools_->createAgentStatusSubscriber(agent_id_,
@@ -96,6 +100,8 @@ namespace flychams::coordination
 
         // Create publisher for agent setpoint
         agent_.setpoint_pub = topic_tools_->createAgentPositionSetpointPublisher(agent_id_);
+        agent_.solver_debug_pub = node_->create_publisher<flychams_interfaces::msg::SolverDebug>(
+            RosUtils::replace("coordination/AGENTID/debug/solvers", "AGENTID", agent_id_), 10);
 
         // Set update timer
         update_timer_ = RosUtils::createTimer(node_, update_rate_,
@@ -105,12 +111,17 @@ namespace flychams::coordination
     void AgentPositioning::onShutdown()
     {
         // Destroy solver
-        solver_->destroy();
+        for (auto& solver : solvers_)
+        {
+            solver->destroy();
+        }
+        solvers_.clear();
         // Destroy agent data
         agent_.status_sub.reset();
         agent_.position_sub.reset();
         agent_.clusters_sub.reset();
         agent_.setpoint_pub.reset();
+        agent_.solver_debug_pub.reset();
         // Destroy update timer
         update_timer_.reset();
     }
@@ -172,16 +183,91 @@ namespace flychams::coordination
             tab_r(i) = agent_.clusters.radii[i];
         }
 
-        // Solve agent positioning
-        float J;
-        Vector3r optimal_position = solver_->run(tab_P, tab_r, x0, J);
-        RCLCPP_INFO(node_->get_logger(), "Agent positioning: Computed optimal position (J = %.2f): (xOpt = %.2f, %.2f, %.2f)", 
-            J, optimal_position(0), optimal_position(1), optimal_position(2));
+        // Solve agent positioning with different solvers to compare results
+        float J_ellipsoid, J_pso, J_alc_pso, J_nesterov, J_nelder_mead;
+        Vector3r x_ellipsoid, x_pso, x_alc_pso, x_nesterov, x_nelder_mead;
+        float t_ellipsoid, t_pso, t_alc_pso, t_nesterov, t_nelder_mead;
+        for (auto& solver : solvers_)
+        {
+            switch (solver->getMode())
+            {
+                case PositionSolver::SolverMode::ELLIPSOID_METHOD:
+                {
+                    const auto& start = std::chrono::high_resolution_clock::now();
+                    x_ellipsoid = solver->run(tab_P, tab_r, x0, J_ellipsoid);
+                    const auto& end = std::chrono::high_resolution_clock::now();
+                    t_ellipsoid = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+                    break;
+                }
+
+                case PositionSolver::SolverMode::PSO_ALGORITHM:
+                {
+                    const auto& start = std::chrono::high_resolution_clock::now();
+                    x_pso = solver->run(tab_P, tab_r, x0, J_pso);
+                    const auto& end = std::chrono::high_resolution_clock::now();
+                    t_pso = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+                    break;
+                }
+
+                case PositionSolver::SolverMode::ALC_PSO_ALGORITHM:
+                {
+                    const auto& start = std::chrono::high_resolution_clock::now();
+                    x_alc_pso = solver->run(tab_P, tab_r, x0, J_alc_pso);
+                    const auto& end = std::chrono::high_resolution_clock::now();
+                    t_alc_pso = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+                    break;
+                }
+
+                case PositionSolver::SolverMode::NESTEROV_ALGORITHM:
+                {
+                    const auto& start = std::chrono::high_resolution_clock::now();
+                    x_nesterov = solver->run(tab_P, tab_r, x0, J_nesterov);
+                    const auto& end = std::chrono::high_resolution_clock::now();
+                    t_nesterov = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+                    break;
+                }
+
+                case PositionSolver::SolverMode::NELDER_MEAD:
+                {
+                    const auto& start = std::chrono::high_resolution_clock::now();
+                    x_nelder_mead = solver->run(tab_P, tab_r, x0, J_nelder_mead);
+                    const auto& end = std::chrono::high_resolution_clock::now();
+                    t_nelder_mead = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+                    break;
+                }
+            }
+        }
         
         // Publish position
         agent_.setpoint.header.stamp = RosUtils::now(node_);
-        RosUtils::toMsg(optimal_position, agent_.setpoint.point);
+        RosUtils::toMsg(x_ellipsoid, agent_.setpoint.point);
         agent_.setpoint_pub->publish(agent_.setpoint);
+
+        // Create solver comparison message
+        flychams_interfaces::msg::SolverDebug solver_debug_msg;
+        solver_debug_msg.header.stamp = RosUtils::now(node_);
+        // Ellipsoid Method
+        solver_debug_msg.j_ellipsoid = J_ellipsoid;
+        RosUtils::toMsg(x_ellipsoid, solver_debug_msg.x_ellipsoid);
+        solver_debug_msg.t_ellipsoid = t_ellipsoid;
+        // PSO Algorithm
+        solver_debug_msg.j_pso = J_pso;
+        RosUtils::toMsg(x_pso, solver_debug_msg.x_pso);
+        solver_debug_msg.t_pso = t_pso;
+        // ALC-PSO Algorithm
+        solver_debug_msg.j_alc_pso = J_alc_pso;
+        RosUtils::toMsg(x_alc_pso, solver_debug_msg.x_alc_pso);
+        solver_debug_msg.t_alc_pso = t_alc_pso;
+        // Nesterov Algorithm
+        solver_debug_msg.j_nesterov = J_nesterov;
+        RosUtils::toMsg(x_nesterov, solver_debug_msg.x_nesterov);
+        solver_debug_msg.t_nesterov = t_nesterov;
+        // Nelder-Mead Algorithm
+        solver_debug_msg.j_nelder_mead = J_nelder_mead;
+        RosUtils::toMsg(x_nelder_mead, solver_debug_msg.x_nelder_mead);
+        solver_debug_msg.t_nelder_mead = t_nelder_mead;
+        // Publish solver comparison results
+        agent_.solver_debug_pub->publish(solver_debug_msg);
     }
 
     // ════════════════════════════════════════════════════════════════════════════
