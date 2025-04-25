@@ -4,7 +4,8 @@
 #include "flychams_coordination/positioning/cost_functions.hpp"
 
 // Solver algorithms
-#include "flychams_coordination/positioning/nelder_mead.hpp"
+#include "flychams_coordination/positioning/nelder_mead_nlopt.hpp"
+#include "flychams_coordination/positioning/l_bfgs_nlopt.hpp"
 #include "flychams_coordination/positioning/ellipsoid_method.hpp"
 #include "flychams_coordination/positioning/pso_algorithm.hpp"
 #include "flychams_coordination/positioning/alc_pso_algorithm.hpp"
@@ -37,7 +38,8 @@ namespace flychams::coordination
         // Modes
         enum class SolverMode
         {
-            NELDER_MEAD,
+            NELDER_MEAD_NLOPT,
+            L_BFGS_NLOPT,
             ELLIPSOID_METHOD,
             PSO_ALGORITHM,
             ALC_PSO_ALGORITHM,
@@ -72,7 +74,7 @@ namespace flychams::coordination
 
             // Nesterov parameters
             float lipschitz_constant = 0.0f;
-        };   
+        };
 
     private: // Parameters
         SolverMode mode_;
@@ -80,7 +82,8 @@ namespace flychams::coordination
 
     private: // Data
         // Solver algorithms
-        NelderMead nelder_mead_;
+        NelderMeadNLopt nelder_mead_nlopt_;
+        LBFGSNLopt l_bfgs_nlopt_;
         EllipsoidMethod ellipsoid_method_;
         PSOAlgorithm pso_algorithm_;
         ALCPSOAlgorithm alc_pso_algorithm_;

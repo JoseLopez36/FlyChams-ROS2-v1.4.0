@@ -13,19 +13,19 @@ namespace flychams::coordination
 {
     /**
      * ════════════════════════════════════════════════════════════════
-     * @brief Solver for agent positioning using Nelder-Mead method
+     * @brief Solver for agent positioning using L-BFGS method
      *
      * @details
-     * This class implements the Nelder-Mead method for finding the minimum
+     * This class implements the L-BFGS method for finding the minimum
      * of a cost function. It is used to find the optimal position of the
      * agent.
      *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
-     * @date 2025-04-17
+     * @date 2025-04-25
      * ════════════════════════════════════════════════════════════════
      */
-    class NelderMead
+    class LBFGSNLopt
     {
     public: // Types
         // Parameters
@@ -51,7 +51,7 @@ namespace flychams::coordination
             // Cost function parameters
             CostFunctions::Parameters cost_params;
         };
-    
+
     private: // Parameters
         Parameters params_;
 
@@ -80,7 +80,7 @@ namespace flychams::coordination
             data_.x_hat = core::Vector3r::Zero();
 
             // Create an NLopt optimizer
-            opt_ = nlopt_create(NLOPT_LN_NELDERMEAD, 3); // 3 is the dimension of the problem
+            opt_ = nlopt_create(NLOPT_LD_LBFGS, 3); // 3 is the dimension of the problem
 
             // Optimizer options
             nlopt_set_xtol_rel(opt_, static_cast<double>(params_.tol)); // Set convergence tolerance
@@ -200,9 +200,15 @@ namespace flychams::coordination
             // Extract data
             core::Vector3r x_vec(static_cast<float>(x[0]), static_cast<float>(x[1]), static_cast<float>(x[2]));
             Data* data_ptr = reinterpret_cast<Data*>(data);
-            
-            // Calculate the cost for J1
-            float J1 = CostFunctions::J1(data_ptr->tab_P, data_ptr->tab_r, x_vec, data_ptr->cost_params);
+
+            // Calculate the cost for J1 (with gradient)
+            core::Vector3r grad_vec;
+            float J1 = CostFunctions::J1(data_ptr->tab_P, data_ptr->tab_r, x_vec, data_ptr->cost_params, grad_vec);
+
+            // Copy the gradient to the output
+            grad[0] = static_cast<double>(grad_vec(0));
+            grad[1] = static_cast<double>(grad_vec(1));
+            grad[2] = static_cast<double>(grad_vec(2));
 
             return static_cast<double>(J1);
         }
@@ -212,9 +218,15 @@ namespace flychams::coordination
             // Extract data
             core::Vector3r x_vec(static_cast<float>(x[0]), static_cast<float>(x[1]), static_cast<float>(x[2]));
             Data* data_ptr = reinterpret_cast<Data*>(data);
-            
-            // Calculate the cost for J2
-            float J2 = CostFunctions::J2(data_ptr->tab_P, data_ptr->tab_r, x_vec, data_ptr->x_hat, data_ptr->cost_params);
+
+            // Calculate the cost for J2 (with gradient)
+            core::Vector3r grad_vec;
+            float J2 = CostFunctions::J2(data_ptr->tab_P, data_ptr->tab_r, x_vec, data_ptr->x_hat, data_ptr->cost_params, grad_vec);
+
+            // Copy the gradient to the output
+            grad[0] = static_cast<double>(grad_vec(0));
+            grad[1] = static_cast<double>(grad_vec(1));
+            grad[2] = static_cast<double>(grad_vec(2));
 
             return static_cast<double>(J2);
         }
