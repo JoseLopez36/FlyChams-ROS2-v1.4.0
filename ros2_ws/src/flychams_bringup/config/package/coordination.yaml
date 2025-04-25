@@ -16,7 +16,7 @@
     agent_positioning:
       positioning_rate: 10.0              # (Hz)
       # Solver parameters
-      solver_mode: 4                      # 0: NELDER_MEAD, 1: ELLIPSOID_METHOD, 2: PSO_ALGORITHM, 3: ALC_PSO_ALGORITHM, 4: NESTEROV_ALGORITHM
+      solver_mode: 3                      # 0: NELDER_MEAD, 1: ELLIPSOID_METHOD, 2: PSO_ALGORITHM, 3: ALC_PSO_ALGORITHM, 4: NESTEROV_ALGORITHM
       # Generic solver parameters
       eps: 1.0e-1                         # Threshold difference between solutions of successive iterations to terminate the algorithm
       convergence_tolerance: 1.0e-5       # Solver convergence tolerance
