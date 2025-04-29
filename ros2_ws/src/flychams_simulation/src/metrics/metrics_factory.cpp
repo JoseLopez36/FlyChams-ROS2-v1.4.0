@@ -70,18 +70,11 @@ namespace flychams::simulation
                 this->agentPositionSetpointCallback(agent_id, msg);
             }, sub_options_with_module_cb_group_);
 
-        // Create agent head setpoints subscriber
-        agents_[agent_id].head_setpoints_sub = topic_tools_->createAgentHeadSetpointsSubscriber(agent_id,
-            [this, agent_id](const AgentHeadSetpointsMsg::SharedPtr msg)
+        // Create agent tracking setpoints subscriber
+        agents_[agent_id].tracking_setpoints_sub = topic_tools_->createAgentTrackingSetpointsSubscriber(agent_id,
+            [this, agent_id](const AgentTrackingSetpointsMsg::SharedPtr msg)
             {
-                this->agentHeadSetpointsCallback(agent_id, msg);
-            }, sub_options_with_module_cb_group_);
-
-        // Create agent window setpoints subscriber
-        agents_[agent_id].window_setpoints_sub = topic_tools_->createAgentWindowSetpointsSubscriber(agent_id,
-            [this, agent_id](const AgentWindowSetpointsMsg::SharedPtr msg)
-            {
-                this->agentWindowSetpointsCallback(agent_id, msg);
+                this->agentTrackingSetpointsCallback(agent_id, msg);
             }, sub_options_with_module_cb_group_);
 
         // Create agent metrics publisher
@@ -162,16 +155,10 @@ namespace flychams::simulation
         agents_[agent_id].metrics.setpoint = msg->point;
     }
 
-    void MetricsFactory::agentHeadSetpointsCallback(const ID& agent_id, const AgentHeadSetpointsMsg::SharedPtr msg)
+    void MetricsFactory::agentTrackingSetpointsCallback(const ID& agent_id, const AgentTrackingSetpointsMsg::SharedPtr msg)
     {
-        // Update agent head setpoints
-        agents_[agent_id].metrics.focals = msg->focal_setpoints;
-        agents_[agent_id].metrics.projected_sizes = msg->projected_sizes;
-    }
-
-    void MetricsFactory::agentWindowSetpointsCallback(const ID& agent_id, const AgentWindowSetpointsMsg::SharedPtr msg)
-    {
-        // Update agent window setpoints
+        // Update agent tracking setpoints
+        agents_[agent_id].metrics.focals = msg->focals;
         agents_[agent_id].metrics.resolution_factors = msg->resolution_factors;
         agents_[agent_id].metrics.projected_sizes = msg->projected_sizes;
     }

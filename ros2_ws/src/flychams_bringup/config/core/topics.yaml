@@ -11,8 +11,7 @@
       assignment: "coordination/AGENTID/assignment"                 # AgentAssignment.msg (custom)
       clusters: "coordination/AGENTID/clusters"                     # AgentClusters.msg (custom)
       position_setpoint: "coordination/AGENTID/setpoint/position"   # PointStamped.msg
-      head_setpoints: "coordination/AGENTID/setpoint/head"          # AgentHeadSetpoints.msg (custom)
-      window_setpoints: "coordination/AGENTID/setpoint/window"      # AgentWindowSetpoints.msg (custom)
+      tracking_setpoints: "coordination/AGENTID/setpoint/tracking"  # AgentTrackingSetpoints.msg (custom)
       metrics: "dashboard/AGENTID/metrics"                          # AgentMetrics.msg (custom)
       markers: "dashboard/AGENTID/markers"                          # MarkerArray.msg
     # Target topics
@@ -27,3 +26,6 @@
       geometry: "perception/CLUSTERID/geometry"                     # ClusterGeometry.msg (custom)
       metrics: "dashboard/CLUSTERID/metrics"                        # ClusterMetrics.msg (custom)
       markers: "dashboard/CLUSTERID/markers"                        # MarkerArray.msg
+    # GUI topics
+    gui_topics:
+      setpoints: "simulation/AGENTID/setpoint/gui"                  # GuiSetpoints.msg (custom)

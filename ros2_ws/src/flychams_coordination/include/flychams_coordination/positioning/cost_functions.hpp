@@ -58,8 +58,7 @@ namespace flychams::coordination
         struct Parameters // Parameters for the cost function
         {
             int n;
-            TrackingUnit central;
-            std::vector<TrackingUnit> tracking;
+            std::vector<TrackingUnit> units;
         };
 
     public: // Cost functions without gradient calculation
@@ -73,51 +72,22 @@ namespace flychams::coordination
                 // Get relevant data
                 const auto& z = tab_P.col(i);
                 const auto& r = tab_r(i);
-                const auto& tracking = params.tracking[i];
+                const auto& unit = params.units[i];
 
                 // Compute the value of the index based on tracking mode
-                switch (tracking.mode)
+                switch (unit.mode)
                 {
                 case core::TrackingMode::MultiCamera:
-                    J += CostFunctions::cameraJ0(z, r, x, tracking);
+                    J += CostFunctions::cameraJ0(z, r, x, unit);
                     break;
 
                 case core::TrackingMode::MultiWindow:
-                    J += CostFunctions::windowJ0(z, r, x, tracking);
+                    J += CostFunctions::windowJ0(z, r, x, unit);
                     break;
 
                 default:
                     throw std::invalid_argument("Invalid tracking mode");
                 }
-            }
-
-            // Account for the central window cost to ensure targets are inside the bounds of the central window
-            // We use the mean of the centers
-            core::Vector3r z_mean = core::Vector3r::Zero();
-            for (int i = 0; i < params.n; i++)
-            {
-                z_mean += tab_P.col(i);
-            }
-            z_mean /= static_cast<float>(params.n);
-            // Get the largest possible radius
-            float r_max = 0.0f;
-            for (int i = 0; i < params.n; i++)
-            {
-                r_max = std::max(r_max, (z_mean - tab_P.col(i)).norm() + tab_r(i));
-            }
-            // Compute the cost of the central window based on tracking mode
-            switch (params.central.mode)
-            {
-            case core::TrackingMode::MultiCamera:
-                J += CostFunctions::cameraJ0(z_mean, r_max, x, params.central);
-                break;
-
-            case core::TrackingMode::MultiWindow:
-                J += CostFunctions::windowJ0(z_mean, r_max, x, params.central);
-                break;
-
-            default:
-                throw std::invalid_argument("Invalid tracking mode");
             }
 
             // Return the value of J
@@ -134,51 +104,22 @@ namespace flychams::coordination
                 // Get relevant data
                 const auto& z = tab_P.col(i);
                 const auto& r = tab_r(i);
-                const auto& tracking = params.tracking[i];
+                const auto& unit = params.units[i];
 
                 // Compute the value of the index based on tracking mode
-                switch (tracking.mode)
+                switch (unit.mode)
                 {
                 case core::TrackingMode::MultiCamera:
-                    J += CostFunctions::cameraJ1(z, r, x, tracking);
+                    J += CostFunctions::cameraJ1(z, r, x, unit);
                     break;
 
                 case core::TrackingMode::MultiWindow:
-                    J += CostFunctions::windowJ1(z, r, x, tracking);
+                    J += CostFunctions::windowJ1(z, r, x, unit);
                     break;
 
                 default:
                     throw std::invalid_argument("Invalid tracking mode");
                 }
-            }
-
-            // Account for the central window cost to ensure targets are inside the bounds of the central window
-            // We use the mean of the centers
-            core::Vector3r z_mean = core::Vector3r::Zero();
-            for (int i = 0; i < params.n; i++)
-            {
-                z_mean += tab_P.col(i);
-            }
-            z_mean /= static_cast<float>(params.n);
-            // Get the largest possible radius
-            float r_max = 0.0f;
-            for (int i = 0; i < params.n; i++)
-            {
-                r_max = std::max(r_max, (z_mean - tab_P.col(i)).norm() + tab_r(i));
-            }
-            // Compute the cost of the central window based on tracking mode
-            switch (params.central.mode)
-            {
-            case core::TrackingMode::MultiCamera:
-                J += CostFunctions::cameraJ1(z_mean, r_max, x, params.central);
-                break;
-
-            case core::TrackingMode::MultiWindow:
-                J += CostFunctions::windowJ1(z_mean, r_max, x, params.central);
-                break;
-
-            default:
-                throw std::invalid_argument("Invalid tracking mode");
             }
 
             // Return the value of J
@@ -195,51 +136,22 @@ namespace flychams::coordination
                 // Get relevant data
                 const auto& z = tab_P.col(i);
                 const auto& r = tab_r(i);
-                const auto& tracking = params.tracking[i];
+                const auto& unit = params.units[i];
 
                 // Compute the value of the index based on tracking mode
-                switch (tracking.mode)
+                switch (unit.mode)
                 {
                 case core::TrackingMode::MultiCamera:
-                    J += CostFunctions::cameraJ2(z, r, x, x_hat, tracking);
+                    J += CostFunctions::cameraJ2(z, r, x, x_hat, unit);
                     break;
 
                 case core::TrackingMode::MultiWindow:
-                    J += CostFunctions::windowJ2(z, r, x, x_hat, tracking);
+                    J += CostFunctions::windowJ2(z, r, x, x_hat, unit);
                     break;
 
                 default:
                     throw std::invalid_argument("Invalid tracking mode");
                 }
-            }
-
-            // Account for the central window cost to ensure targets are inside the bounds of the central window
-            // We use the mean of the centers
-            core::Vector3r z_mean = core::Vector3r::Zero();
-            for (int i = 0; i < params.n; i++)
-            {
-                z_mean += tab_P.col(i);
-            }
-            z_mean /= static_cast<float>(params.n);
-            // Get the largest possible radius
-            float r_max = 0.0f;
-            for (int i = 0; i < params.n; i++)
-            {
-                r_max = std::max(r_max, (z_mean - tab_P.col(i)).norm() + tab_r(i));
-            }
-            // Compute the cost of the central window based on tracking mode
-            switch (params.central.mode)
-            {
-            case core::TrackingMode::MultiCamera:
-                J += CostFunctions::cameraJ2(z_mean, r_max, x, x_hat, params.central);
-                break;
-
-            case core::TrackingMode::MultiWindow:
-                J += CostFunctions::windowJ2(z_mean, r_max, x, x_hat, params.central);
-                break;
-
-            default:
-                throw std::invalid_argument("Invalid tracking mode");
             }
 
             // Return the value of J
@@ -260,18 +172,18 @@ namespace flychams::coordination
                 // Get relevant data
                 const auto& z = tab_P.col(i);
                 const auto& r = tab_r(i);
-                const auto& tracking = params.tracking[i];
+                const auto& unit = params.units[i];
 
                 // Compute the value of the index based on tracking mode
                 core::Vector3r grad_i;
-                switch (tracking.mode)
+                switch (unit.mode)
                 {
                 case core::TrackingMode::MultiCamera:
-                    J += CostFunctions::cameraJ1(z, r, x, tracking, grad_i);
+                    J += CostFunctions::cameraJ1(z, r, x, unit, grad_i);
                     break;
 
                 case core::TrackingMode::MultiWindow:
-                    J += CostFunctions::windowJ1(z, r, x, tracking, grad_i);
+                    J += CostFunctions::windowJ1(z, r, x, unit, grad_i);
                     break;
 
                 default:
@@ -281,38 +193,6 @@ namespace flychams::coordination
                 // Integrate the gradient
                 grad += grad_i;
             }
-
-            // Account for the central window cost to ensure targets are inside the bounds of the central window
-            // We use the mean of the centers
-            core::Vector3r z_mean = core::Vector3r::Zero();
-            for (int i = 0; i < params.n; i++)
-            {
-                z_mean += tab_P.col(i);
-            }
-            z_mean /= static_cast<float>(params.n);
-            // Get the largest possible radius
-            float r_max = 0.0f;
-            for (int i = 0; i < params.n; i++)
-            {
-                r_max = std::max(r_max, (z_mean - tab_P.col(i)).norm() + tab_r(i));
-            }
-            // Compute the cost of the central window based on tracking mode
-            core::Vector3r grad_central;
-            switch (params.central.mode)
-            {
-            case core::TrackingMode::MultiCamera:
-                J += CostFunctions::cameraJ1(z_mean, r_max, x, params.central, grad_central);
-                break;
-
-            case core::TrackingMode::MultiWindow:
-                J += CostFunctions::windowJ1(z_mean, r_max, x, params.central, grad_central);
-                break;
-
-            default:
-                throw std::invalid_argument("Invalid tracking mode");
-            }
-            // Integrate the gradient of the central window
-            grad += grad_central;
 
             // Return the value of J
             return J;
@@ -331,18 +211,18 @@ namespace flychams::coordination
                 // Get relevant data
                 const auto& z = tab_P.col(i);
                 const auto& r = tab_r(i);
-                const auto& tracking = params.tracking[i];
+                const auto& unit = params.units[i];
 
                 // Compute the value of the index based on tracking mode
                 core::Vector3r grad_i;
-                switch (tracking.mode)
+                switch (unit.mode)
                 {
                 case core::TrackingMode::MultiCamera:
-                    J += CostFunctions::cameraJ2(z, r, x, x_hat, tracking, grad_i);
+                    J += CostFunctions::cameraJ2(z, r, x, x_hat, unit, grad_i);
                     break;
 
                 case core::TrackingMode::MultiWindow:
-                    J += CostFunctions::windowJ2(z, r, x, x_hat, tracking, grad_i);
+                    J += CostFunctions::windowJ2(z, r, x, x_hat, unit, grad_i);
                     break;
 
                 default:
@@ -352,38 +232,6 @@ namespace flychams::coordination
                 // Integrate the gradient
                 grad += grad_i;
             }
-
-            // Account for the central window cost to ensure targets are inside the bounds of the central window
-            // We use the mean of the centers
-            core::Vector3r z_mean = core::Vector3r::Zero();
-            for (int i = 0; i < params.n; i++)
-            {
-                z_mean += tab_P.col(i);
-            }
-            z_mean /= static_cast<float>(params.n);
-            // Get the largest possible radius
-            float r_max = 0.0f;
-            for (int i = 0; i < params.n; i++)
-            {
-                r_max = std::max(r_max, (z_mean - tab_P.col(i)).norm() + tab_r(i));
-            }
-            // Compute the cost of the central window based on tracking mode
-            core::Vector3r grad_central;
-            switch (params.central.mode)
-            {
-            case core::TrackingMode::MultiCamera:
-                J += CostFunctions::cameraJ2(z_mean, r_max, x, x_hat, params.central, grad_central);
-                break;
-
-            case core::TrackingMode::MultiWindow:
-                J += CostFunctions::windowJ2(z_mean, r_max, x, x_hat, params.central, grad_central);
-                break;
-
-            default:
-                throw std::invalid_argument("Invalid tracking mode");
-            }
-            // Integrate the gradient of the central window
-            grad += grad_central;
 
             // Return the value of J
             return J;

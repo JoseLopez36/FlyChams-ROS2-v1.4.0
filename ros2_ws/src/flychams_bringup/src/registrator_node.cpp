@@ -4,7 +4,6 @@
 #include "flychams_bringup/registration/agent_registration.hpp"
 #include "flychams_bringup/registration/target_registration.hpp"
 #include "flychams_bringup/registration/cluster_registration.hpp"
-#include "flychams_bringup/registration/gui_registration.hpp"
 
 // Core includes
 #include "flychams_core/base/base_registrator_node.hpp"
@@ -44,13 +43,11 @@ public: // Constructor/Destructor
         agent_registration_ = std::make_shared<AgentRegistration>(node_, config_tools_, framework_tools_, topic_tools_, transform_tools_, registration_cb_group_);
         target_registration_ = std::make_shared<TargetRegistration>(node_, config_tools_, framework_tools_, topic_tools_, transform_tools_, registration_cb_group_);
         cluster_registration_ = std::make_shared<ClusterRegistration>(node_, config_tools_, framework_tools_, topic_tools_, transform_tools_, registration_cb_group_);
-        gui_registration_ = std::make_shared<GuiRegistration>(node_, config_tools_, framework_tools_, topic_tools_, transform_tools_, registration_cb_group_);
 
         // Get all elements
         agents_ = agent_registration_->getAgents();
         targets_ = target_registration_->getTargets();
         clusters_ = cluster_registration_->getClusters();
-        windows_ = gui_registration_->getWindows();
 
         // Check if every element type is correctly registered
         if (agents_.empty())
@@ -68,12 +65,6 @@ public: // Constructor/Destructor
         if (clusters_.empty())
         {
             RCLCPP_ERROR(node_->get_logger(), "No clusters registered. Cannot setup the simulation");
-            rclcpp::shutdown();
-            return;
-        }
-        if (windows_.empty())
-        {
-            RCLCPP_ERROR(node_->get_logger(), "No windows registered. Cannot setup the simulation");
             rclcpp::shutdown();
             return;
         }
@@ -101,13 +92,11 @@ public: // Constructor/Destructor
         agents_.clear();
         targets_.clear();
         clusters_.clear();
-        windows_.clear();
 
         // Destroy registration instances
         agent_registration_.reset();
         target_registration_.reset();
         cluster_registration_.reset();
-        gui_registration_.reset();
     }
 
 private: // Components
@@ -115,13 +104,11 @@ private: // Components
     AgentRegistration::SharedPtr agent_registration_;
     TargetRegistration::SharedPtr target_registration_;
     ClusterRegistration::SharedPtr cluster_registration_;
-    GuiRegistration::SharedPtr gui_registration_;
 
     // Elements
     IDs agents_;
     IDs targets_;
     IDs clusters_;
-    IDs windows_;
 };
 
 int main(int argc, char** argv)

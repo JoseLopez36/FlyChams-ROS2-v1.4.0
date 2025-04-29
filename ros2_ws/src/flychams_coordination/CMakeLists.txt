@@ -22,7 +22,6 @@ set(COORD_SRC
   src/positioning/agent_positioning.cpp
   src/positioning/position_solver.cpp
   src/tracking/agent_tracking.cpp
-  src/tracking/tracking_solver.cpp
 )
 add_library(${PROJECT_NAME} SHARED ${COORD_SRC})
 target_include_directories(${PROJECT_NAME} PUBLIC

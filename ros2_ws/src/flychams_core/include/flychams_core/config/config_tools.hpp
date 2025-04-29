@@ -173,60 +173,54 @@ namespace flychams::core
         }
 
     public: // Processing getter methods
-        const HeadConfigPtr getCentralHead(const std::string& agent_id) const
+        const std::pair<std::vector<HeadConfigPtr>, int> getHeads(const std::string& agent_id) const
         {
-            for (const auto& [head_id, head_ptr] : getHeadSet(agent_id))
+            // Get head set
+            const auto& head_set = getHeadSet(agent_id);
+            int n = static_cast<int>(head_set.size());
+
+            // Create vector of heads
+            std::vector<HeadConfigPtr> heads(n);
+            int tracking = 1;
+            for (const auto& [head_id, head_ptr] : head_set)
             {
                 if (head_ptr->role == TrackingRole::Central)
                 {
-                    return head_ptr;
+                    heads[0] = head_ptr;
                 }
-            }
-
-            return nullptr;
-        }
-
-        const std::vector<HeadConfigPtr> getTrackingHeads(const std::string& agent_id) const
-        {
-            std::vector<HeadConfigPtr> tracking_heads;
-
-            for (const auto& [head_id, head_ptr] : getHeadSet(agent_id))
-            {
-                if (head_ptr->role == TrackingRole::Tracking)
+                else if (head_ptr->role == TrackingRole::Tracking)
                 {
-                    tracking_heads.push_back(head_ptr);
+                    heads[tracking] = head_ptr;
+                    tracking++;
                 }
             }
 
-            return tracking_heads;
+            return std::make_pair(heads, n);
         }
 
-        const WindowConfigPtr getCentralWindow(const std::string& agent_id) const
+        const std::pair<std::vector<WindowConfigPtr>, int> getWindows(const std::string& agent_id) const
         {
-            for (const auto& [window_id, window_ptr] : getWindowSet(agent_id))
+            // Get window set
+            const auto& window_set = getWindowSet(agent_id);
+            int n = static_cast<int>(window_set.size());
+
+            // Create vector of windows
+            std::vector<WindowConfigPtr> windows(n);
+            int tracking = 1;
+            for (const auto& [window_id, window_ptr] : window_set)
             {
                 if (window_ptr->role == TrackingRole::Central)
                 {
-                    return window_ptr;
+                    windows[0] = window_ptr;
                 }
-            }
-
-            return nullptr;
-        }
-
-        const std::vector<WindowConfigPtr> getTrackingWindows(const std::string& agent_id) const
-        {
-            std::vector<WindowConfigPtr> tracking_windows;
-
-            for (const auto& [window_id, window_ptr] : getWindowSet(agent_id))
-            {
-                if (window_ptr->role == TrackingRole::Tracking)
+                else if (window_ptr->role == TrackingRole::Tracking)
                 {
-                    tracking_windows.push_back(window_ptr);
+                    windows[tracking] = window_ptr;
+                    tracking++;
                 }
             }
 
-            return tracking_windows;
+            return std::make_pair(windows, n);
         }
 
         const HeadParameters getHeadParameters(const std::string& agent_id, const std::string& head_id) const
@@ -240,8 +234,11 @@ namespace flychams::core
             // Extract tracking config
             const auto& tracking = getTracking(agent_id);
 
-            // Camera ID
+            // Head ID
             params.id = head_id;
+
+            // Head role
+            params.role = head_ptr->role;
 
             // Camera focal length limits (m)
             params.f_min = head_ptr->min_focal;
@@ -308,13 +305,12 @@ namespace flychams::core
             return params;
         }
 
-        const WindowParameters getWindowParameters(const std::string& agent_id, const std::string& window_id) const
+        const WindowParameters getWindowParameters(const std::string& agent_id, const std::string& window_id, const HeadParameters& central_head_params) const
         {
             WindowParameters params;
 
             // Extract window config
             const auto& window_ptr = getWindow(agent_id, window_id);
-            const auto& central_head = getHeadParameters(agent_id, getCentralHead(agent_id)->id);
 
             // Extract tracking config
             const auto& tracking = getTracking(agent_id);
@@ -322,21 +318,27 @@ namespace flychams::core
             // Window ID
             params.id = window_id;
 
+            // Head role
+            params.role = window_ptr->role;
+
+            // Source camera ID
+            params.source_id = central_head_params.id;
+
             // Window resolution factors limits
             params.lambda_min = window_ptr->min_lambda;
             params.lambda_max = window_ptr->max_lambda;
             params.lambda_ref = window_ptr->ref_lambda;
 
             // Full resolution (pix)
-            params.full_width = central_head.width;
-            params.full_height = central_head.height;
+            params.full_width = central_head_params.width;
+            params.full_height = central_head_params.height;
 
             // Tracking resolution (pix)
             params.tracking_width = window_ptr->resolution(0);
             params.tracking_height = window_ptr->resolution(1);
 
             // Get rho
-            params.rho = central_head.rho;
+            params.rho = central_head_params.rho;
 
             // Calculate ROI parameters
             const auto& min_apparent_size = tracking.min_target_size;
@@ -387,46 +389,39 @@ namespace flychams::core
             // Get tracking mode
             params.mode = tracking.mode;
 
+            // Get heads and windows
+            const auto& [heads, n_heads] = getHeads(agent_id);
+            const auto& [windows, n_windows] = getWindows(agent_id);
+
+            // Set number of heads and windows
+            params.n_heads = n_heads;
+            params.n_windows = n_windows;
+
             // Get tracking parameters based on tracking mode
             switch (params.mode)
             {
             case TrackingMode::MultiCamera:
             {
-                // Get agent central head
-                params.central_head_params = getHeadParameters(agent_id, getCentralHead(agent_id)->id);
-
-                // Get agent tracking heads
-                const auto& tracking_heads = getTrackingHeads(agent_id);
-
-                // Get head count
-                params.n = static_cast<int>(tracking_heads.size());
-
-                // Set parameters for each tracking head
-                params.tracking_head_params.resize(params.n);
-                for (int i = 0; i < params.n; i++)
+                // Set parameters for each unit
+                params.head_params.resize(params.n_heads);
+                for (int i = 0; i < params.n_heads; i++)
                 {
-                    params.tracking_head_params[i] = getHeadParameters(agent_id, tracking_heads[i]->id);
+                    params.head_params[i] = getHeadParameters(agent_id, heads[i]->id);
                 }
                 break;
             }
 
             case TrackingMode::MultiWindow:
             {
-                // Get agent central head and window
-                params.central_head_params = getHeadParameters(agent_id, getCentralHead(agent_id)->id);
-                params.central_window_params = getWindowParameters(agent_id, getCentralWindow(agent_id)->id);
+                // Set central head parameters
+                params.head_params.resize(1);
+                params.head_params[0] = getHeadParameters(agent_id, heads[0]->id);
 
-                // Get agent tracking windows
-                const auto& tracking_windows = getTrackingWindows(agent_id);
-
-                // Get window count
-                params.n = static_cast<int>(tracking_windows.size());
-
-                // Set parameters for each tracking window
-                params.tracking_window_params.resize(params.n);
-                for (int i = 0; i < params.n; i++)
+                // Set parameters for each unit
+                params.window_params.resize(params.n_windows);
+                for (int i = 0; i < params.n_windows; i++)
                 {
-                    params.tracking_window_params[i] = getWindowParameters(agent_id, tracking_windows[i]->id);
+                    params.window_params[i] = getWindowParameters(agent_id, windows[i]->id, params.head_params[0]);
                 }
                 break;
             }
@@ -525,11 +520,7 @@ namespace flychams::core
                 config_ptr->system.map_camera_orientation.y() = MathUtils::degToRad(map_camera_orientation_vec[1]);
                 config_ptr->system.map_camera_orientation.z() = MathUtils::degToRad(map_camera_orientation_vec[2]);
             }
-
-            // Central view settings
-            config_ptr->system.central_view_id = RosUtils::getParameter<ID>(node_, "gui.central_view_id");
-
-            // Tracking view settings
+            // Tracking views settings
             config_ptr->system.tracking_view_ids = RosUtils::getParameter<std::vector<ID>>(node_, "gui.tracking_view_ids");
         }
 
@@ -545,8 +536,7 @@ namespace flychams::core
             config_ptr->topics.agent_assignment = RosUtils::getParameter<std::string>(node_, "agent_topics.assignment");
             config_ptr->topics.agent_clusters = RosUtils::getParameter<std::string>(node_, "agent_topics.clusters");
             config_ptr->topics.agent_position_setpoint = RosUtils::getParameter<std::string>(node_, "agent_topics.position_setpoint");
-            config_ptr->topics.agent_head_setpoints = RosUtils::getParameter<std::string>(node_, "agent_topics.head_setpoints");
-            config_ptr->topics.agent_window_setpoints = RosUtils::getParameter<std::string>(node_, "agent_topics.window_setpoints");
+            config_ptr->topics.agent_tracking_setpoints = RosUtils::getParameter<std::string>(node_, "agent_topics.tracking_setpoints");
             config_ptr->topics.agent_metrics = RosUtils::getParameter<std::string>(node_, "agent_topics.metrics");
             config_ptr->topics.agent_markers = RosUtils::getParameter<std::string>(node_, "agent_topics.markers");
 
@@ -561,6 +551,9 @@ namespace flychams::core
             config_ptr->topics.cluster_geometry = RosUtils::getParameter<std::string>(node_, "cluster_topics.geometry");
             config_ptr->topics.cluster_metrics = RosUtils::getParameter<std::string>(node_, "cluster_topics.metrics");
             config_ptr->topics.cluster_markers = RosUtils::getParameter<std::string>(node_, "cluster_topics.markers");
+
+            // GUI topics
+            config_ptr->topics.gui_setpoints = RosUtils::getParameter<std::string>(node_, "gui_topics.setpoints");
         }
 
         void parseFrameParameters(MissionConfigPtr& config_ptr)

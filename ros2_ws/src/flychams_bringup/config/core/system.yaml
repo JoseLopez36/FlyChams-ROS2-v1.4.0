@@ -31,7 +31,5 @@
       map_camera_id: ""
       map_camera_position: [0.0, 0.0, 0.0]        # [x, y, z]
       map_camera_orientation: [0.0, 0.0, 0.0]   # [roll, pitch, yaw]
-      # Central view settings
-      central_view_id: "CENTRALVIEW"
-      # Tracking view settings
-      tracking_view_ids: ["TRACKINGVIEW00", "TRACKINGVIEW01", "TRACKINGVIEW02", "TRACKINGVIEW03"]
+      # Tracking views settings
+      tracking_view_ids: ["CENTRALVIEW", "TRACKINGVIEW00", "TRACKINGVIEW01", "TRACKINGVIEW02", "TRACKINGVIEW03"]

@@ -35,8 +35,7 @@ namespace flychams::core
             agent_topics_.assignment_pattern = topic_config.agent_assignment;
             agent_topics_.clusters_pattern = topic_config.agent_clusters;
             agent_topics_.position_setpoint_pattern = topic_config.agent_position_setpoint;
-            agent_topics_.head_setpoints_pattern = topic_config.agent_head_setpoints;
-            agent_topics_.window_setpoints_pattern = topic_config.agent_window_setpoints;
+            agent_topics_.tracking_setpoints_pattern = topic_config.agent_tracking_setpoints;
             agent_topics_.metrics_pattern = topic_config.agent_metrics;
             agent_topics_.markers_pattern = topic_config.agent_markers;
 
@@ -51,6 +50,9 @@ namespace flychams::core
             cluster_topics_.geometry_pattern = topic_config.cluster_geometry;
             cluster_topics_.metrics_pattern = topic_config.cluster_metrics;
             cluster_topics_.markers_pattern = topic_config.cluster_markers;
+
+            // Get GUI topics
+            gui_topics_.setpoints_pattern = topic_config.gui_setpoints;
         }
 
         ~TopicTools()
@@ -82,8 +84,7 @@ namespace flychams::core
             std::string assignment_pattern;
             std::string clusters_pattern;
             std::string position_setpoint_pattern;
-            std::string head_setpoints_pattern;
-            std::string window_setpoints_pattern;
+            std::string tracking_setpoints_pattern;
             std::string metrics_pattern;
             std::string markers_pattern;
         };
@@ -103,6 +104,11 @@ namespace flychams::core
             std::string metrics_pattern;
             std::string markers_pattern;
         };
+        // GUI topics
+        struct GuiTopics
+        {
+            std::string setpoints_pattern;
+        };
 
     private: // Data
         // Topics
@@ -110,6 +116,7 @@ namespace flychams::core
         AgentTopics agent_topics_;
         TargetTopics target_topics_;
         ClusterTopics cluster_topics_;
+        GuiTopics gui_topics_;
 
         // ROS components
         NodePtr node_;
@@ -149,13 +156,9 @@ namespace flychams::core
         {
             return RosUtils::replace(agent_topics_.position_setpoint_pattern, "AGENTID", agent_id);
         }
-        std::string getAgentHeadSetpointsTopic(const ID& agent_id)
+        std::string getAgentTrackingSetpointsTopic(const ID& agent_id)
         {
-            return RosUtils::replace(agent_topics_.head_setpoints_pattern, "AGENTID", agent_id);
-        }
-        std::string getAgentWindowSetpointsTopic(const ID& agent_id)
-        {
-            return RosUtils::replace(agent_topics_.window_setpoints_pattern, "AGENTID", agent_id);
+            return RosUtils::replace(agent_topics_.tracking_setpoints_pattern, "AGENTID", agent_id);
         }
         std::string getAgentMetricsTopic(const ID& agent_id)
         {
@@ -202,6 +205,12 @@ namespace flychams::core
             return RosUtils::replace(cluster_topics_.markers_pattern, "CLUSTERID", cluster_id);
         }
 
+        // GUI topics
+        std::string getGuiSetpointsTopic(const ID& agent_id)
+        {
+            return RosUtils::replace(gui_topics_.setpoints_pattern, "AGENTID", agent_id);
+        }
+
     public: // Topic creation utilities
         // Publishers
         // Global publishers
@@ -238,13 +247,9 @@ namespace flychams::core
         {
             return node_->create_publisher<PointStampedMsg>(getAgentPositionSetpointTopic(agent_id), 10);
         }
-        PublisherPtr<AgentHeadSetpointsMsg> createAgentHeadSetpointsPublisher(const ID& agent_id)
+        PublisherPtr<AgentTrackingSetpointsMsg> createAgentTrackingSetpointsPublisher(const ID& agent_id)
         {
-            return node_->create_publisher<AgentHeadSetpointsMsg>(getAgentHeadSetpointsTopic(agent_id), 10);
-        }
-        PublisherPtr<AgentWindowSetpointsMsg> createAgentWindowSetpointsPublisher(const ID& agent_id)
-        {
-            return node_->create_publisher<AgentWindowSetpointsMsg>(getAgentWindowSetpointsTopic(agent_id), 10);
+            return node_->create_publisher<AgentTrackingSetpointsMsg>(getAgentTrackingSetpointsTopic(agent_id), 10);
         }
         PublisherPtr<AgentMetricsMsg> createAgentMetricsPublisher(const ID& agent_id)
         {
@@ -292,6 +297,12 @@ namespace flychams::core
             return node_->create_publisher<MarkerArrayMsg>(getClusterMarkersTopic(cluster_id), 10);
         }
 
+        // GUI publishers
+        PublisherPtr<GuiSetpointsMsg> createGuiSetpointsPublisher(const ID& agent_id)
+        {
+            return node_->create_publisher<GuiSetpointsMsg>(getGuiSetpointsTopic(agent_id), 10);
+        }
+
         // Subscribers
         // Global subscribers
         SubscriberPtr<RegistrationMsg> createRegistrationSubscriber(const std::function<void(const RegistrationMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
@@ -327,13 +338,9 @@ namespace flychams::core
         {
             return node_->create_subscription<PointStampedMsg>(getAgentPositionSetpointTopic(agent_id), 10, callback, options);
         }
-        SubscriberPtr<AgentHeadSetpointsMsg> createAgentHeadSetpointsSubscriber(const ID& agent_id, const std::function<void(const AgentHeadSetpointsMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
+        SubscriberPtr<AgentTrackingSetpointsMsg> createAgentTrackingSetpointsSubscriber(const ID& agent_id, const std::function<void(const AgentTrackingSetpointsMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
-            return node_->create_subscription<AgentHeadSetpointsMsg>(getAgentHeadSetpointsTopic(agent_id), 10, callback, options);
-        }
-        SubscriberPtr<AgentWindowSetpointsMsg> createAgentWindowSetpointsSubscriber(const ID& agent_id, const std::function<void(const AgentWindowSetpointsMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
-        {
-            return node_->create_subscription<AgentWindowSetpointsMsg>(getAgentWindowSetpointsTopic(agent_id), 10, callback, options);
+            return node_->create_subscription<AgentTrackingSetpointsMsg>(getAgentTrackingSetpointsTopic(agent_id), 10, callback, options);
         }
         SubscriberPtr<AgentMetricsMsg> createAgentMetricsSubscriber(const ID& agent_id, const std::function<void(const AgentMetricsMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
@@ -379,6 +386,12 @@ namespace flychams::core
         SubscriberPtr<MarkerArrayMsg> createClusterMarkersSubscriber(const ID& cluster_id, const std::function<void(const MarkerArrayMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
             return node_->create_subscription<MarkerArrayMsg>(getClusterMarkersTopic(cluster_id), 10, callback, options);
+        }
+
+        // GUI subscribers
+        SubscriberPtr<GuiSetpointsMsg> createGuiSetpointsSubscriber(const ID& agent_id, const std::function<void(const GuiSetpointsMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
+        {
+            return node_->create_subscription<GuiSetpointsMsg>(getGuiSetpointsTopic(agent_id), 10, callback, options);
         }
     };
 

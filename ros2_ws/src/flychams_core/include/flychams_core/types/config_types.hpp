@@ -58,9 +58,7 @@ namespace flychams::core
         ID map_camera_id;
         Vector3r map_camera_position;
         Vector3r map_camera_orientation;
-        // Central view settings
-        ID central_view_id;
-        // Tracking view settings
+        // Tracking views settings
         std::vector<ID> tracking_view_ids;
     };
 
@@ -76,8 +74,7 @@ namespace flychams::core
         std::string agent_assignment;
         std::string agent_clusters;
         std::string agent_position_setpoint;
-        std::string agent_head_setpoints;
-        std::string agent_window_setpoints;
+        std::string agent_tracking_setpoints;
         std::string agent_metrics;
         std::string agent_markers;
 
@@ -92,6 +89,9 @@ namespace flychams::core
         std::string cluster_geometry;
         std::string cluster_metrics;
         std::string cluster_markers;
+
+        // GUI topics
+        std::string gui_setpoints;
     };
 
     struct FrameParameters

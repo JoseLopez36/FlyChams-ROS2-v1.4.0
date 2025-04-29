@@ -33,6 +33,8 @@ namespace flychams::simulation
 
     public: // Types
         using SharedPtr = std::shared_ptr<GuiManager>;
+        using WindowCmd = core::FrameworkTools::WindowCmd;
+        using DrawCmd = core::FrameworkTools::DrawCmd;
         enum class GuiMode
         {
             IDLE,
@@ -44,53 +46,15 @@ namespace flychams::simulation
             // Status data
             core::AgentStatus status;
             bool has_status;
-            // Head setpoints messages
-            core::AgentHeadSetpointsMsg head_setpoints;
-            bool has_head_setpoints;
-            // Window setpoints messages
-            core::AgentWindowSetpointsMsg window_setpoints;
-            bool has_window_setpoints;
+            // Setpoints data
+            bool has_gui_setpoints;
             // Subscribers
             core::SubscriberPtr<core::AgentStatusMsg> status_sub;
-            core::SubscriberPtr<core::AgentHeadSetpointsMsg> head_setpoints_sub;
-            core::SubscriberPtr<core::AgentWindowSetpointsMsg> window_setpoints_sub;
+            core::SubscriberPtr<core::GuiSetpointsMsg> gui_setpoints_sub;
             // Constructor
             Agent()
-                : status(), has_status(false), head_setpoints(), has_head_setpoints(false),
-                window_setpoints(), has_window_setpoints(false), status_sub(), head_setpoints_sub(),
-                window_setpoints_sub()
-            {
-            }
-        };
-        struct WindowCmds
-        {
-            core::IDs window_ids;
-            core::IDs vehicle_ids;
-            core::IDs camera_ids;
-            std::vector<int> crop_x;
-            std::vector<int> crop_y;
-            std::vector<int> crop_w;
-            std::vector<int> crop_h;
-        };
-        struct DrawCmds
-        {
-            core::ID window_id;
-            // Rectangles
-            std::vector<core::PointMsg> rectangle_corners;
-            std::vector<core::PointMsg> rectangle_sizes;
-            core::ColorMsg rectangle_color;
-            float rectangle_thickness;
-            // Strings
-            std::vector<core::PointMsg> string_positions;
-            std::vector<std::string> string_texts;
-            core::ColorMsg string_color;
-            float string_scale;
-
-            // Constructor
-            DrawCmds()
-                : window_id(), rectangle_corners(), rectangle_sizes(), rectangle_color(),
-                rectangle_thickness(), string_positions(), string_texts(), string_color(),
-                string_scale()
+                : status(), has_status(false), has_gui_setpoints(false),
+                status_sub(), gui_setpoints_sub()
             {
             }
         };
@@ -105,9 +69,9 @@ namespace flychams::simulation
         // Agent
         Agent agent_;
         // Window commands
-        WindowCmds simulation_window_cmds_; // Simulation window commands
-        WindowCmds operator_window_cmds_;   // Operator window commands
-        DrawCmds central_draw_cmds_;        // Central draw commands
+        std::vector<WindowCmd> simulation_window_cmds_; // Simulation window commands
+        std::vector<WindowCmd> operator_window_cmds_;   // Operator window commands
+        DrawCmd central_draw_cmd_;                      // Central draw command
 
     public: // Public methods
         void activate() { gui_mode_ = GuiMode::RESET; }
@@ -115,18 +79,15 @@ namespace flychams::simulation
 
     private: // Callbacks
         void statusCallback(const core::AgentStatusMsg::SharedPtr msg);
-        void headSetpointsCallback(const core::AgentHeadSetpointsMsg::SharedPtr msg);
-        void windowSetpointsCallback(const core::AgentWindowSetpointsMsg::SharedPtr msg);
+        void setpointsCallback(const core::GuiSetpointsMsg::SharedPtr msg);
 
     private: // GUI management
         void update();
 
     private: // GUI methods
-        void setWindows(const WindowCmds& window_cmds);
-        void resetWindows(const WindowCmds& window_cmds);
-        void drawWindow(const DrawCmds& draw_cmds);
-        void updateHeadSetpoints(const core::AgentHeadSetpointsMsg& setpoints);
-        void updateWindowSetpoints(const core::AgentWindowSetpointsMsg& setpoints);
+        void setWindows(const std::vector<WindowCmd>& window_cmds);
+        void resetWindows(std::vector<WindowCmd>& window_cmds);
+        void drawWindow(const DrawCmd& draw_cmd);
 
     private: // ROS components
         // Timer

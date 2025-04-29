@@ -149,20 +149,71 @@ namespace flychams::coordination
             AgentClustersMsg msg;
             msg.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
 
-            // Iterate over the assignment
+            // Iterate over the assignment and add tracking clusters
             int n = static_cast<int>(agent.assignment.size());
-            msg.centers.resize(n);
-            msg.radii.resize(n);
-            for (int i = 0; i < n; i++)
+            msg.centers.resize(n + 1);
+            msg.radii.resize(n + 1);
+            int c = 0;
+            for (int i = 1; i < n + 1; i++)
             {
-                const auto& cluster = clusters_[agent.assignment[i]];
+                const auto& cluster = clusters_[agent.assignment[c]];
                 msg.centers[i] = cluster.center;
                 msg.radii[i] = cluster.radius;
+                c++;
             }
+
+            // Add central cluster
+            const auto& [central_P, central_r] = computeCentralCluster(msg.centers, msg.radii);
+            msg.centers[0] = central_P;
+            msg.radii[0] = central_r;
 
             // Publish
             agent.clusters_pub->publish(msg);
         }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════════
+    // ANALYSIS: Analysis methods
+    // ════════════════════════════════════════════════════════════════════════════
+
+    std::pair<core::PointMsg, float> AgentAnalysis::computeCentralCluster(const std::vector<core::PointMsg>& centers, const std::vector<float>& radii)
+    {
+        // Get number of tracking units
+        int n = centers.size() - 1;
+
+        // Convert message to Eigen
+        Matrix3Xr tab_P(3, n);
+        RowVectorXr tab_r(n);
+        int c = 0;
+        for (int i = 1; i < n + 1; i++)
+        {
+            tab_P.col(c) = RosUtils::fromMsg(centers[i]);
+            tab_r(c) = radii[i];
+            c++;
+        }
+        
+        // Compute mean of all available clusters
+        core::Vector3r z_mean = core::Vector3r::Zero();
+        for (int i = 0; i < n; i++)
+        {
+            z_mean += tab_P.col(i);
+        }
+        z_mean /= static_cast<float>(n);
+
+        // Get the largest possible radius
+        float r_max = 0.0f;
+        for (int i = 0; i < n; i++)
+        {
+            r_max = std::max(r_max, (z_mean - tab_P.col(i)).norm() + tab_r(i));
+        }
+
+        // Convert back to message
+        PointMsg central_P;
+        RosUtils::toMsg(z_mean, central_P);
+        float central_r = r_max;
+
+        // Return central cluster and radius
+        return std::make_pair(central_P, central_r);
     }
 
 } // namespace flychams::coordination

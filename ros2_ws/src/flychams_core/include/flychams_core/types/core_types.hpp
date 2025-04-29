@@ -275,6 +275,8 @@ namespace flychams::core
     {
         // Head ID
         std::string id;
+        // Head role
+        TrackingRole role;
         // Focal lengths (m)
         float f_min;
         float f_max;
@@ -306,6 +308,10 @@ namespace flychams::core
     {
         // Window ID
         std::string id;
+        // Window role
+        TrackingRole role;
+        // Source camera ID
+        std::string source_id;
         // Resolution factors (0-1)
         float lambda_min;
         float lambda_max;
@@ -334,11 +340,10 @@ namespace flychams::core
     struct TrackingParameters
     {
         TrackingMode mode;
-        int n;                                                          // Number of tracking units (heads or windows)
-        HeadParameters central_head_params;                             // Parameters for central head
-        WindowParameters central_window_params;                         // Parameters for central window
-        std::vector<HeadParameters> tracking_head_params;               // Parameters for each tracking head
-        std::vector<WindowParameters> tracking_window_params;           // Parameters for each tracking window
+        int n_heads;                                      // Number of heads
+        int n_windows;                                    // Number of windows
+        std::vector<HeadParameters> head_params;          // Parameters for each head
+        std::vector<WindowParameters> window_params;      // Parameters for each window
     };
 
     // ════════════════════════════════════════════════════════════════
@@ -413,5 +418,14 @@ namespace flychams::core
         float rand_size;
         float rand_speed;
     };
+
+    struct Crop
+    {
+        int x;
+        int y;
+        int w;
+        int h;
+        bool is_out_of_bounds;
+    };  
 
 } // namespace flychams::core 

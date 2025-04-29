@@ -31,6 +31,54 @@ namespace flychams::core
 
     public: // Types
         using SharedPtr = std::shared_ptr<FrameworkTools>;
+        struct WindowCmd
+        {
+            core::ID window_id;
+            core::ID vehicle_id;
+            core::ID camera_id;
+            core::CropMsg crop;
+            // Constructors
+            WindowCmd() = default;
+            WindowCmd(const core::ID& window_id_in, const core::ID& vehicle_id_in, const core::ID& camera_id_in)
+            {
+                window_id = window_id_in;
+                vehicle_id = vehicle_id_in;
+                camera_id = camera_id_in;
+                crop.x = 0;
+                crop.y = 0;
+                crop.w = 0;
+                crop.h = 0;
+                crop.is_out_of_bounds = false;
+            }
+        };
+        struct RectanglesCmd
+        {
+            std::vector<core::PointMsg> positions;
+            std::vector<core::PointMsg> sizes;
+            core::ColorMsg color;
+            float thickness;
+        };
+        struct StringsCmd
+        {
+            std::vector<core::PointMsg> positions;
+            std::vector<std::string> texts;
+            core::ColorMsg color;
+            float scale;
+        };
+        struct DrawCmd
+        {
+            core::ID window_id;
+            // Rectangles
+            RectanglesCmd rectangles;
+            // Strings
+            StringsCmd strings;
+
+            // Constructor
+            DrawCmd()
+                : window_id(), rectangles(), strings()
+            {
+            }
+        };
 
     public: // Vehicle adders (override)
         virtual void addVehicle(const ID& vehicle_id) = 0;
@@ -56,9 +104,8 @@ namespace flychams::core
         virtual void setCameraFovs(const ID& vehicle_id, const IDs& camera_ids, const std::vector<float>& target_fovs) = 0;
 
     public: // Window control methods (override)
-        virtual void setWindowImageGroup(const IDs& window_ids, const IDs& vehicle_ids, const IDs& camera_ids, const std::vector<int>& crop_x, const std::vector<int>& crop_y, const std::vector<int>& crop_w, const std::vector<int>& crop_h) = 0;
-        virtual void setWindowRectangles(const ID& window_id, const std::vector<PointMsg>& corners, const std::vector<PointMsg>& sizes, const ColorMsg& color, const float& thickness) = 0;
-        virtual void setWindowStrings(const ID& window_id, const std::vector<std::string>& strings, const std::vector<PointMsg>& positions, const ColorMsg& color, const float& scale) = 0;
+        virtual void setWindows(const std::vector<WindowCmd>& window_cmds) = 0;
+        virtual void drawWindow(const DrawCmd& draw_cmd) = 0;
 
     public: // Tracking control methods (override)
         virtual bool addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors) = 0;

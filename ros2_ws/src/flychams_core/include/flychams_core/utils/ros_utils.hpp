@@ -149,6 +149,15 @@ namespace flychams::core
             toMsg(MathUtils::rotationMatrixToQuaternion(matrix.block<3, 3>(0, 0)), transform.rotation);
         }
 
+        static void toMsg(const Crop& crop, CropMsg& crop_msg)
+        {
+            crop_msg.x = crop.x;
+            crop_msg.y = crop.y;
+            crop_msg.w = crop.w;
+            crop_msg.h = crop.h;
+            crop_msg.is_out_of_bounds = crop.is_out_of_bounds;
+        }
+
         // ════════════════════════════════════════════════════════════════════════════
         // OTHER: Other utilities
         // ════════════════════════════════════════════════════════════════════════════

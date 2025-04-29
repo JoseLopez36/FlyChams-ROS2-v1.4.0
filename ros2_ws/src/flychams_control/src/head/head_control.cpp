@@ -14,29 +14,14 @@ namespace flychams::control
 		// Get update rate
 		update_rate_ = RosUtils::getParameterOr<float>(node_, "head_control.control_update_rate", 20.0f);
 
-		// Initialize agent state
-		curr_status_ = AgentStatus::IDLE;
-		has_status_ = false;
-
-		// Initialize head setpoints
-		head_setpoints_ = AgentHeadSetpointsMsg();
-		has_head_setpoints_ = false;
-
-		// Compute central head command
-		const auto& central_head_ptr = config_tools_->getCentralHead(agent_id_);
-		const auto& central_head_rpy = Vector3r(central_head_ptr->orientation.x(), central_head_ptr->orientation.y(), central_head_ptr->orientation.z());
-		Vector3Msg central_head_rpy_msg;
-		RosUtils::toMsg(central_head_rpy, central_head_rpy_msg);
-		const auto& [central_cmd_fov, central_cmd_ori] = getCommand(central_head_ptr->ref_focal, central_head_ptr->camera.sensor_size(0), central_head_rpy_msg);
-		central_cmd_.id = central_head_ptr->id;
-		central_cmd_.fov = central_cmd_fov;
-		central_cmd_.ori = central_cmd_ori;
+		// Initialize data
+		agent_ = Agent();
 
 		// Subscribe to status and head setpoints topics
-		status_sub_ = topic_tools_->createAgentStatusSubscriber(agent_id_,
+		agent_.status_sub = topic_tools_->createAgentStatusSubscriber(agent_id_,
 			std::bind(&HeadControl::statusCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
-		head_setpoints_sub_ = topic_tools_->createAgentHeadSetpointsSubscriber(agent_id_,
-			std::bind(&HeadControl::headSetpointsCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
+		agent_.setpoints_sub = topic_tools_->createAgentTrackingSetpointsSubscriber(agent_id_,
+			std::bind(&HeadControl::setpointsCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
 
 		// Set update timer
 		update_timer_ = RosUtils::createTimer(node_, update_rate_,
@@ -46,8 +31,8 @@ namespace flychams::control
 	void HeadControl::onShutdown()
 	{
 		// Destroy subscribers
-		status_sub_.reset();
-		head_setpoints_sub_.reset();
+		agent_.status_sub.reset();
+		agent_.setpoints_sub.reset();
 		// Destroy update timer
 		update_timer_.reset();
 	}
@@ -59,15 +44,15 @@ namespace flychams::control
 	void HeadControl::statusCallback(const core::AgentStatusMsg::SharedPtr msg)
 	{
 		// Update current status
-		curr_status_ = static_cast<AgentStatus>(msg->status);
-		has_status_ = true;
+		agent_.status = static_cast<AgentStatus>(msg->status);
+		agent_.has_status = true;
 	}
 
-	void HeadControl::headSetpointsCallback(const core::AgentHeadSetpointsMsg::SharedPtr msg)
+	void HeadControl::setpointsCallback(const core::AgentTrackingSetpointsMsg::SharedPtr msg)
 	{
-		// Update head setpoints
-		head_setpoints_ = *msg;
-		has_head_setpoints_ = true;
+		// Update tracking setpoints
+		agent_.setpoints = *msg;
+		agent_.has_setpoints = true;
 	}
 
 	// ════════════════════════════════════════════════════════════════════════════
@@ -76,46 +61,43 @@ namespace flychams::control
 
 	void HeadControl::update()
 	{
-		// Check if we have a valid status
-		if (!has_status_)
+		// Check if we have a valid status and setpoints
+		if (!agent_.has_status || !agent_.has_setpoints)
 		{
-			RCLCPP_WARN(node_->get_logger(), "Head control: No status data received for agent %s",
+			RCLCPP_WARN(node_->get_logger(), "Head control: No status or setpoints data received for agent %s",
 				agent_id_.c_str());
 			return;
 		}
 
 		// Check if we are in the correct state to move
-		if (curr_status_ != AgentStatus::TRACKING)
+		if (agent_.status != AgentStatus::TRACKING)
 		{
 			RCLCPP_WARN(node_->get_logger(), "Head control: Agent %s is not in the correct state to control heads",
 				agent_id_.c_str());
 			return;
 		}
 
-		// Create command vectors and initialize with central head command
-		std::vector<ID> head_ids = { central_cmd_.id };
-		std::vector<QuaternionMsg> head_orientations = { central_cmd_.ori };
-		std::vector<float> head_fovs = { central_cmd_.fov };
-
-		// Check if head setpoints are set
-		if (has_head_setpoints_)
+		// Iterate over all heads to fill vectors
+		int n = static_cast<int>(agent_.setpoints.head_ids.size());
+		std::vector<ID> head_ids(n);
+		std::vector<QuaternionMsg> head_orientations(n);
+		std::vector<float> head_fovs(n);
+		for (int i = 0; i < n; i++)
 		{
-			int n = static_cast<int>(head_setpoints_.head_ids.size());
-			for (int i = 0; i < n; i++)
-			{
-				// Get head parameters
-				const auto& head_id = head_setpoints_.head_ids[i];
-				const auto& head_ptr = config_tools_->getHead(agent_id_, head_id);
-				const float& sensor_width = head_ptr->camera.sensor_size(0);
+			// Get head parameters
+			const auto& head_id = agent_.setpoints.head_ids[i];
+			const auto& head_ptr = config_tools_->getHead(agent_id_, head_id);
+			const float& focal = agent_.setpoints.focals[i];
+			const float& sensor_width = head_ptr->camera.sensor_size(0);
+			const auto& angles = agent_.setpoints.angles[i];
 
-				// Compute command for this head
-				const auto& [head_cmd_fov, head_cmd_ori] = getCommand(head_setpoints_.focal_setpoints[i], sensor_width, head_setpoints_.rpy_setpoints[i]);
+			// Compute command for this head
+			const auto& [head_cmd_fov, head_cmd_ori] = getCommand(focal, sensor_width, angles);
 
-				// Add command to vectors
-				head_ids.push_back(head_id);
-				head_orientations.push_back(head_cmd_ori);
-				head_fovs.push_back(head_cmd_fov);
-			}
+			// Add command to vectors
+			head_ids[i] = head_id;
+			head_orientations[i] = head_cmd_ori;
+			head_fovs[i] = head_cmd_fov;
 		}
 
 		// Send commands to heads

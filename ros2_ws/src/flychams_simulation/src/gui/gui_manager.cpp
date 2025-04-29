@@ -20,70 +20,34 @@ namespace flychams::simulation
         // Initialize data
         agent_ = Agent();
 
+        // Get head configuration
+        const auto& [heads, n] = config_tools_->getHeads(agent_id_);
+
         // Get system config
         const auto& system_config = config_tools_->getSystem();
 
         // Initialize simulation window commands
-        simulation_window_cmds_ = WindowCmds();
+        simulation_window_cmds_.clear();
         // Scenario window
-        simulation_window_cmds_.window_ids.push_back(system_config.scenario_view_id);
-        simulation_window_cmds_.camera_ids.push_back(system_config.scenario_camera_id);
-        simulation_window_cmds_.vehicle_ids.push_back(agent_id_);
-        simulation_window_cmds_.crop_x.push_back(0);
-        simulation_window_cmds_.crop_y.push_back(0);
-        simulation_window_cmds_.crop_w.push_back(0);
-        simulation_window_cmds_.crop_h.push_back(0);
+        simulation_window_cmds_.push_back(WindowCmd(system_config.scenario_view_id, agent_id_, system_config.scenario_camera_id));
         // Agent window
-        simulation_window_cmds_.window_ids.push_back(system_config.agent_view_id);
-        simulation_window_cmds_.camera_ids.push_back(system_config.agent_camera_id);
-        simulation_window_cmds_.vehicle_ids.push_back(agent_id_);
-        simulation_window_cmds_.crop_x.push_back(0);
-        simulation_window_cmds_.crop_y.push_back(0);
-        simulation_window_cmds_.crop_w.push_back(0);
-        simulation_window_cmds_.crop_h.push_back(0);
+        simulation_window_cmds_.push_back(WindowCmd(system_config.agent_view_id, agent_id_, system_config.agent_camera_id));
         // Payload window
-        simulation_window_cmds_.window_ids.push_back(system_config.payload_view_id);
-        simulation_window_cmds_.camera_ids.push_back(system_config.payload_camera_id);
-        simulation_window_cmds_.vehicle_ids.push_back(agent_id_);
-        simulation_window_cmds_.crop_x.push_back(0);
-        simulation_window_cmds_.crop_y.push_back(0);
-        simulation_window_cmds_.crop_w.push_back(0);
-        simulation_window_cmds_.crop_h.push_back(0);
+        simulation_window_cmds_.push_back(WindowCmd(system_config.payload_view_id, agent_id_, system_config.payload_camera_id));
         // Map window
-        simulation_window_cmds_.window_ids.push_back(system_config.map_view_id);
-        simulation_window_cmds_.camera_ids.push_back(system_config.map_camera_id);
-        simulation_window_cmds_.vehicle_ids.push_back(agent_id_);
-        simulation_window_cmds_.crop_x.push_back(0);
-        simulation_window_cmds_.crop_y.push_back(0);
-        simulation_window_cmds_.crop_w.push_back(0);
-        simulation_window_cmds_.crop_h.push_back(0);
+        simulation_window_cmds_.push_back(WindowCmd(system_config.map_view_id, agent_id_, system_config.map_camera_id));
 
-        // Initialize operator window commands
-        operator_window_cmds_ = WindowCmds();
-        // Central window
-        operator_window_cmds_.window_ids.push_back(system_config.central_view_id);
-        operator_window_cmds_.camera_ids.push_back(config_tools_->getCentralHead(agent_id_)->id);
-        operator_window_cmds_.vehicle_ids.push_back(agent_id_);
-        operator_window_cmds_.crop_x.push_back(0);
-        operator_window_cmds_.crop_y.push_back(0);
-        operator_window_cmds_.crop_w.push_back(0);
-        operator_window_cmds_.crop_h.push_back(0);
-        // Tracking windows
+        // Initialize operator window commands (empty cameras for now)
+        operator_window_cmds_.clear();
         for (const auto& tracking_view_id : system_config.tracking_view_ids)
         {
-            operator_window_cmds_.window_ids.push_back(tracking_view_id);
-            operator_window_cmds_.camera_ids.push_back("");
-            operator_window_cmds_.vehicle_ids.push_back(agent_id_);
-            operator_window_cmds_.crop_x.push_back(0);
-            operator_window_cmds_.crop_y.push_back(0);
-            operator_window_cmds_.crop_w.push_back(0);
-            operator_window_cmds_.crop_h.push_back(0);
+            operator_window_cmds_.push_back(WindowCmd(tracking_view_id, agent_id_, ""));
         }
 
         // Initialize central head draw commands
-        central_draw_cmds_ = DrawCmds();
-        central_draw_cmds_.window_id = operator_window_cmds_.window_ids[0];
-        for (size_t i = 0; i < system_config.tracking_view_ids.size(); i++)
+        central_draw_cmd_ = DrawCmd();
+        central_draw_cmd_.window_id = operator_window_cmds_[0].window_id;
+        for (size_t i = 1; i < operator_window_cmds_.size(); i++)
         {
             // Draw parameters
             ColorMsg rectangle_color;
@@ -102,23 +66,22 @@ namespace flychams::simulation
             start_position.x = HUGE_VALF;
             start_position.y = HUGE_VALF;
 
-            central_draw_cmds_.rectangle_corners.push_back(start_position);
-            central_draw_cmds_.rectangle_sizes.push_back(PointMsg());
-            central_draw_cmds_.rectangle_color = rectangle_color;
-            central_draw_cmds_.rectangle_thickness = rectangle_thickness;
-            central_draw_cmds_.string_positions.push_back(start_position);
-            central_draw_cmds_.string_texts.push_back("TW" + std::to_string(i + 1));
-            central_draw_cmds_.string_color = string_color;
-            central_draw_cmds_.string_scale = string_scale;
+            // Fill draw command
+            central_draw_cmd_.rectangles.positions.push_back(start_position);
+            central_draw_cmd_.rectangles.sizes.push_back(PointMsg());
+            central_draw_cmd_.rectangles.color = rectangle_color;
+            central_draw_cmd_.rectangles.thickness = rectangle_thickness;
+            central_draw_cmd_.strings.positions.push_back(start_position);
+            central_draw_cmd_.strings.texts.push_back("TW" + std::to_string(i));
+            central_draw_cmd_.strings.color = string_color;
+            central_draw_cmd_.strings.scale = string_scale;
         }
 
         // Create subscribers for agent status, head setpoints and window setpoints
         agent_.status_sub = topic_tools_->createAgentStatusSubscriber(agent_id_,
             std::bind(&GuiManager::statusCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
-        agent_.head_setpoints_sub = topic_tools_->createAgentHeadSetpointsSubscriber(agent_id_,
-            std::bind(&GuiManager::headSetpointsCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
-        agent_.window_setpoints_sub = topic_tools_->createAgentWindowSetpointsSubscriber(agent_id_,
-            std::bind(&GuiManager::windowSetpointsCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
+        agent_.gui_setpoints_sub = topic_tools_->createGuiSetpointsSubscriber(agent_id_,
+            std::bind(&GuiManager::setpointsCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
 
         // Set update timer
         update_timer_ = RosUtils::createTimer(node_, update_rate_,
@@ -129,8 +92,7 @@ namespace flychams::simulation
     {
         // Destroy agent data
         agent_.status_sub.reset();
-        agent_.head_setpoints_sub.reset();
-        agent_.window_setpoints_sub.reset();
+        agent_.gui_setpoints_sub.reset();
         // Destroy update timer
         update_timer_.reset();
     }
@@ -146,18 +108,44 @@ namespace flychams::simulation
         agent_.has_status = true;
     }
 
-    void GuiManager::headSetpointsCallback(const AgentHeadSetpointsMsg::SharedPtr msg)
+    void GuiManager::setpointsCallback(const GuiSetpointsMsg::SharedPtr msg)
     {
-        // Update agent head setpoints
-        agent_.head_setpoints = *msg;
-        agent_.has_head_setpoints = true;
-    }
+        // Get number of setpoints
+        int n = static_cast<int>(msg->camera_ids.size());
 
-    void GuiManager::windowSetpointsCallback(const AgentWindowSetpointsMsg::SharedPtr msg)
-    {
-        // Update agent window setpoints
-        agent_.window_setpoints = *msg;
-        agent_.has_window_setpoints = true;
+        // Iterate through all setpoints
+        for (int i = 0; i < n; i++)
+        {
+            // Get camera ID and crop
+            const auto& camera_id = msg->camera_ids[i];
+            const auto& crop = msg->crops[i];
+
+            // Check if crop is out of bounds. If so, set empty image and skip this window
+            if (crop.is_out_of_bounds)
+            {
+                operator_window_cmds_[i].camera_id = "";
+                continue;
+            }
+
+            // Set camera ID
+            operator_window_cmds_[i].camera_id = camera_id;
+
+            // Update crop
+            operator_window_cmds_[i].crop = crop;
+
+            // Update rectangles (draw command)
+            central_draw_cmd_.rectangles.positions[i].x = crop.x;
+            central_draw_cmd_.rectangles.positions[i].y = crop.y;
+            central_draw_cmd_.rectangles.sizes[i].x = crop.w;
+            central_draw_cmd_.rectangles.sizes[i].y = crop.h;
+
+            // Update strings (draw command)
+            central_draw_cmd_.strings.positions[i].x = crop.x;
+            central_draw_cmd_.strings.positions[i].y = crop.y - 200.0f;
+        }
+
+        // Update has_gui_setpoints flag
+        agent_.has_gui_setpoints = true;
     }
 
     // ════════════════════════════════════════════════════════════════════════════
@@ -201,27 +189,13 @@ namespace flychams::simulation
                 return;
             }
 
-            // Update head setpoints commands
-            if (agent_.has_head_setpoints)
+            // Update GUI setpoints commands
+            if (agent_.has_gui_setpoints)
             {
-                RCLCPP_INFO(node_->get_logger(), "GUI manager: Updating head setpoints for agent %s", agent_id_.c_str());
-                updateHeadSetpoints(agent_.head_setpoints);
+                RCLCPP_INFO(node_->get_logger(), "GUI manager: Updating GUI setpoints for agent %s", agent_id_.c_str());
+                setWindows(operator_window_cmds_);
+                drawWindow(central_draw_cmd_);
             }
-
-            // Update window setpoints commands
-            if (agent_.has_window_setpoints)
-            {
-                RCLCPP_INFO(node_->get_logger(), "GUI manager: Updating window setpoints for agent %s", agent_id_.c_str());
-                updateWindowSetpoints(agent_.window_setpoints);
-            }
-
-            // Set operator window images
-            RCLCPP_INFO(node_->get_logger(), "GUI manager: Setting operator windows for agent %s", agent_id_.c_str());
-            setWindows(operator_window_cmds_);
-
-            // Send draw commands to the central window
-            RCLCPP_INFO(node_->get_logger(), "GUI manager: Drawing central window for agent %s", agent_id_.c_str());
-            drawWindow(central_draw_cmds_);
             break;
 
         default:
@@ -234,90 +208,32 @@ namespace flychams::simulation
     // IMPLEMENTATION: Implementation methods for GUI management
     // ════════════════════════════════════════════════════════════════════════════
 
-    void GuiManager::setWindows(const WindowCmds& window_cmds)
+    void GuiManager::setWindows(const std::vector<WindowCmd>& window_cmds)
     {
         // Send commands to set window images
-        framework_tools_->setWindowImageGroup(window_cmds.window_ids,
-            window_cmds.vehicle_ids, window_cmds.camera_ids,
-            window_cmds.crop_x, window_cmds.crop_y,
-            window_cmds.crop_w, window_cmds.crop_h);
+        framework_tools_->setWindows(window_cmds);
         // Delay to ensure GUI is updated
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
-    void GuiManager::resetWindows(const WindowCmds& window_cmds)
+    void GuiManager::resetWindows(std::vector<WindowCmd>& window_cmds)
     {
-        // Send empty commands to windows
-        int n = window_cmds.window_ids.size();
-        framework_tools_->setWindowImageGroup(window_cmds.window_ids,
-            std::vector<ID>(n, ""),
-            std::vector<ID>(n, ""),
-            std::vector<int>(n, 0),
-            std::vector<int>(n, 0),
-            std::vector<int>(n, 0),
-            std::vector<int>(n, 0));
-        // Delay to ensure GUI is updated
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    }
-
-    void GuiManager::drawWindow(const DrawCmds& draw_cmds)
-    {
-        // Send rectangle draw commands to the window
-        framework_tools_->setWindowRectangles(draw_cmds.window_id,
-            draw_cmds.rectangle_corners, draw_cmds.rectangle_sizes,
-            draw_cmds.rectangle_color, draw_cmds.rectangle_thickness);
-        // Delay to ensure GUI is updated
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        // Send string draw commands to the window
-        framework_tools_->setWindowStrings(draw_cmds.window_id,
-            draw_cmds.string_texts, draw_cmds.string_positions,
-            draw_cmds.string_color, draw_cmds.string_scale);
-        // Delay to ensure GUI is updated
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-    void GuiManager::updateHeadSetpoints(const AgentHeadSetpointsMsg& setpoints)
-    {
-        for (int i = 0; i < setpoints.head_ids.size(); i++)
+        // Empty source camera IDs
+        for (auto& window_cmd : window_cmds)
         {
-            // Set camera ID as head ID
-            operator_window_cmds_.camera_ids[i + 1] = setpoints.head_ids[i];
-            // No crop
-            operator_window_cmds_.crop_x[i + 1] = 0;
-            operator_window_cmds_.crop_y[i + 1] = 0;
-            operator_window_cmds_.crop_w[i + 1] = 0;
-            operator_window_cmds_.crop_h[i + 1] = 0;
+            window_cmd.camera_id = "";
         }
+
+        // Send commands
+        setWindows(window_cmds);
     }
 
-    void GuiManager::updateWindowSetpoints(const AgentWindowSetpointsMsg& setpoints)
+    void GuiManager::drawWindow(const DrawCmd& draw_cmd)
     {
-        for (int i = 0; i < setpoints.crop_setpoints.size(); i++)
-        {
-            // Get setpoint crop
-            const CropMsg crop = setpoints.crop_setpoints[i];
-            // Check if crop is out of bounds. If so, set empty image and skip this window
-            if (crop.is_out_of_bounds)
-            {
-                operator_window_cmds_.camera_ids[i + 1] = "";
-                continue;
-            }
-            // Set camera ID as central head ID
-            operator_window_cmds_.camera_ids[i + 1] = operator_window_cmds_.camera_ids[0];
-            // Update crop
-            operator_window_cmds_.crop_x[i + 1] = crop.x;
-            operator_window_cmds_.crop_y[i + 1] = crop.y;
-            operator_window_cmds_.crop_w[i + 1] = crop.w;
-            operator_window_cmds_.crop_h[i + 1] = crop.h;
-            // Update draw rectangles
-            central_draw_cmds_.rectangle_corners[i].x = crop.x;
-            central_draw_cmds_.rectangle_corners[i].y = crop.y;
-            central_draw_cmds_.rectangle_sizes[i].x = crop.w;
-            central_draw_cmds_.rectangle_sizes[i].y = crop.h;
-            // Update draw strings
-            central_draw_cmds_.string_positions[i].x = crop.x;
-            central_draw_cmds_.string_positions[i].y = crop.y - 200.0f;
-        }
+        // Send draw commands to the window
+        framework_tools_->drawWindow(draw_cmd);
+        // Delay to ensure GUI is updated
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
 } // namespace flychams::simulation

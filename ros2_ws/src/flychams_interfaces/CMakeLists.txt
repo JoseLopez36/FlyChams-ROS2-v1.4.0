@@ -24,8 +24,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/AgentStatus.msg"
   "msg/AgentAssignment.msg"
   "msg/AgentClusters.msg"
-  "msg/AgentHeadSetpoints.msg"
-  "msg/AgentWindowSetpoints.msg"
+  "msg/AgentTrackingSetpoints.msg"
   "msg/AgentMetrics.msg"
   # Target messages
   "msg/TargetMetrics.msg"
@@ -33,6 +32,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ClusterAssignment.msg"
   "msg/ClusterGeometry.msg"
   "msg/ClusterMetrics.msg"
+  # GUI messages
+  "msg/GuiSetpoints.msg"
   DEPENDENCIES std_msgs geometry_msgs
 )
 

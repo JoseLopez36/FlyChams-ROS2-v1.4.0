@@ -105,9 +105,8 @@ namespace flychams::core
         void setCameraFovs(const ID& vehicle_id, const IDs& camera_ids, const std::vector<float>& target_fovs) override;
 
     public: // Window control methods
-        void setWindowImageGroup(const IDs& window_ids, const IDs& vehicle_ids, const IDs& camera_ids, const std::vector<int>& crop_x, const std::vector<int>& crop_y, const std::vector<int>& crop_w, const std::vector<int>& crop_h) override;
-        void setWindowRectangles(const ID& window_id, const std::vector<PointMsg>& corners, const std::vector<PointMsg>& sizes, const ColorMsg& color, const float& thickness) override;
-        void setWindowStrings(const ID& window_id, const std::vector<std::string>& strings, const std::vector<PointMsg>& positions, const ColorMsg& color, const float& scale) override;
+        void setWindows(const std::vector<WindowCmd>& window_cmds) override;
+        void drawWindow(const DrawCmd& draw_cmd) override;
 
     public: // Tracking control methods
         bool addTargetGroup(const IDs& target_ids, const std::vector<TargetType>& target_types, const std::vector<PointMsg>& positions, const bool& highlight, const std::vector<ColorMsg>& highlight_colors) override;
@@ -131,31 +130,21 @@ namespace flychams::core
                 return 2;
             else if (window_id == system_config.payload_view_id)
                 return 3;
-            else if (window_id == system_config.central_view_id)
-                return 4;
             else if (window_id == system_config.tracking_view_ids.at(0))
-                return 5;
+                return 4;
             else if (window_id == system_config.tracking_view_ids.at(1))
-                return 6;
+                return 5;
             else if (window_id == system_config.tracking_view_ids.at(2))
-                return 7;
+                return 6;
             else if (window_id == system_config.tracking_view_ids.at(3))
+                return 7;
+            else if (window_id == system_config.tracking_view_ids.at(4))
                 return 8;
             else
             {
                 RCLCPP_ERROR(node_->get_logger(), "Invalid window ID: %s", window_id.c_str());
                 return 0;
             }
-        }
-
-        std::vector<int> getWindowIndices(const IDs& window_ids) const
-        {
-            std::vector<int> indices;
-            for (const auto& window_id : window_ids)
-            {
-                indices.push_back(getWindowIndex(window_id));
-            }
-            return indices;
         }
 
     private: // ROS components

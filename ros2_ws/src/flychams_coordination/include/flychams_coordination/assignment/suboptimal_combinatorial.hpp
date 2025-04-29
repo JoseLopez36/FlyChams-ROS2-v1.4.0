@@ -317,13 +317,20 @@ namespace flychams::coordination
 
             // If the assignment has not been calculated previously:
             // Calculate observation cost
-            core::Matrix3Xr tab_P = core::Matrix3Xr::Zero(3, nk);
-            core::RowVectorXr tab_r = core::RowVectorXr::Zero(nk);
-            for (int t = 0; t < nk; t++)
+            // Get cluster centers and radii matrices for all units (accounting for the central unit)
+            core::Matrix3Xr tab_P = core::Matrix3Xr::Zero(3, nk + 1);
+            core::RowVectorXr tab_r = core::RowVectorXr::Zero(nk + 1);
+            // Tracking units
+            for (int t = 1; t < nk + 1; t++)
             {
                 tab_P.col(t) = Tk[t].C;
                 tab_r(t) = Tk[t].r;
             }
+            // Central unit (mean of all selected clusters and maximum radius)
+            const auto& [central_P, central_r] = computeCentralCluster(tab_P, tab_r);
+            tab_P.col(0) = central_P;
+            tab_r(0) = central_r;
+            // Run solver to get optimal position
             float Jo;
             core::Vector3r x_opt = solver->run(tab_P, tab_r, x, Jo);
 
@@ -442,6 +449,30 @@ namespace flychams::coordination
             }
 
             return P;
+        }
+
+        std::pair<core::Vector3r, float> computeCentralCluster(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r)
+        {
+            // Get number of tracking units
+            int n = tab_P.cols();
+            
+            // Compute mean of all available clusters
+            core::Vector3r z_mean = core::Vector3r::Zero();
+            for (int i = 0; i < n; i++)
+            {
+                z_mean += tab_P.col(i);
+            }
+            z_mean /= static_cast<float>(n);
+
+            // Get the largest possible radius
+            float r_max = 0.0f;
+            for (int i = 0; i < n; i++)
+            {
+                r_max = std::max(r_max, (z_mean - tab_P.col(i)).norm() + tab_r(i));
+            }
+
+            // Return central cluster and radius
+            return std::make_pair(z_mean, r_max);
         }
     };
 

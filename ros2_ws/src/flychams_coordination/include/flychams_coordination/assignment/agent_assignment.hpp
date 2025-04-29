@@ -114,9 +114,8 @@ namespace flychams::coordination
         void update();
 
     private: // Utility methods
-        void createPositionSolver(PositionSolver::SharedPtr& solver, const core::ID& agent_id);
-        CostFunctions::TrackingUnit centralUnitParameters(const core::TrackingParameters& tracking_params);
-        std::vector<CostFunctions::TrackingUnit> trackingUnitParameters(const core::TrackingParameters& tracking_params);
+        PositionSolver::SharedPtr createPositionSolver(const std::string& agent_id, const PositionSolver::Parameters& solver_params, const PositionSolver::SolverMode& solver_mode);
+        std::vector<CostFunctions::TrackingUnit> createUnitParameters(const core::TrackingParameters& tracking_params);
 
     private: // ROS components
         // Timer

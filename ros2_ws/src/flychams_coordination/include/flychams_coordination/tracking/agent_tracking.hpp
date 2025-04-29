@@ -1,7 +1,8 @@
 #pragma once
 
 // Tracking includes
-#include "flychams_coordination/tracking/tracking_solver.hpp"
+#include "flychams_coordination/tracking/head_solver.hpp"
+#include "flychams_coordination/tracking/window_solver.hpp"
 
 // Base module include
 #include "flychams_core/base/base_module.hpp"
@@ -10,12 +11,7 @@ namespace flychams::coordination
 {
     /**
      * ════════════════════════════════════════════════════════════════
-     * @brief Controller for UAV agent position and yaw
-     *
-     * @details
-     * This class is responsible for controlling the position and yaw
-     * of UAV agents using PID controllers. It manages multiple agents
-     * and their respective control parameters.
+     * @brief Manager to ensure constant tracking of targets
      *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
@@ -42,27 +38,22 @@ namespace flychams::coordination
             // Status data
             core::AgentStatus status;
             bool has_status;
-            // Position data
-            core::PointMsg position;
-            bool has_position;
             // Clusters data
             core::AgentClustersMsg clusters;
             bool has_clusters;
             // Tracking setpoint messages
-            core::AgentHeadSetpointsMsg head_setpoints;
-            core::AgentWindowSetpointsMsg window_setpoints;
+            core::AgentTrackingSetpointsMsg tracking_setpoints;
+            core::GuiSetpointsMsg gui_setpoints;
             // Subscribers
             core::SubscriberPtr<core::AgentStatusMsg> status_sub;
-            core::SubscriberPtr<core::PointStampedMsg> position_sub;
             core::SubscriberPtr<core::AgentClustersMsg> clusters_sub;
             // Publisher
-            core::PublisherPtr<core::AgentHeadSetpointsMsg> head_setpoints_pub;
-            core::PublisherPtr<core::AgentWindowSetpointsMsg> window_setpoints_pub;
+            core::PublisherPtr<core::AgentTrackingSetpointsMsg> tracking_setpoints_pub;
+            core::PublisherPtr<core::GuiSetpointsMsg> gui_setpoints_pub;
             // Constructor
             Agent()
-                : status(), has_status(false), position(), has_position(false), clusters(),
-                has_clusters(false), head_setpoints(), window_setpoints(), status_sub(),
-                position_sub(), clusters_sub(), head_setpoints_pub(), window_setpoints_pub()
+                : status(), has_status(false), clusters(), has_clusters(false), tracking_setpoints(), 
+                gui_setpoints(), status_sub(), clusters_sub(), tracking_setpoints_pub(), gui_setpoints_pub()
             {
             }
         };
@@ -71,13 +62,21 @@ namespace flychams::coordination
         core::ID agent_id_;
         float update_rate_;
         // Tracking parameters
-        core::TrackingParameters tracking_params_;
+        core::TrackingMode mode_;
+        int n_heads_;
+        int n_windows_;
+        std::vector<core::HeadParameters> head_params_;
+        std::vector<core::WindowParameters> window_params_;
+        // Transform frames
+        std::string world_frame_;
+        std::vector<std::string> optical_frames_;
 
     private: // Data
         // Agent
         Agent agent_;
         // Solvers
-        std::vector<TrackingSolver> solvers_;
+        std::vector<HeadSolver> head_solvers_;
+        std::vector<WindowSolver> window_solvers_;
 
     private: // Callbacks
         void statusCallback(const core::AgentStatusMsg::SharedPtr msg);
@@ -88,8 +87,10 @@ namespace flychams::coordination
         void update();
 
     private: // Tracking methods
-        void computeMultiCamera(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, core::AgentHeadSetpointsMsg& setpoints);
-        void computeMultiWindow(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, core::AgentWindowSetpointsMsg& setpoints);
+        void initializeMultiCamera();
+        void initializeMultiWindow();
+        void updateMultiCamera(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const std::vector<core::Matrix4r>& tab_T);
+        void updateMultiWindow(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const core::Matrix4r& central_T);
 
     private: // ROS components
         // Timer

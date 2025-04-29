@@ -282,56 +282,60 @@ namespace flychams::core
     // WINDOW CONTROL: Service-based control methods
     // ════════════════════════════════════════════════════════════════════════════
 
-    void AirsimTools::setWindowImageGroup(const IDs& window_ids, const IDs& vehicle_ids, const IDs& camera_ids, const std::vector<int>& crop_x, const std::vector<int>& crop_y, const std::vector<int>& crop_w, const std::vector<int>& crop_h)
+    void AirsimTools::setWindows(const std::vector<WindowCmd>& window_cmds)
     {
+        // Get number of windows
+        const size_t n = window_cmds.size();
+
         // Create message
         WindowImageCmdGroup msg;
-        msg.window_indices = getWindowIndices(window_ids);
-        msg.vehicle_names = vehicle_ids;
-        msg.camera_names = camera_ids;
-
-        for (size_t i = 0; i < window_ids.size(); i++)
+        msg.window_indices.resize(n);
+        msg.vehicle_names.resize(n);
+        msg.camera_names.resize(n);
+        msg.corners.resize(n);
+        msg.sizes.resize(n);
+        for (size_t i = 0; i < n; i++)
         {
-            PointMsg corner;
-            corner.x = crop_x[i];
-            corner.y = crop_y[i];
-            msg.corners.push_back(corner);
-            PointMsg size;
-            size.x = crop_w[i];
-            size.y = crop_h[i];
-            msg.sizes.push_back(size);
+            const auto& cmd = window_cmds[i];
+
+            msg.window_indices[i] = getWindowIndex(cmd.window_id);
+            msg.vehicle_names[i] = cmd.vehicle_id;
+            msg.camera_names[i] = cmd.camera_id;
+            msg.corners[i].x = cmd.crop.x;
+            msg.corners[i].y = cmd.crop.y;
+            msg.sizes[i].x = cmd.crop.w;
+            msg.sizes[i].y = cmd.crop.h;
         }
 
         // Publish message
         window_image_cmd_group_pub_->publish(msg);
     }
 
-    void AirsimTools::setWindowRectangles(const ID& window_id, const std::vector<PointMsg>& corners, const std::vector<PointMsg>& sizes, const ColorMsg& color, const float& thickness)
+    void AirsimTools::drawWindow(const DrawCmd& draw_cmd)
     {
-        // Create message
-        WindowRectangleCmd msg;
-        msg.window_index = getWindowIndex(window_id);
-        msg.corners = corners;
-        msg.sizes = sizes;
-        msg.color = color;
-        msg.thickness = thickness;
+        // Get number of elements to draw
+        const size_t n_rectangles = draw_cmd.rectangles.positions.size();
+        const size_t n_strings = draw_cmd.strings.positions.size();
 
-        // Publish message
-        window_rectangle_cmd_pub_->publish(msg);
-    }
+        // Create rectangle message
+        WindowRectangleCmd rectangle_msg;
+        rectangle_msg.window_index = getWindowIndex(draw_cmd.window_id);
+        rectangle_msg.corners = draw_cmd.rectangles.positions;
+        rectangle_msg.sizes = draw_cmd.rectangles.sizes;
+        rectangle_msg.color = draw_cmd.rectangles.color;
+        rectangle_msg.thickness = draw_cmd.rectangles.thickness;
 
-    void AirsimTools::setWindowStrings(const ID& window_id, const std::vector<std::string>& strings, const std::vector<PointMsg>& positions, const ColorMsg& color, const float& scale)
-    {
-        // Create message
-        WindowStringCmd msg;
-        msg.window_index = getWindowIndex(window_id);
-        msg.strings = strings;
-        msg.positions = positions;
-        msg.color = color;
-        msg.scale = scale;
+        // Create string message
+        WindowStringCmd string_msg;
+        string_msg.window_index = getWindowIndex(draw_cmd.window_id);
+        string_msg.strings = draw_cmd.strings.texts;
+        string_msg.positions = draw_cmd.strings.positions;
+        string_msg.color = draw_cmd.strings.color;
+        string_msg.scale = draw_cmd.strings.scale;
 
-        // Publish message
-        window_string_cmd_pub_->publish(msg);
+        // Publish rectangle and string messages
+        window_rectangle_cmd_pub_->publish(rectangle_msg);
+        window_string_cmd_pub_->publish(string_msg);
     }
 
     // ════════════════════════════════════════════════════════════════════════════

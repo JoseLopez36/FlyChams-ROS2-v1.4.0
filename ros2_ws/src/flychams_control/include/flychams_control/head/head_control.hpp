@@ -34,11 +34,22 @@ namespace flychams::control
 
 	public: // Types
 		using SharedPtr = std::shared_ptr<HeadControl>;
-		struct HeadCmd
+		struct Agent
 		{
-			core::ID id;
-			core::QuaternionMsg ori;
-			float fov;
+			// Status data
+			core::AgentStatus status;
+			bool has_status;
+			// Setpoint data
+			core::AgentTrackingSetpointsMsg setpoints;
+			bool has_setpoints;
+			// Subscribers
+			core::SubscriberPtr<core::AgentStatusMsg> status_sub;
+			core::SubscriberPtr<core::AgentTrackingSetpointsMsg> setpoints_sub;
+			// Constructor
+			Agent()
+				: status(), has_status(false), setpoints(), has_setpoints(false), status_sub(), setpoints_sub()
+			{
+			}
 		};
 
 	private: // Parameters
@@ -46,18 +57,12 @@ namespace flychams::control
 		float update_rate_;
 
 	private: // Data
-		// Current status
-		core::AgentStatus curr_status_;
-		bool has_status_;
-		// Head setpoints
-		core::AgentHeadSetpointsMsg head_setpoints_;
-		bool has_head_setpoints_;
-		// Central head command
-		HeadCmd central_cmd_;
+		// Agent
+		Agent agent_;
 
 	private: // Callbacks
 		void statusCallback(const core::AgentStatusMsg::SharedPtr msg);
-		void headSetpointsCallback(const core::AgentHeadSetpointsMsg::SharedPtr msg);
+		void setpointsCallback(const core::AgentTrackingSetpointsMsg::SharedPtr msg);
 
 	private: // Head management
 		// Update
@@ -67,9 +72,6 @@ namespace flychams::control
 		std::pair<float, core::QuaternionMsg> getCommand(const float& focal, const float& sensor_width, const core::Vector3Msg& rpy);
 
 	private:
-		// Subscribers
-		core::SubscriberPtr<core::AgentStatusMsg> status_sub_;
-		core::SubscriberPtr<core::AgentHeadSetpointsMsg> head_setpoints_sub_;
 		// Timer
 		core::TimerPtr update_timer_;
 	};

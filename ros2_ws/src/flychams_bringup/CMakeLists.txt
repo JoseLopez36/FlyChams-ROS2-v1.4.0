@@ -16,7 +16,6 @@ set(BRINGUP_SRC
   src/registration/agent_registration.cpp
   src/registration/target_registration.cpp
   src/registration/cluster_registration.cpp
-  src/registration/gui_registration.cpp
 )
 add_library(${PROJECT_NAME} SHARED ${BRINGUP_SRC})
 target_include_directories(${PROJECT_NAME} PUBLIC

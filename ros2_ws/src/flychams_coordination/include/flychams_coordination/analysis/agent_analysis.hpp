@@ -89,6 +89,9 @@ namespace flychams::coordination
     private: // Analysis management
         void update();
 
+    private: // Analysis methods
+        std::pair<core::PointMsg, float> computeCentralCluster(const std::vector<core::PointMsg>& centers, const std::vector<float>& radii);
+
     private: // ROS components
         // Timer
         core::TimerPtr update_timer_;
