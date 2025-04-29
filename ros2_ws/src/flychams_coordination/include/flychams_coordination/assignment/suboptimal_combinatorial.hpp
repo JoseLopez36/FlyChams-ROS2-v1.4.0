@@ -18,11 +18,6 @@ namespace flychams::coordination
      * ════════════════════════════════════════════════════════════════
      * @brief Solver for agent assignment using sub-optimal combinatorial 
      * optimization
-     *
-     * @details
-     * This class implements a sub-optimal combinatorial optimization
-     * algorithm for solving the agent assignment problem.
-     *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
      * @date 2025-04-22

@@ -12,12 +12,6 @@ namespace flychams::coordination
      * ════════════════════════════════════════════════════════════════
      * @brief Solver for agent positioning using Aging Leader Challenger
      * PSO algorithm
-     *
-     * @details
-     * This class implements the ALC-PSO algorithm for finding the minimum
-     * of a cost function. It is used to find the optimal position of the
-     * agent.
-     *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
      * @date 2025-04-24

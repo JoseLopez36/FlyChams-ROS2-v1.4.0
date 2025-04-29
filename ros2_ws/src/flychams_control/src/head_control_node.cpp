@@ -13,12 +13,6 @@ using namespace flychams::control;
  * ════════════════════════════════════════════════════════════════
  * @brief Control node for controlling the agent's heads (gimbal/
  * camera)
- *
- * @details
- * This class implements the control node for controlling the heads
- * of the agents (e.g. zoom, pan, tilt). It uses the discoverer node
- * to discover the heads and then creates a controller for each head.
- *
  * ════════════════════════════════════════════════════════════════
  * @author Jose Francisco Lopez Ruiz
  * @date 2025-02-28

@@ -8,12 +8,6 @@ namespace flychams::control
 	/**
 	 * ════════════════════════════════════════════════════════════════
 	 * @brief Controller for UAV heads
-	 *
-	 * @details
-	 * This class is responsible for controlling the position and yaw
-	 * of UAV heads using PID controllers. It manages multiple heads
-	 * and their respective control parameters.
-	 *
 	 * ════════════════════════════════════════════════════════════════
 	 * @author Jose Francisco Lopez Ruiz
 	 * @date 2025-03-04

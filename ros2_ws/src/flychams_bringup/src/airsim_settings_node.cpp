@@ -8,12 +8,6 @@ using namespace flychams::core;
 /**
  * ════════════════════════════════════════════════════════════════
  * @brief Airsim settings node for creating the settings.json file
- *
- * @details
- * This node creates the settings.json file for the AirSim simulator.
- * It uses the ConfigTools class to parse the configuration file and
- * create the settings.json file.
- *
  * ════════════════════════════════════════════════════════════════
  * @author Jose Francisco Lopez Ruiz
  * @date 2025-03-02

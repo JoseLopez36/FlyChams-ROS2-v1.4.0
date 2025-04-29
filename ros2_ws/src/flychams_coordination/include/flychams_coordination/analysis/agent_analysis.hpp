@@ -8,10 +8,6 @@ namespace flychams::coordination
     /**
      * ════════════════════════════════════════════════════════════════
      * @brief Agent analysis manager
-     *
-     * @details
-     * This class is responsible for analyzing agent data (e.g. clusters).
-     *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
      * @date 2025-03-28

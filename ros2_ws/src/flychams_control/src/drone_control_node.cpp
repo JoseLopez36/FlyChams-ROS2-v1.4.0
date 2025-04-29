@@ -12,12 +12,6 @@ using namespace flychams::control;
 /**
  * ════════════════════════════════════════════════════════════════
  * @brief Control node for controlling each drone registered
- *
- * @details
- * This class implements the control node for controlling the position
- * of the drones. It uses the discoverer node to discover each drone
- * and then creates controllers for it.
- *
  * ════════════════════════════════════════════════════════════════
  * @author Jose Francisco Lopez Ruiz
  * @date 2025-03-31

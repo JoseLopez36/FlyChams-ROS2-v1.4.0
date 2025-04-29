@@ -12,7 +12,6 @@ namespace flychams::coordination
     /**
      * ════════════════════════════════════════════════════════════════
      * @brief Manager to ensure constant tracking of targets
-     *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
      * @date 2025-01-29

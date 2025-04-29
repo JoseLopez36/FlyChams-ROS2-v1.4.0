@@ -13,13 +13,6 @@ using namespace flychams::coordination;
  * ════════════════════════════════════════════════════════════════
  * @brief Agent assignment node for assigning clusters to agents
  * in the simulation
- *
- * @details
- * This class implements the agent assignment node for assigning
- * clusters to agents in the simulation. It uses the discoverer node
- * to discover the different clusters and then adds them to the
- * assignment manager.
- *
  * ════════════════════════════════════════════════════════════════
  * @author Jose Francisco Lopez Ruiz
  * @date 2025-02-28

@@ -8,10 +8,6 @@ namespace flychams::bringup
 	/**
 	 * ════════════════════════════════════════════════════════════════
 	 * @brief Registration of clusters
-	 *
-	 * @details
-	 * This class is responsible for registering clusters.
-	 *
 	 * ════════════════════════════════════════════════════════════════
 	 * @author Jose Francisco Lopez Ruiz
 	 * @date 2025-03-21

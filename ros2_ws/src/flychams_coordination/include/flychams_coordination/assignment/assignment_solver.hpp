@@ -14,13 +14,6 @@ namespace flychams::coordination
     /**
      * ════════════════════════════════════════════════════════════════
      * @brief Solver for cluster-agent assignment problems
-     *
-     * @details
-     * This class implements different algorithms for solving the
-     * cluster-agent assignment problem. It supports multiple assignment
-     * modes such as sub-optimal combinatorial assignment,
-     * with configurable parameters for optimization.
-     *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
      * @date 2025-01-31

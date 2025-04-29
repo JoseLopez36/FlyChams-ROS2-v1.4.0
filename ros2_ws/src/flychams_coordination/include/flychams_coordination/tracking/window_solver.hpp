@@ -9,7 +9,6 @@ namespace flychams::coordination
     /**
      * ════════════════════════════════════════════════════════════════
      * @brief Solver for agent tracking. Specific for head tracking
-     *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
      * @date 2025-04-28

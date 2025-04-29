@@ -41,11 +41,6 @@ namespace flychams::core
      * ════════════════════════════════════════════════════════════════
      * @brief AirSim-specific implementation of the framework tools utility
      *
-     * @details
-     * This class implements the framework tools interface for the AirSim
-     * framework, providing specific implementations for vehicle control,
-     * target management, and GUI operations.
-     *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
      * @date 2025-02-14

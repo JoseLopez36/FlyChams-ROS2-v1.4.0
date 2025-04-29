@@ -11,12 +11,6 @@ namespace flychams::coordination
     /**
      * ════════════════════════════════════════════════════════════════
      * @brief Assignment manager for UAV agents
-     *
-     * @details
-     * This class is responsible for computing optimal assignments
-     * of agents to clusters, so that the agents can track the
-     * clusters with the best possible quality.
-     *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
      * @date 2025-01-29

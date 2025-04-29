@@ -8,12 +8,6 @@ namespace flychams::control
     /**
      * ════════════════════════════════════════════════════════════════
      * @brief Speed planner
-     *
-     * @details
-     * This class implements a speed planner.
-     * It provides methods for planning the speed of the drone based on
-     * the distance to the goal and other criteria.
-     *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
      * @date 2025-03-27

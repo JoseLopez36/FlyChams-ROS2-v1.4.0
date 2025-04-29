@@ -84,13 +84,10 @@ namespace airsim_wrapper
     /**
      * ════════════════════════════════════════════════════════════════
      * @brief AirSim ROS2 Wrapper Class
-     *
-     * @details
-     * This class provides a ROS2 wrapper for the AirSim simulator.
-     * It handles communication between ROS2 nodes and AirSim, managing
-     * vehicle control, sensor data, and simulator state.
-     *
-     * ════════════════════════════════════════════════════════════════
+	 * ════════════════════════════════════════════════════════════════
+	 * @author Jose Francisco Lopez Ruiz
+	 * @date 2025-03-31
+	 * ════════════════════════════════════════════════════════════════
      */
     class AirsimWrapper
     {

@@ -11,14 +11,8 @@ using namespace flychams::coordination;
 
 /**
  * ════════════════════════════════════════════════════════════════
- * @brief Agent tracking node for tracking targets (clusters) in the simulation
- *
- * @details
- * This class implements the agent tracking node for tracking
- * targets (clusters) in the simulation. It uses the discoverer node to discover
- * the different targets and then creates a tracking system for each
- * target.
- *
+ * @brief Agent tracking node for tracking targets (clusters) in 
+ * the simulation
  * ════════════════════════════════════════════════════════════════
  * @author Jose Francisco Lopez Ruiz
  * @date 2025-02-28

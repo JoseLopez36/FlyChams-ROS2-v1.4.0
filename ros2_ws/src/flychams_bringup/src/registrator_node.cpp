@@ -15,13 +15,6 @@ using namespace flychams::bringup;
  * ════════════════════════════════════════════════════════════════
  * @brief Registrator node for registering the different elements
  * in the simulation
- *
- * @details
- * This class implements the registrator node for registering the
- * different elements in the simulation. It bases on the registrator node
- * to register the different elements, so that they can be discovered by
- * the different nodes.
- *
  * ════════════════════════════════════════════════════════════════
  * @author Jose Francisco Lopez Ruiz
  * @date 2025-02-28

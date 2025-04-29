@@ -12,11 +12,6 @@ namespace flychams::coordination
     /**
      * ════════════════════════════════════════════════════════════════
      * @brief Agent positioning module
-     *
-     * @details
-     * This class is responsible for computing the position of an agent
-     * based on its cluster distribution.
-     *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
      * @date 2025-03-28

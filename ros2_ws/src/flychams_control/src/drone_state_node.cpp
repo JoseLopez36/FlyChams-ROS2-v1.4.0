@@ -12,12 +12,6 @@ using namespace flychams::control;
 /**
  * ════════════════════════════════════════════════════════════════
  * @brief Control node for managing the state of the drones
- *
- * @details
- * This class implements the control node for managing the state
- * of the drones. It uses the discoverer node to discover each drone
- * and then creates a state manager for it.
- *
  * ════════════════════════════════════════════════════════════════
  * @author Jose Francisco Lopez Ruiz
  * @date 2025-03-31

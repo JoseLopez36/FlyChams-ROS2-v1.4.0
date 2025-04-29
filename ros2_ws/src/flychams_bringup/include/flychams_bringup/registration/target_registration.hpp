@@ -8,10 +8,6 @@ namespace flychams::bringup
 	/**
 	 * ════════════════════════════════════════════════════════════════
 	 * @brief Registration of tracking targets
-	 *
-	 * @details
-	 * This class is responsible for registering tracking targets.
-	 *
 	 * ════════════════════════════════════════════════════════════════
 	 * @author Jose Francisco Lopez Ruiz
 	 * @date 2025-03-21

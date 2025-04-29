@@ -11,14 +11,8 @@ using namespace flychams::coordination;
 
 /**
  * ════════════════════════════════════════════════════════════════
- * @brief Agent positioning node for positioning agents in the simulation
- *
- * @details
- * This class implements the agent positioning node for positioning
- * agents in the simulation. It uses the discoverer node to discover
- * the different agents and then creates a positioning system for each
- * agent.
- *
+ * @brief Agent positioning node for positioning agents in the 
+ * simulation
  * ════════════════════════════════════════════════════════════════
  * @author Jose Francisco Lopez Ruiz
  * @date 2025-02-28

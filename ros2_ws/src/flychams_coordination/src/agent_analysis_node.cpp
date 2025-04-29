@@ -12,12 +12,6 @@ using namespace flychams::coordination;
 /**
  * ════════════════════════════════════════════════════════════════
  * @brief Agent analysis node for analyzing agent data
- *
- * @details
- * This class implements the agent analysis node for analyzing
- * agent data (e.g. clusters). It uses the discoverer node to discover
- * the different agents and then adds them to the analysis manager.
- *
  * ════════════════════════════════════════════════════════════════
  * @author Jose Francisco Lopez Ruiz
  * @date 2025-03-28

@@ -8,11 +8,6 @@ namespace flychams::control
     /**
      * ════════════════════════════════════════════════════════════════
      * @brief State manager for UAV drones
-     *
-     * @details
-     * This class implements a state manager for UAV drones.
-     * It handles the state transitions and the communication with the drone.
-     *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
      * @date 2025-03-26

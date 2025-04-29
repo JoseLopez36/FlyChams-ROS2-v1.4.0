@@ -14,12 +14,6 @@ namespace flychams::coordination
     /**
      * ════════════════════════════════════════════════════════════════
      * @brief Solver for agent positioning using Nesterov's algorithm
-     *
-     * @details
-     * This class implements Nesterov's algorithm for finding the minimum
-     * of a cost function. It is used to find the optimal position of the
-     * agent.
-     *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
      * @date 2025-04-24

@@ -8,11 +8,6 @@ namespace flychams::coordination
     /**
      * ════════════════════════════════════════════════════════════════
      * @brief Cost functions for agent positioning
-     *
-     * @details
-     * This class implements the cost functions for agent positioning.
-     * It is used to calculate the cost of the agent position.
-     *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
      * @date 2025-04-17

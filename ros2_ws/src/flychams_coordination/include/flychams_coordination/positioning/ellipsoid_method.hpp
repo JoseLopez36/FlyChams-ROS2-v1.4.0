@@ -11,12 +11,6 @@ namespace flychams::coordination
     /**
      * ════════════════════════════════════════════════════════════════
      * @brief Solver for agent positioning using ellipsoid method
-     *
-     * @details
-     * This class implements the ellipsoid method for finding the minimum
-     * of a cost function. It is used to find the optimal position of the
-     * agent.
-     *
      * ════════════════════════════════════════════════════════════════
      * @author Jose Francisco Lopez Ruiz
      * @date 2025-04-17

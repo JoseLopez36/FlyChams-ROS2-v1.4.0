@@ -11,13 +11,6 @@ namespace flychams::control
 	/**
 	 * ════════════════════════════════════════════════════════════════
 	 * @brief Motion manager for UAV drones
-	 *
-	 * @details
-	 * This class is responsible for managing the motion of UAV drones.
-	 * It handles the motion of the drone, mainly the speed and the goal
-	 * position to ensure the drone moves smoothly and reaches the goal
-	 * position.
-	 *
 	 * ════════════════════════════════════════════════════════════════
 	 * @author Jose Francisco Lopez Ruiz
 	 * @date 2025-01-29
