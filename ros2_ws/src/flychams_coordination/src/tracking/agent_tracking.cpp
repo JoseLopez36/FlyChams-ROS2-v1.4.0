@@ -27,7 +27,7 @@ namespace flychams::coordination
         head_params_ = tracking_params.head_params;
         window_params_ = tracking_params.window_params;
 
-        // Get transform frames
+        // Get relevant transform frames
         world_frame_ = transform_tools_->getGlobalFrame();
         for (const auto& head : head_params_)
         {
@@ -37,17 +37,17 @@ namespace flychams::coordination
         // Initialize selected tracking mode
         switch (mode_)
         {
-            case TrackingMode::MultiCamera:
-                initializeMultiCamera();
-                break;
+        case TrackingMode::MultiCamera:
+            initializeMultiCamera();
+            break;
 
-            case TrackingMode::MultiWindow:
-                initializeMultiWindow();
-                break;
+        case TrackingMode::MultiWindow:
+            initializeMultiWindow();
+            break;
 
-            default:
-                RCLCPP_ERROR(node_->get_logger(), "Agent tracking: Invalid tracking mode");
-                break;
+        default:
+            RCLCPP_ERROR(node_->get_logger(), "Agent tracking: Invalid tracking mode");
+            break;
         }
 
         // Create subscribers for agent status, position and clusters
@@ -129,24 +129,24 @@ namespace flychams::coordination
         std::vector<Matrix4r> tab_T(n_heads_);
         for (int h = 0; h < n_heads_; h++)
         {
-            const TransformMsg& world_to_optical = transform_tools_->getTransform(world_frame_, optical_frames_[h]);
-            tab_T[h] = RosUtils::fromMsg(world_to_optical);
+            const TransformMsg& T = transform_tools_->getTransform(world_frame_, optical_frames_[h]);
+            tab_T[h] = RosUtils::fromMsg(T);
         }
 
         // Solve tracking for selected mode
         switch (mode_)
         {
-            case TrackingMode::MultiCamera:
-                updateMultiCamera(tab_P, tab_r, tab_T);
-                break;
+        case TrackingMode::MultiCamera:
+            updateMultiCamera(tab_P, tab_r, tab_T);
+            break;
 
-            case TrackingMode::MultiWindow:
-                updateMultiWindow(tab_P, tab_r, tab_T[0]);
-                break;
+        case TrackingMode::MultiWindow:
+            updateMultiWindow(tab_P, tab_r, tab_T[0]);
+            break;
 
-            default:
-                RCLCPP_ERROR(node_->get_logger(), "Agent tracking: Invalid tracking mode");
-                break;
+        default:
+            RCLCPP_ERROR(node_->get_logger(), "Agent tracking: Invalid tracking mode");
+            break;
         }
 
         // Publish tracking and GUI setpoints messages
@@ -175,7 +175,7 @@ namespace flychams::coordination
 
         // Initialize GUI setpoints message
         agent_.gui_setpoints.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
-        
+
         // Iterate over all heads to fill GUI setpoints
         for (const auto& head : head_params_)
         {
@@ -255,12 +255,27 @@ namespace flychams::coordination
         int h = 0;
         for (auto& solver : head_solvers_)
         {
+            // Create auxiliary transform
+            // This transform is used in the calculation of tracking orientation
+            // Reference: world frame
+            // Location: optical frame origin
+            // Rotation: 180 deg around X
+            Matrix4r wTaux = Matrix4r::Identity();
+            // Location
+            wTaux.block<3, 1>(0, 3) = tab_T[h].block<3, 1>(0, 3);
+            // Rotation
+            const Quaternionr wQaux = Quaternionr(0.0f, 1.0f, 0.0f, 0.0f);  // w, x, y, z
+            wTaux.block<3, 3>(0, 0) = MathUtils::quaternionToRotationMatrix(wQaux);
+
             // Compute head setpoint
-            const auto& [focal, rpy, s_proj_pix] = solver.runCamera(
-                tab_P.col(h), tab_r(h), tab_T[h], head_params_[h]);
+            const auto& [focal, auxRPYc, s_proj_pix] = solver.runCamera(
+                tab_P.col(h), tab_r(h), wTaux, head_params_[h]);
+
+            // Convert auxiliary orientation to world frame (same X, inverted Y and Z)
+            const Vector3r wRPYc = Vector3r(auxRPYc(0), auxRPYc(1) - M_PI_2f, auxRPYc(2) - M_PI_2f);
 
             // Update head setpoint
-            RosUtils::toMsg(rpy, agent_.tracking_setpoints.angles[h]);
+            RosUtils::toMsg(wRPYc, agent_.tracking_setpoints.angles[h]);
             agent_.tracking_setpoints.focals[h] = focal;
             agent_.tracking_setpoints.projected_sizes[h] = s_proj_pix;
 
@@ -271,12 +286,27 @@ namespace flychams::coordination
     void AgentTracking::updateMultiWindow(const Matrix3Xr& tab_P, const RowVectorXr& tab_r, const Matrix4r& central_T)
     {
         // Solve tracking for central head
+        // Create auxiliary transform
+        // This transform is used in the calculation of tracking orientation
+        // Reference: world frame
+        // Location: optical frame origin
+        // Rotation: 180 deg around X
+        Matrix4r wTaux = Matrix4r::Identity();
+        // Location
+        wTaux.block<3, 1>(0, 3) = central_T.block<3, 1>(0, 3);
+        // Rotation
+        const Quaternionr wQaux = Quaternionr(0.0f, 1.0f, 0.0f, 0.0f);  // w, x, y, z
+        wTaux.block<3, 3>(0, 0) = MathUtils::quaternionToRotationMatrix(wQaux);
+
         // Compute head setpoint
-        const auto& [focal, rpy, s_proj_pix] = head_solvers_[0].runCamera(
-            tab_P.col(0), tab_r(0), central_T, head_params_[0]);
+        const auto& [focal, auxRPYc, s_proj_pix] = head_solvers_[0].runCamera(
+            tab_P.col(0), tab_r(0), wTaux, head_params_[0]);
+
+        // Convert auxiliary orientation to world frame (same X, inverted Y and Z)
+        const Vector3r wRPYc = Vector3r(auxRPYc(0), auxRPYc(1) - M_PI_2f, auxRPYc(2) - M_PI_2f);
 
         // Update head setpoint
-        RosUtils::toMsg(rpy, agent_.tracking_setpoints.angles[0]);
+        RosUtils::toMsg(wRPYc, agent_.tracking_setpoints.angles[0]);
         agent_.tracking_setpoints.focals[0] = focal;
         //agent_.tracking_setpoints.projected_sizes[0] = s_proj_pix; // Not used for multi-window tracking
 

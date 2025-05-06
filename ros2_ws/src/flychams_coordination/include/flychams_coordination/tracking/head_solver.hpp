@@ -46,7 +46,7 @@ namespace flychams::coordination
             // Args:
             // z: Target position in world frame (m)
             // r: Equivalent radius of the target's area of interest (m)
-            // T: Camera pose in world frame
+            // T: Ci_ in world frame (auxiliary frame)
             // head_params: Head parameters
 
             // Extract camera position and orientation
@@ -128,7 +128,7 @@ namespace flychams::coordination
             const core::Vector3r v = t.normalized();
 
             // Handle vertical downward case
-            if (1.0f - std::abs(v.z()) < 1e-6f)
+            if (std::abs(v.z() - 1.0f) < 1e-6f)
             {
                 // In CONTINUOUS mode, take the previous yaw
                 rpy(2) = (mode == AimingMode::CONTINUOUS) ? prev_rpy(2) : 0.0f;
@@ -159,27 +159,18 @@ namespace flychams::coordination
         }
 
         std::pair<float, float> calculateCameraBaseSolution(const core::Vector3r& v)
-
-            std::pair<float, float> calculateCameraBaseSolution(const core::Vector3r& v)
         {
             return {
-                std::atan2(v.y(), v.x()),     // Yaw (Z-axis rotation)
-                -std::asin(v.z())             // Pitch (Y-axis rotation)
-            };
-        }
-        {
-            return {
-                std::atan2(v.y(), v.x()),     // Yaw (Z-axis rotation)
-                -std::asin(v.z())             // Pitch (Y-axis rotation)
+                std::atan2(v.x(), -v.y()),    // Yaw (Z-axis rotation)
+                std::acos(v.z())              // Pitch (Y-axis rotation)
             };
         }
 
         std::pair<float, float> calculateCameraInvertedSolution(const core::Vector3r& v)
         {
-            const auto& base = calculateCameraBaseSolution(v);
             return {
-                base.first + M_PIf,
-                M_PIf - base.second
+                std::atan2(-v.x(), v.y()),    // Yaw (Z-axis rotation)
+                -std::acos(v.z())             // Pitch (Y-axis rotation)
             };
         }
 

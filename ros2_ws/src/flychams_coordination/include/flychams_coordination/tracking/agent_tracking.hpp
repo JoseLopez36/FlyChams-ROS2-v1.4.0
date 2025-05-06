@@ -51,7 +51,7 @@ namespace flychams::coordination
             core::PublisherPtr<core::GuiSetpointsMsg> gui_setpoints_pub;
             // Constructor
             Agent()
-                : status(), has_status(false), clusters(), has_clusters(false), tracking_setpoints(), 
+                : status(), has_status(false), clusters(), has_clusters(false), tracking_setpoints(),
                 gui_setpoints(), status_sub(), clusters_sub(), tracking_setpoints_pub(), gui_setpoints_pub()
             {
             }
@@ -66,7 +66,7 @@ namespace flychams::coordination
         int n_windows_;
         std::vector<core::HeadParameters> head_params_;
         std::vector<core::WindowParameters> window_params_;
-        // Transform frames
+        // Transform parameters
         std::string world_frame_;
         std::vector<std::string> optical_frames_;
 
