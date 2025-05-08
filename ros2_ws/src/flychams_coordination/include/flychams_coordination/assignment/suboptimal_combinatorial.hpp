@@ -313,21 +313,27 @@ namespace flychams::coordination
             // If the assignment has not been calculated previously:
             // Calculate observation cost
             // Get cluster centers and radii matrices for all units (accounting for the central unit)
-            core::Matrix3Xr tab_P = core::Matrix3Xr::Zero(3, nk + 1);
-            core::RowVectorXr tab_r = core::RowVectorXr::Zero(nk + 1);
+            core::Matrix3Xr tab_P = core::Matrix3Xr::Zero(3, nk);
+            core::RowVectorXr tab_r = core::RowVectorXr::Zero(nk);
             // Tracking units
-            for (int t = 1, i = 0; t < nk + 1; t++, i++)
+            for (int t = 0; t < nk; t++)
             {
-                tab_P.col(t) = Tk[i].C;
-                tab_r(t) = Tk[i].r;
+                tab_P.col(t) = Tk[t].C;
+                tab_r(t) = Tk[t].r;
             }
             // Central unit (mean of all selected clusters and maximum radius)
             const auto& [central_P, central_r] = computeCentralCluster(tab_P, tab_r);
-            tab_P.col(0) = central_P;
-            tab_r(0) = central_r;
+            // Create matrix with central unit
+            core::Matrix3Xr tab_P_central(3, nk + 1);
+            tab_P_central.col(0) = central_P;
+            tab_P_central.block(0, 1, 3, nk) = tab_P;
+            core::RowVectorXr tab_r_central(nk + 1);
+            tab_r_central(0) = central_r;
+            tab_r_central.tail(nk) = tab_r;
+
             // Run solver to get optimal position
             float Jo;
-            core::Vector3r x_opt = solver->run(tab_P, tab_r, x, Jo);
+            core::Vector3r x_opt = solver->run(tab_P_central, tab_r_central, x, Jo);
 
             // Calculate distance cost
             float Jd = (x - x_opt).norm();

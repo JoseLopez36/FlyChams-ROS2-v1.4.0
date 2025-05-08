@@ -60,70 +60,51 @@ namespace flychams::coordination
         std::vector<PositionSolver::SharedPtr>  solvers_;
 
     private: // Positioning management
-        void update(const int& n, const float& t);
+        void update(const int& n_step, const float& t_step);
 
     private: // Positioning methods
         PositionSolver::SharedPtr createSolver(const std::string& agent_id, const PositionSolver::Parameters& solver_params, const PositionSolver::SolverMode& solver_mode);
         std::vector<CostFunctions::TrackingUnit> createUnitParameters(const core::TrackingParameters& tracking_params);
+        std::pair<core::Matrix3Xr, core::RowVectorXr> addNoise(const std::vector<core::Vector3r>& centers, const std::vector<float>& radii, const std::vector<Noise>& centers_noise, const std::vector<Noise>& radii_noise);
+        std::pair<core::Matrix3Xr, core::RowVectorXr> addCentral(const core::Matrix3Xr& centers, const core::RowVectorXr& radii);
         float random();
-        core::Vector3r randomVector();
 
     private: // ROS components
         // Publishers
-        std::vector<core::PublisherPtr<flychams_interfaces::msg::SolverDebug>> solver_debug_pubs_;
+        core::PublisherPtr<flychams_interfaces::msg::SolverDebug> solver_debug_pub_;
 
     private: // Experiment parameters
         // General parameters
         const int N_ = 1000; // Number of iterations per cluster distribution and algorithm
-        const int K_ = 9;    // Maximum number of clusters
+        const int K_ = 4;    // Number of clusters
         // Agent parameters
-        const core::Vector3r x0_ = { 0.0f, 0.0f, 70.0f };
-        // Cluster parameters (up to 9 clusters)
+        const core::Vector3r x0_ = { 0.0f, 0.0f, 50.0f };
+        // Cluster parameters
         // Cluster centers
         const std::vector<core::Vector3r> tab_P_ = {
-            {30.0f, 20.0f, 0.0f},
-            {100.0f, 0.0f, 0.0f},
-            {0.0f, 50.0f, 0.0f},
-            {100.0f, 50.0f, 0.0f},
-            {0.0f, 0.0f, 0.0f},
-            {100.0f, 0.0f, 0.0f},
-            {0.0f, 100.0f, 0.0f},
-            {100.0f, 100.0f, 0.0f},
-            {30.0f, 150.0f, 0.0f}
+            {20.07f, 39.81f, 0.0f},
+            {54.33f, 29.44f, 0.0f},
+            {14.10f, -35.11f, 0.0f},
+            {-18.12f, 29.50f, 0.0f}
         };
         const std::vector<Noise> tab_P_noise_ = {
             {0.0f, 0.3f},
-            {0.0f, 0.0f},
-            {0.0f, 0.0f},
-            {0.0f, 0.0f},
-            {0.0f, 0.0f},
-            {0.0f, 0.0f},
-            {0.0f, 0.0f},
-            {0.0f, 0.0f},
-            {0.0f, 0.0f}
+            {0.0f, 0.3f},
+            {0.0f, 0.3f},
+            {0.0f, 0.3f}
         };
         // Cluster radii
         const std::vector<float> tab_r_ = {
-            5.5f,
-            15.0f,
-            4.0f,
-            7.0f,
-            10.0f,
-            10.0f,
-            10.0f,
-            10.0f,
-            10.0f
+            3.34f,
+            1.3f,
+            4.7f,
+            2.45f
         };
         const std::vector<Noise> tab_r_noise_ = {
             {0.0f, 0.1f},
-            {0.0f, 0.0f},
-            {0.0f, 0.0f},
-            {0.0f, 0.0f},
-            {0.0f, 0.0f},
-            {0.0f, 0.0f},
-            {0.0f, 0.0f},
-            {0.0f, 0.0f},
-            {0.0f, 0.0f}
+            {0.0f, 0.1f},
+            {0.0f, 0.1f},
+            {0.0f, 0.1f}
         };
     };
 

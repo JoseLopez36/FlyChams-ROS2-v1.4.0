@@ -36,13 +36,9 @@ namespace flychams::coordination
             solvers_.push_back(createSolver(agent_id_, solver_params_, mode));
         }
 
-        // Create publishers for solver data. One per number k of clusters
-        for (int k = 0; k < K_; k++)
-        {
-            const auto& base_topic = RosUtils::replace("coordination/AGENTID/debug/solvers/num_clusters_", "AGENTID", agent_id_);
-            solver_debug_pubs_.push_back(node_->create_publisher<flychams_interfaces::msg::SolverDebug>(
-                base_topic + std::to_string(k + 1), 1));
-        }
+        // Create publisher for solver data
+        solver_debug_pub_ = node_->create_publisher<flychams_interfaces::msg::SolverDebug>(
+            RosUtils::replace("coordination/AGENTID/debug/solvers", "AGENTID", agent_id_), 10);
 
         // Log
         RCLCPP_INFO(node_->get_logger(), "Agent positioning experiment: Running with %d clusters...", K_);
@@ -58,7 +54,7 @@ namespace flychams::coordination
             t += 1.0f / update_rate_;
 
             // Log
-            RCLCPP_INFO(node_->get_logger(), "Agent positioning experiment: Completed %d iterations", n);
+            RCLCPP_INFO(node_->get_logger(), "Agent positioning experiment: Completed %d iterations", n + 1);
         }
     }
 
@@ -70,127 +66,108 @@ namespace flychams::coordination
             solver->destroy();
         }
         solvers_.clear();
-        // Destroy publishers
-        solver_debug_pubs_.clear();
+        // Destroy publisher
+        solver_debug_pub_.reset();
     }
 
     // ════════════════════════════════════════════════════════════════════════════
     // UPDATE: Update positioning
     // ════════════════════════════════════════════════════════════════════════════
 
-    void AgentPositioningExperiment::update(const int& n, const float& t)
+    void AgentPositioningExperiment::update(const int& n_step, const float& t_step)
     {
         // Add configured random Gaussian noise to cluster centers and radii
-        std::vector<Vector3r> tab_P(K_);
-        std::vector<float> tab_r(K_);
-        for (int k = 0; k < K_; k++)
+        const auto& [tab_P_noisy, tab_r_noisy] = addNoise(tab_P_, tab_r_, tab_P_noise_, tab_r_noise_);
+
+        // Add central unit (mean of all selected clusters and maximum radius)
+        const auto& [tab_P_k_with_central, tab_r_k_with_central] = addCentral(tab_P_noisy, tab_r_noisy);
+
+        // Create message
+        flychams_interfaces::msg::SolverDebug msg;
+
+        // Fill global data
+        msg.n_iterations = N_;
+        msg.n_clusters = K_;
+        RosUtils::toMsg(x0_, msg.x0);
+
+        // Fill per-iteration data
+        msg.n = n_step + 1;
+        msg.t = t_step;
+        msg.tab_p.resize(K_);
+        msg.tab_r.resize(K_);
+        for (int i = 0; i < K_; i++)
         {
-            tab_P[k] = tab_P_[k] + randomVector() * tab_P_noise_[k].std + Vector3r::Constant(tab_P_noise_[k].mean);
-            tab_r[k] = tab_r_[k] + random() * tab_r_noise_[k].std + tab_r_noise_[k].mean;
+            RosUtils::toMsg(tab_P_k_with_central.col(i + 1), msg.tab_p[i]);
+            msg.tab_r[i] = tab_r_k_with_central(i + 1);
         }
 
-        // Solve agent positioning with each solver and each cluster number
-        for (int k = 0; k < K_; k++)
+        // Solve with each solver
+        for (auto& solver : solvers_)
         {
-            // Get number of clusters
-            const int n_clusters = k + 1;
+            float J, t;
+            Vector3r x;
 
-            // Get reduced matrix of cluster centers and radii
-            Matrix3Xr tab_P_k = Matrix3Xr::Zero(3, n_clusters);
-            RowVectorXr tab_r_k = RowVectorXr::Zero(n_clusters);
-            for (int i = 0; i < n_clusters; i++)
+            // Run solver
+            const auto& start = std::chrono::high_resolution_clock::now();
+            x = solver->run(tab_P_k_with_central, tab_r_k_with_central, x0_, J);
+            const auto& end = std::chrono::high_resolution_clock::now();
+            t = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1.0e3f;
+
+            // Add results to solver debug message
+            switch (solver->getMode())
             {
-                tab_P_k.col(i) = tab_P[i];
-                tab_r_k(i) = tab_r[i];
+            case PositionSolver::SolverMode::ELLIPSOID_METHOD:
+            {
+                msg.j_ellipsoid = J;
+                RosUtils::toMsg(x, msg.x_ellipsoid);
+                msg.t_ellipsoid = t;
+                break;
             }
 
-            // Create message
-            flychams_interfaces::msg::SolverDebug msg;
-
-            // Fill global data
-            msg.n_iterations = N_;
-            msg.n_clusters = n_clusters;
-            RosUtils::toMsg(x0_, msg.x0);
-
-            // Fill per-iteration data
-            msg.n = n;
-            msg.t = t;
-            msg.tab_p.resize(n_clusters);
-            msg.tab_r.resize(n_clusters);
-            for (int i = 0; i < n_clusters; i++)
+            case PositionSolver::SolverMode::PSO_ALGORITHM:
             {
-                RosUtils::toMsg(tab_P[i], msg.tab_p[i]);
-                msg.tab_r[i] = tab_r[i];
+                msg.j_pso = J;
+                RosUtils::toMsg(x, msg.x_pso);
+                msg.t_pso = t;
+                break;
             }
 
-            // Solve with each solver
-            for (auto& solver : solvers_)
+            case PositionSolver::SolverMode::ALC_PSO_ALGORITHM:
             {
-                float J, t;
-                Vector3r x;
-
-                // Run solver
-                const auto& start = std::chrono::high_resolution_clock::now();
-                x = solver->run(tab_P_k, tab_r_k, x0_, J);
-                const auto& end = std::chrono::high_resolution_clock::now();
-                t = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
-                // Add results to solver debug message
-                switch (solver->getMode())
-                {
-                case PositionSolver::SolverMode::ELLIPSOID_METHOD:
-                {
-                    msg.j_ellipsoid = J;
-                    RosUtils::toMsg(x, msg.x_ellipsoid);
-                    msg.t_ellipsoid = t;
-                    break;
-                }
-
-                case PositionSolver::SolverMode::PSO_ALGORITHM:
-                {
-                    msg.j_pso = J;
-                    RosUtils::toMsg(x, msg.x_pso);
-                    msg.t_pso = t;
-                    break;
-                }
-
-                case PositionSolver::SolverMode::ALC_PSO_ALGORITHM:
-                {
-                    msg.j_alc_pso = J;
-                    RosUtils::toMsg(x, msg.x_alc_pso);
-                    msg.t_alc_pso = t;
-                    break;
-                }
-
-                case PositionSolver::SolverMode::NESTEROV_ALGORITHM:
-                {
-                    msg.j_nesterov = J;
-                    RosUtils::toMsg(x, msg.x_nesterov);
-                    msg.t_nesterov = t;
-                    break;
-                }
-
-                case PositionSolver::SolverMode::NELDER_MEAD_NLOPT:
-                {
-                    msg.j_nelder_mead = J;
-                    RosUtils::toMsg(x, msg.x_nelder_mead);
-                    msg.t_nelder_mead = t;
-                    break;
-                }
-
-                case PositionSolver::SolverMode::L_BFGS_NLOPT:
-                {
-                    msg.j_l_bfgs = J;
-                    RosUtils::toMsg(x, msg.x_l_bfgs);
-                    msg.t_l_bfgs = t;
-                    break;
-                }
-                }
+                msg.j_alc_pso = J;
+                RosUtils::toMsg(x, msg.x_alc_pso);
+                msg.t_alc_pso = t;
+                break;
             }
 
-            // Publish results
-            solver_debug_pubs_[k]->publish(msg);
+            case PositionSolver::SolverMode::NESTEROV_ALGORITHM:
+            {
+                msg.j_nesterov = J;
+                RosUtils::toMsg(x, msg.x_nesterov);
+                msg.t_nesterov = t;
+                break;
+            }
+
+            case PositionSolver::SolverMode::NELDER_MEAD_NLOPT:
+            {
+                msg.j_nelder_mead = J;
+                RosUtils::toMsg(x, msg.x_nelder_mead);
+                msg.t_nelder_mead = t;
+                break;
+            }
+
+            case PositionSolver::SolverMode::L_BFGS_NLOPT:
+            {
+                msg.j_l_bfgs = J;
+                RosUtils::toMsg(x, msg.x_l_bfgs);
+                msg.t_l_bfgs = t;
+                break;
+            }
+            }
         }
+
+        // Publish results
+        solver_debug_pub_->publish(msg);
     }
 
     // ════════════════════════════════════════════════════════════════════════════
@@ -327,18 +304,68 @@ namespace flychams::coordination
         return params_vector;
     }
 
+    std::pair<core::Matrix3Xr, core::RowVectorXr> AgentPositioningExperiment::addNoise(const std::vector<core::Vector3r>& centers, const std::vector<float>& radii, const std::vector<Noise>& centers_noise, const std::vector<Noise>& radii_noise)
+    {
+        // Get number of tracking units
+        int n = static_cast<int>(centers.size());
+
+        // Add noise to cluster centers and radii
+        core::Matrix3Xr centers_noisy(3, n);
+        core::RowVectorXr radii_noisy(n);
+        for (int i = 0; i < n; i++)
+        {
+            // Add center noise (only horizontal)
+            for (int j = 0; j < 2; j++)
+            {
+                centers_noisy(j, i) = centers[i](j) + centers_noise[i].mean + random() * centers_noise[i].std;
+            }
+            centers_noisy(2, i) = centers[i](2);
+            // Add radius noise
+            radii_noisy(i) = radii[i] + radii_noise[i].mean + random() * radii_noise[i].std;
+        }
+
+        // Return noisy cluster centers and radii
+        return std::make_pair(centers_noisy, radii_noisy);
+    }
+
+    std::pair<core::Matrix3Xr, core::RowVectorXr> AgentPositioningExperiment::addCentral(const core::Matrix3Xr& centers, const core::RowVectorXr& radii)
+    {
+        // Get number of tracking units
+        int n = centers.cols();
+
+        // Compute mean of all available clusters
+        core::Vector3r centers_mean = core::Vector3r::Zero();
+        for (int i = 0; i < n; i++)
+        {
+            centers_mean += centers.col(i);
+        }
+        centers_mean /= static_cast<float>(n);
+
+        // Get the largest possible radius
+        float radii_max = 0.0f;
+        for (int i = 0; i < n; i++)
+        {
+            radii_max = std::max(radii_max, (centers_mean - centers.col(i)).norm() + radii(i));
+        }
+
+        // Create center matrix with central unit
+        Matrix3Xr centers_with_central(3, n + 1);
+        centers_with_central.col(0) = centers_mean;
+        centers_with_central.block(0, 1, 3, n) = centers;
+
+        // Create radii vector with central radius
+        RowVectorXr radii_with_central(n + 1);
+        radii_with_central(0) = radii_max;
+        radii_with_central.tail(n) = radii;
+
+        // Return central cluster and radius
+        return std::make_pair(centers_with_central, radii_with_central);
+    }
+
     float AgentPositioningExperiment::random()
     {
         // Generate a random number between 0 and 1
         return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
-    }
-
-    core::Vector3r AgentPositioningExperiment::randomVector()
-    {
-        // Generate a random vector with values in [0, 1]
-        core::Vector3r r = core::Vector3r::Random();
-        r = r.array().abs();
-        return r;
     }
 
 } // namespace flychams::coordination
