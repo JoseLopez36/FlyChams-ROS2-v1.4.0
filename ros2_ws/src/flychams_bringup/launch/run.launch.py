@@ -90,6 +90,7 @@ def generate_launch_description():
         'agent_assignment': launch.get('agent_assignment', [True, 'info']),
         'agent_analysis': launch.get('agent_analysis', [True, 'info']),
         'agent_positioning': launch.get('agent_positioning', [True, 'info']),
+        'agent_positioning_experiment': launch.get('agent_positioning_experiment', [True, 'info']),
         'agent_tracking': launch.get('agent_tracking', [True, 'info']),
         # Simulation nodes
         'gui_manager': launch.get('gui_manager', [True, 'info']),
@@ -252,6 +253,26 @@ def generate_launch_description():
                 output='screen',
                 namespace='flychams',
                 arguments=['--ros-args', '--log-level', nodes['agent_positioning'][1]],
+                parameters=[
+                    system_path, 
+                    topics_path, 
+                    frames_path, 
+                    coordination_path,
+                    {'use_sim_time': True}
+                ]
+            )
+        )
+
+    # Conditionally add Agent Positioning Experiment node
+    if nodes['agent_positioning_experiment'][0]:
+        ld.append(
+            Node(
+                package='flychams_coordination',
+                executable='agent_positioning_experiment_node',
+                name='agent_positioning_experiment_node',
+                output='screen',
+                namespace='flychams',
+                arguments=['--ros-args', '--log-level', nodes['agent_positioning_experiment'][1]],
                 parameters=[
                     system_path, 
                     topics_path, 

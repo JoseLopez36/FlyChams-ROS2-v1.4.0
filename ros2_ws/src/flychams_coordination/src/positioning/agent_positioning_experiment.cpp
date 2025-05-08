@@ -1,4 +1,4 @@
-#include "flychams_coordination/positioning/agent_positioning.hpp"
+#include "flychams_coordination/positioning/agent_positioning_experiment.hpp"
 
 using namespace flychams::core;
 
@@ -8,7 +8,7 @@ namespace flychams::coordination
     // CONSTRUCTOR: Constructor and destructor
     // ════════════════════════════════════════════════════════════════════════════
 
-    void AgentPositioning::onInit()
+    void AgentPositioningExperiment::onInit()
     {
         // Get parameters from parameter server
         // Get update rate
@@ -30,38 +30,39 @@ namespace flychams::coordination
         // Get Nesterov parameters
         solver_params_.lipschitz_constant = RosUtils::getParameterOr<float>(node_, "agent_positioning.lipschitz_constant", 0.0f);
 
-        // Initialize data
-        agent_ = Agent();
-
-        // Initialize setpoint message
-        agent_.setpoint.header = RosUtils::createHeader(node_, transform_tools_->getGlobalFrame());
-        agent_.setpoint.point = PointMsg();
-
         // Create and initialize solvers
         for (const auto& mode : modes_)
         {
             solvers_.push_back(createSolver(agent_id_, solver_params_, mode));
         }
 
-        // Create subscribers for agent status, position and clusters
-        agent_.status_sub = topic_tools_->createAgentStatusSubscriber(agent_id_,
-            std::bind(&AgentPositioning::statusCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
-        agent_.position_sub = topic_tools_->createAgentPositionSubscriber(agent_id_,
-            std::bind(&AgentPositioning::positionCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
-        agent_.clusters_sub = topic_tools_->createAgentClustersSubscriber(agent_id_,
-            std::bind(&AgentPositioning::clustersCallback, this, std::placeholders::_1), sub_options_with_module_cb_group_);
+        // Create publishers for solver data. One per number k of clusters
+        for (int k = 0; k < K_; k++)
+        {
+            const auto& base_topic = RosUtils::replace("coordination/AGENTID/debug/solvers/num_clusters_", "AGENTID", agent_id_);
+            solver_debug_pubs_.push_back(node_->create_publisher<flychams_interfaces::msg::SolverDebug>(
+                base_topic + std::to_string(k + 1), 1));
+        }
 
-        // Create publisher for agent setpoint
-        agent_.setpoint_pub = topic_tools_->createAgentPositionSetpointPublisher(agent_id_);
-        agent_.solver_debug_pub = node_->create_publisher<flychams_interfaces::msg::SolverDebug>(
-            RosUtils::replace("coordination/AGENTID/debug/solvers", "AGENTID", agent_id_), 10);
+        // Log
+        RCLCPP_INFO(node_->get_logger(), "Agent positioning experiment: Running with %d clusters...", K_);
 
-        // Set update timer
-        update_timer_ = RosUtils::createTimer(node_, update_rate_,
-            std::bind(&AgentPositioning::update, this), module_cb_group_);
+        // Iterate
+        float t = 0.0f;
+        for (int n = 0; n < N_; n++)
+        {
+            // Update
+            update(n, t);
+
+            // Update time
+            t += 1.0f / update_rate_;
+
+            // Log
+            RCLCPP_INFO(node_->get_logger(), "Agent positioning experiment: Completed %d iterations", n);
+        }
     }
 
-    void AgentPositioning::onShutdown()
+    void AgentPositioningExperiment::onShutdown()
     {
         // Destroy solver
         for (auto& solver : solvers_)
@@ -69,157 +70,134 @@ namespace flychams::coordination
             solver->destroy();
         }
         solvers_.clear();
-        // Destroy agent data
-        agent_.status_sub.reset();
-        agent_.position_sub.reset();
-        agent_.clusters_sub.reset();
-        agent_.setpoint_pub.reset();
-        agent_.solver_debug_pub.reset();
-        // Destroy update timer
-        update_timer_.reset();
-    }
-
-    // ════════════════════════════════════════════════════════════════════════════
-    // CALLBACKS: Callback functions
-    // ════════════════════════════════════════════════════════════════════════════
-
-    void AgentPositioning::statusCallback(const AgentStatusMsg::SharedPtr msg)
-    {
-        // Update agent status
-        agent_.status = static_cast<AgentStatus>(msg->status);
-        agent_.has_status = true;
-    }
-
-    void AgentPositioning::positionCallback(const PointStampedMsg::SharedPtr msg)
-    {
-        // Update agent position
-        agent_.position = msg->point;
-        agent_.has_position = true;
-    }
-
-    void AgentPositioning::clustersCallback(const AgentClustersMsg::SharedPtr msg)
-    {
-        // Update agent clusters
-        agent_.clusters = *msg;
-        agent_.has_clusters = true;
+        // Destroy publishers
+        solver_debug_pubs_.clear();
     }
 
     // ════════════════════════════════════════════════════════════════════════════
     // UPDATE: Update positioning
     // ════════════════════════════════════════════════════════════════════════════
 
-    void AgentPositioning::update()
+    void AgentPositioningExperiment::update(const int& n, const float& t)
     {
-        // Check if we have a valid agent status, position and cluster assignments
-        if (!agent_.has_status || !agent_.has_position || !agent_.has_clusters)
+        // Add configured random Gaussian noise to cluster centers and radii
+        std::vector<Vector3r> tab_P(K_);
+        std::vector<float> tab_r(K_);
+        for (int k = 0; k < K_; k++)
         {
-            RCLCPP_WARN(node_->get_logger(), "Agent positioning: Agent %s has no status, position or clusters", agent_id_.c_str());
-            return; // Skip positioning if we don't have a valid agent status, position or clusters
+            tab_P[k] = tab_P_[k] + randomVector() * tab_P_noise_[k].std + Vector3r::Constant(tab_P_noise_[k].mean);
+            tab_r[k] = tab_r_[k] + random() * tab_r_noise_[k].std + tab_r_noise_[k].mean;
         }
 
-        // Check if we are in the correct state to position
-        if (agent_.status != AgentStatus::TRACKING)
+        // Solve agent positioning with each solver and each cluster number
+        for (int k = 0; k < K_; k++)
         {
-            RCLCPP_WARN(node_->get_logger(), "Agent positioning: Agent %s is not in the correct state to position",
-                agent_id_.c_str());
-            return;
+            // Get number of clusters
+            const int n_clusters = k + 1;
+
+            // Get reduced matrix of cluster centers and radii
+            Matrix3Xr tab_P_k = Matrix3Xr::Zero(3, n_clusters);
+            RowVectorXr tab_r_k = RowVectorXr::Zero(n_clusters);
+            for (int i = 0; i < n_clusters; i++)
+            {
+                tab_P_k.col(i) = tab_P[i];
+                tab_r_k(i) = tab_r[i];
+            }
+
+            // Create message
+            flychams_interfaces::msg::SolverDebug msg;
+
+            // Fill global data
+            msg.n_iterations = N_;
+            msg.n_clusters = n_clusters;
+            RosUtils::toMsg(x0_, msg.x0);
+
+            // Fill per-iteration data
+            msg.n = n;
+            msg.t = t;
+            msg.tab_p.resize(n_clusters);
+            msg.tab_r.resize(n_clusters);
+            for (int i = 0; i < n_clusters; i++)
+            {
+                RosUtils::toMsg(tab_P[i], msg.tab_p[i]);
+                msg.tab_r[i] = tab_r[i];
+            }
+
+            // Solve with each solver
+            for (auto& solver : solvers_)
+            {
+                float J, t;
+                Vector3r x;
+
+                // Run solver
+                const auto& start = std::chrono::high_resolution_clock::now();
+                x = solver->run(tab_P_k, tab_r_k, x0_, J);
+                const auto& end = std::chrono::high_resolution_clock::now();
+                t = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+                // Add results to solver debug message
+                switch (solver->getMode())
+                {
+                case PositionSolver::SolverMode::ELLIPSOID_METHOD:
+                {
+                    msg.j_ellipsoid = J;
+                    RosUtils::toMsg(x, msg.x_ellipsoid);
+                    msg.t_ellipsoid = t;
+                    break;
+                }
+
+                case PositionSolver::SolverMode::PSO_ALGORITHM:
+                {
+                    msg.j_pso = J;
+                    RosUtils::toMsg(x, msg.x_pso);
+                    msg.t_pso = t;
+                    break;
+                }
+
+                case PositionSolver::SolverMode::ALC_PSO_ALGORITHM:
+                {
+                    msg.j_alc_pso = J;
+                    RosUtils::toMsg(x, msg.x_alc_pso);
+                    msg.t_alc_pso = t;
+                    break;
+                }
+
+                case PositionSolver::SolverMode::NESTEROV_ALGORITHM:
+                {
+                    msg.j_nesterov = J;
+                    RosUtils::toMsg(x, msg.x_nesterov);
+                    msg.t_nesterov = t;
+                    break;
+                }
+
+                case PositionSolver::SolverMode::NELDER_MEAD_NLOPT:
+                {
+                    msg.j_nelder_mead = J;
+                    RosUtils::toMsg(x, msg.x_nelder_mead);
+                    msg.t_nelder_mead = t;
+                    break;
+                }
+
+                case PositionSolver::SolverMode::L_BFGS_NLOPT:
+                {
+                    msg.j_l_bfgs = J;
+                    RosUtils::toMsg(x, msg.x_l_bfgs);
+                    msg.t_l_bfgs = t;
+                    break;
+                }
+                }
+            }
+
+            // Publish results
+            solver_debug_pubs_[k]->publish(msg);
         }
-
-        // Convert messages to Eigen types
-        Vector3r x0 = RosUtils::fromMsg(agent_.position);
-        int n = static_cast<int>(agent_.clusters.centers.size());
-        Matrix3Xr tab_P = Matrix3Xr::Zero(3, n);
-        RowVectorXr tab_r = RowVectorXr::Zero(n);
-        for (int i = 0; i < n; i++)
-        {
-            tab_P.col(i) = RosUtils::fromMsg(agent_.clusters.centers[i]);
-            tab_r(i) = agent_.clusters.radii[i];
-        }
-
-        // Solve agent positioning with different solvers to compare results
-        Vector3r optimal_position;
-        flychams_interfaces::msg::SolverDebug solver_debug_msg;
-        for (auto& solver : solvers_)
-        {
-            float J, t;
-            Vector3r x;
-
-            // Run solver
-            const auto& start = std::chrono::high_resolution_clock::now();
-            x = solver->run(tab_P, tab_r, x0, J);
-            const auto& end = std::chrono::high_resolution_clock::now();
-            t = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-
-            // Add results to solver debug message
-            switch (solver->getMode())
-            {
-            case PositionSolver::SolverMode::ELLIPSOID_METHOD:
-            {
-                solver_debug_msg.j_ellipsoid = J;
-                RosUtils::toMsg(x, solver_debug_msg.x_ellipsoid);
-                solver_debug_msg.t_ellipsoid = t;
-
-                // Use ellipsoid method as optimal position for moving the agent
-                optimal_position = x;
-                break;
-            }
-
-            case PositionSolver::SolverMode::PSO_ALGORITHM:
-            {
-                solver_debug_msg.j_pso = J;
-                RosUtils::toMsg(x, solver_debug_msg.x_pso);
-                solver_debug_msg.t_pso = t;
-                break;
-            }
-
-            case PositionSolver::SolverMode::ALC_PSO_ALGORITHM:
-            {
-                solver_debug_msg.j_alc_pso = J;
-                RosUtils::toMsg(x, solver_debug_msg.x_alc_pso);
-                solver_debug_msg.t_alc_pso = t;
-                break;
-            }
-
-            case PositionSolver::SolverMode::NESTEROV_ALGORITHM:
-            {
-                solver_debug_msg.j_nesterov = J;
-                RosUtils::toMsg(x, solver_debug_msg.x_nesterov);
-                solver_debug_msg.t_nesterov = t;
-                break;
-            }
-
-            case PositionSolver::SolverMode::NELDER_MEAD_NLOPT:
-            {
-                solver_debug_msg.j_nelder_mead = J;
-                RosUtils::toMsg(x, solver_debug_msg.x_nelder_mead);
-                solver_debug_msg.t_nelder_mead = t;
-                break;
-            }
-
-            case PositionSolver::SolverMode::L_BFGS_NLOPT:
-            {
-                solver_debug_msg.j_l_bfgs = J;
-                RosUtils::toMsg(x, solver_debug_msg.x_l_bfgs);
-                solver_debug_msg.t_l_bfgs = t;
-                break;
-            }
-            }
-        }
-
-        // Publish position
-        agent_.setpoint.header.stamp = RosUtils::now(node_);
-        RosUtils::toMsg(optimal_position, agent_.setpoint.point);
-        agent_.setpoint_pub->publish(agent_.setpoint);
-
-        // Publish solver comparison results
-        agent_.solver_debug_pub->publish(solver_debug_msg);
     }
 
     // ════════════════════════════════════════════════════════════════════════════
     // POSITIONING: Positioning methods
     // ════════════════════════════════════════════════════════════════════════════
 
-    PositionSolver::SharedPtr AgentPositioning::createSolver(const std::string& agent_id, const PositionSolver::Parameters& solver_params, const PositionSolver::SolverMode& solver_mode)
+    PositionSolver::SharedPtr AgentPositioningExperiment::createSolver(const std::string& agent_id, const PositionSolver::Parameters& solver_params, const PositionSolver::SolverMode& solver_mode)
     {
         // Create solver instance
         PositionSolver::SharedPtr solver = std::make_shared<PositionSolver>();
@@ -255,7 +233,7 @@ namespace flychams::coordination
         return solver;
     }
 
-    std::vector<CostFunctions::TrackingUnit> AgentPositioning::createUnitParameters(const TrackingParameters& tracking_params)
+    std::vector<CostFunctions::TrackingUnit> AgentPositioningExperiment::createUnitParameters(const TrackingParameters& tracking_params)
     {
         std::vector<CostFunctions::TrackingUnit> params_vector;
 
@@ -347,6 +325,20 @@ namespace flychams::coordination
         }
 
         return params_vector;
+    }
+
+    float AgentPositioningExperiment::random()
+    {
+        // Generate a random number between 0 and 1
+        return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+    }
+
+    core::Vector3r AgentPositioningExperiment::randomVector()
+    {
+        // Generate a random vector with values in [0, 1]
+        core::Vector3r r = core::Vector3r::Random();
+        r = r.array().abs();
+        return r;
     }
 
 } // namespace flychams::coordination

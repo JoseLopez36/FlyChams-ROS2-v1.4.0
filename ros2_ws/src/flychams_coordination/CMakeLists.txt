@@ -20,6 +20,7 @@ set(COORD_SRC
   src/assignment/assignment_solver.cpp
   src/analysis/agent_analysis.cpp
   src/positioning/agent_positioning.cpp
+  src/positioning/agent_positioning_experiment.cpp
   src/positioning/position_solver.cpp
   src/tracking/agent_tracking.cpp
 )
@@ -55,6 +56,11 @@ add_executable(agent_positioning_node src/agent_positioning_node.cpp)
 target_link_libraries(agent_positioning_node ${PROJECT_NAME})
 ament_target_dependencies(agent_positioning_node rclcpp flychams_core)
 
+# Create executable for agent positioning experiment node
+add_executable(agent_positioning_experiment_node src/agent_positioning_experiment_node.cpp)
+target_link_libraries(agent_positioning_experiment_node ${PROJECT_NAME})
+ament_target_dependencies(agent_positioning_experiment_node rclcpp flychams_core)
+
 # Create executable for agent tracking node
 add_executable(agent_tracking_node src/agent_tracking_node.cpp)
 target_link_libraries(agent_tracking_node ${PROJECT_NAME})
@@ -78,7 +84,7 @@ install(TARGETS nlopt
   INCLUDES DESTINATION include
 )
 
-install(TARGETS agent_assignment_node agent_analysis_node agent_positioning_node agent_tracking_node
+install(TARGETS agent_assignment_node agent_analysis_node agent_positioning_node agent_positioning_experiment_node agent_tracking_node
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
