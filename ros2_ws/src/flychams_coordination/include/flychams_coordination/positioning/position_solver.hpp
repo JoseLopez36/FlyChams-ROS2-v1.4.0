@@ -38,7 +38,9 @@ namespace flychams::coordination
             L_BFGS_NLOPT,
             PSO_ALGORITHM,
             ALC_PSO_ALGORITHM,
-            CMA_ES_ALGORITHM
+            CMA_ES_ALGORITHM,
+            PSO_ALGORITHM_5000P,
+            ALC_PSO_ALGORITHM_5000P
         };
         // Parameters
         struct Parameters

@@ -33,7 +33,22 @@ namespace flychams::coordination
         // Create and initialize solvers
         for (const auto& mode : modes_)
         {
-            solvers_.push_back(createSolver(agent_id_, solver_params_, mode));
+            PositionSolver::SolverMode solver_mode = mode;
+            if (mode == PositionSolver::SolverMode::PSO_ALGORITHM_5000P)
+            {
+                solver_params_.num_particles = 5000;
+                solver_mode = PositionSolver::SolverMode::PSO_ALGORITHM;
+            }
+            else if (mode == PositionSolver::SolverMode::ALC_PSO_ALGORITHM_5000P)
+            {
+                solver_params_.num_particles = 5000;
+                solver_mode = PositionSolver::SolverMode::ALC_PSO_ALGORITHM;
+            }
+            else
+            {
+                solver_params_.num_particles = 50;
+            }
+            solvers_[mode] = createSolver(agent_id_, solver_params_, solver_mode);
         }
 
         // Create publisher for solver data
@@ -51,17 +66,21 @@ namespace flychams::coordination
             update(n, t);
 
             // Update time
-            t += 1.0f / update_rate_;
+            float T = 1.0f / update_rate_;
+            t += T;
 
             // Log
             RCLCPP_INFO(node_->get_logger(), "Agent positioning experiment: Completed %d iterations", n + 1);
+
+            // Sleep
+            std::this_thread::sleep_for(std::chrono::duration<float>(T));
         }
     }
 
     void AgentPositioningExperiment::onShutdown()
     {
         // Destroy solver
-        for (auto& solver : solvers_)
+        for (auto& [mode, solver] : solvers_)
         {
             solver->destroy();
         }
@@ -102,8 +121,9 @@ namespace flychams::coordination
         }
 
         // Solve with each solver
-        for (auto& solver : solvers_)
+        for (auto& mode : modes_)
         {
+            auto solver = solvers_[mode];
             float J, t;
             Vector3r x;
 
@@ -114,37 +134,13 @@ namespace flychams::coordination
             t = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1.0e3f;
 
             // Add results to solver debug message
-            switch (solver->getMode())
+            switch (mode)
             {
             case PositionSolver::SolverMode::ELLIPSOID_METHOD:
             {
                 msg.j_ellipsoid = J;
                 RosUtils::toMsg(x, msg.x_ellipsoid);
                 msg.t_ellipsoid = t;
-                break;
-            }
-
-            case PositionSolver::SolverMode::PSO_ALGORITHM:
-            {
-                msg.j_pso = J;
-                RosUtils::toMsg(x, msg.x_pso);
-                msg.t_pso = t;
-                break;
-            }
-
-            case PositionSolver::SolverMode::ALC_PSO_ALGORITHM:
-            {
-                msg.j_alc_pso = J;
-                RosUtils::toMsg(x, msg.x_alc_pso);
-                msg.t_alc_pso = t;
-                break;
-            }
-
-            case PositionSolver::SolverMode::NESTEROV_ALGORITHM:
-            {
-                msg.j_nesterov = J;
-                RosUtils::toMsg(x, msg.x_nesterov);
-                msg.t_nesterov = t;
                 break;
             }
 
@@ -156,6 +152,14 @@ namespace flychams::coordination
                 break;
             }
 
+            case PositionSolver::SolverMode::NESTEROV_ALGORITHM:
+            {
+                msg.j_nesterov = J;
+                RosUtils::toMsg(x, msg.x_nesterov);
+                msg.t_nesterov = t;
+                break;
+            }
+
             case PositionSolver::SolverMode::L_BFGS_NLOPT:
             {
                 msg.j_l_bfgs = J;
@@ -163,6 +167,47 @@ namespace flychams::coordination
                 msg.t_l_bfgs = t;
                 break;
             }
+
+            case PositionSolver::SolverMode::PSO_ALGORITHM:
+            {
+                msg.j_pso_50p = J;
+                RosUtils::toMsg(x, msg.x_pso_50p);
+                msg.t_pso_50p = t;
+                break;
+            }
+
+            case PositionSolver::SolverMode::ALC_PSO_ALGORITHM:
+            {
+                msg.j_alc_pso_50p = J;
+                RosUtils::toMsg(x, msg.x_alc_pso_50p);
+                msg.t_alc_pso_50p = t;
+                break;
+            }
+
+            case PositionSolver::SolverMode::PSO_ALGORITHM_5000P:
+            {
+                msg.j_pso_5000p = J;
+                RosUtils::toMsg(x, msg.x_pso_5000p);
+                msg.t_pso_5000p = t;
+                break;
+            }
+
+            case PositionSolver::SolverMode::ALC_PSO_ALGORITHM_5000P:
+            {
+                msg.j_alc_pso_5000p = J;
+                RosUtils::toMsg(x, msg.x_alc_pso_5000p);
+                msg.t_alc_pso_5000p = t;
+                break;
+            }
+
+            case PositionSolver::SolverMode::CMA_ES_ALGORITHM:
+            {
+                msg.j_cma_es = J;
+                RosUtils::toMsg(x, msg.x_cma_es);
+                msg.t_cma_es = t;
+                break;
+            }
+
             }
         }
 

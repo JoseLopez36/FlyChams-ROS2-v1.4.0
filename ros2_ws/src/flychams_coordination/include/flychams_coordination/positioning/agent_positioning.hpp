@@ -70,11 +70,14 @@ namespace flychams::coordination
         // Position solver parameters
         std::vector<PositionSolver::SolverMode> modes_ = {
             PositionSolver::SolverMode::ELLIPSOID_METHOD,
+            PositionSolver::SolverMode::NELDER_MEAD_NLOPT,
+            PositionSolver::SolverMode::NESTEROV_ALGORITHM,
+            PositionSolver::SolverMode::L_BFGS_NLOPT,
             PositionSolver::SolverMode::PSO_ALGORITHM,
             PositionSolver::SolverMode::ALC_PSO_ALGORITHM,
-            PositionSolver::SolverMode::NESTEROV_ALGORITHM,
-            PositionSolver::SolverMode::NELDER_MEAD_NLOPT,
-            PositionSolver::SolverMode::L_BFGS_NLOPT
+            PositionSolver::SolverMode::PSO_ALGORITHM_5000P,
+            PositionSolver::SolverMode::ALC_PSO_ALGORITHM_5000P,
+            PositionSolver::SolverMode::CMA_ES_ALGORITHM
         };
         PositionSolver::Parameters solver_params_;
 
@@ -82,7 +85,7 @@ namespace flychams::coordination
         // Agent
         Agent agent_;
         // Position solvers
-        std::vector<PositionSolver::SharedPtr>  solvers_;
+        std::unordered_map<PositionSolver::SolverMode, PositionSolver::SharedPtr> solvers_;
 
     private: // Callbacks
         void statusCallback(const core::AgentStatusMsg::SharedPtr msg);

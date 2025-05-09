@@ -47,17 +47,20 @@ namespace flychams::coordination
         // Position solver parameters
         std::vector<PositionSolver::SolverMode> modes_ = {
             PositionSolver::SolverMode::ELLIPSOID_METHOD,
+            PositionSolver::SolverMode::NELDER_MEAD_NLOPT,
+            PositionSolver::SolverMode::NESTEROV_ALGORITHM,
+            PositionSolver::SolverMode::L_BFGS_NLOPT,
             PositionSolver::SolverMode::PSO_ALGORITHM,
             PositionSolver::SolverMode::ALC_PSO_ALGORITHM,
-            PositionSolver::SolverMode::NESTEROV_ALGORITHM,
-            PositionSolver::SolverMode::NELDER_MEAD_NLOPT,
-            PositionSolver::SolverMode::L_BFGS_NLOPT
+            PositionSolver::SolverMode::PSO_ALGORITHM_5000P,
+            PositionSolver::SolverMode::ALC_PSO_ALGORITHM_5000P,
+            PositionSolver::SolverMode::CMA_ES_ALGORITHM
         };
         PositionSolver::Parameters solver_params_;
 
     private: // Data
         // Position solvers
-        std::vector<PositionSolver::SharedPtr>  solvers_;
+        std::unordered_map<PositionSolver::SolverMode, PositionSolver::SharedPtr> solvers_;
 
     private: // Positioning management
         void update(const int& n_step, const float& t_step);
@@ -75,10 +78,10 @@ namespace flychams::coordination
 
     private: // Experiment parameters
         // General parameters
-        const int N_ = 1000; // Number of iterations per cluster distribution and algorithm
-        const int K_ = 4;    // Number of clusters
-        // Agent parameters
-        const core::Vector3r x0_ = { 0.0f, 0.0f, 50.0f };
+        const int N_ = 1000;  // Number of iterations per cluster distribution and algorithm
+        const int K_ = 4;     // Number of clusters
+        // Agent parameters (x mean position)
+        const core::Vector3r x0_ = { 0.0f, 0.0f, 90.0f };
         // Cluster parameters
         // Cluster centers
         const std::vector<core::Vector3r> tab_P_ = {
@@ -87,11 +90,12 @@ namespace flychams::coordination
             {14.10f, -35.11f, 0.0f},
             {-18.12f, 29.50f, 0.0f}
         };
+        // Cluster centers noise (mean: 0, std: approximately 5% of the distance between the center and the origin)
         const std::vector<Noise> tab_P_noise_ = {
-            {0.0f, 0.3f},
-            {0.0f, 0.3f},
-            {0.0f, 0.3f},
-            {0.0f, 0.3f}
+            {0.0f, 1.0f},
+            {0.0f, 1.0f},
+            {0.0f, 1.0f},
+            {0.0f, 1.0f}
         };
         // Cluster radii
         const std::vector<float> tab_r_ = {
@@ -100,11 +104,12 @@ namespace flychams::coordination
             4.7f,
             2.45f
         };
+        // Cluster radii noise (mean: 0, std: approximately 5% of the radius)
         const std::vector<Noise> tab_r_noise_ = {
-            {0.0f, 0.1f},
-            {0.0f, 0.1f},
-            {0.0f, 0.1f},
-            {0.0f, 0.1f}
+            {0.0f, 0.15f},
+            {0.0f, 0.15f},
+            {0.0f, 0.15f},
+            {0.0f, 0.15f}
         };
     };
 

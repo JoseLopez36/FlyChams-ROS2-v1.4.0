@@ -40,7 +40,22 @@ namespace flychams::coordination
         // Create and initialize solvers
         for (const auto& mode : modes_)
         {
-            solvers_.push_back(createSolver(agent_id_, solver_params_, mode));
+            PositionSolver::SolverMode solver_mode = mode;
+            if (mode == PositionSolver::SolverMode::PSO_ALGORITHM_5000P)
+            {
+                solver_params_.num_particles = 5000;
+                solver_mode = PositionSolver::SolverMode::PSO_ALGORITHM;
+            }
+            else if (mode == PositionSolver::SolverMode::ALC_PSO_ALGORITHM_5000P)
+            {
+                solver_params_.num_particles = 5000;
+                solver_mode = PositionSolver::SolverMode::ALC_PSO_ALGORITHM;
+            }
+            else
+            {
+                solver_params_.num_particles = 50;
+            }
+            solvers_[mode] = createSolver(agent_id_, solver_params_, solver_mode);
         }
 
         // Create subscribers for agent status, position and clusters
@@ -64,7 +79,7 @@ namespace flychams::coordination
     void AgentPositioning::onShutdown()
     {
         // Destroy solver
-        for (auto& solver : solvers_)
+        for (auto& [mode, solver] : solvers_)
         {
             solver->destroy();
         }
@@ -139,8 +154,9 @@ namespace flychams::coordination
         // Solve agent positioning with different solvers to compare results
         Vector3r optimal_position;
         flychams_interfaces::msg::SolverDebug solver_debug_msg;
-        for (auto& solver : solvers_)
+        for (auto& mode : modes_)
         {
+            auto solver = solvers_[mode];
             float J, t;
             Vector3r x;
 
@@ -151,7 +167,7 @@ namespace flychams::coordination
             t = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
             // Add results to solver debug message
-            switch (solver->getMode())
+            switch (mode)
             {
             case PositionSolver::SolverMode::ELLIPSOID_METHOD:
             {
@@ -164,19 +180,11 @@ namespace flychams::coordination
                 break;
             }
 
-            case PositionSolver::SolverMode::PSO_ALGORITHM:
+            case PositionSolver::SolverMode::NELDER_MEAD_NLOPT:
             {
-                solver_debug_msg.j_pso = J;
-                RosUtils::toMsg(x, solver_debug_msg.x_pso);
-                solver_debug_msg.t_pso = t;
-                break;
-            }
-
-            case PositionSolver::SolverMode::ALC_PSO_ALGORITHM:
-            {
-                solver_debug_msg.j_alc_pso = J;
-                RosUtils::toMsg(x, solver_debug_msg.x_alc_pso);
-                solver_debug_msg.t_alc_pso = t;
+                solver_debug_msg.j_nelder_mead = J;
+                RosUtils::toMsg(x, solver_debug_msg.x_nelder_mead);
+                solver_debug_msg.t_nelder_mead = t;
                 break;
             }
 
@@ -188,14 +196,6 @@ namespace flychams::coordination
                 break;
             }
 
-            case PositionSolver::SolverMode::NELDER_MEAD_NLOPT:
-            {
-                solver_debug_msg.j_nelder_mead = J;
-                RosUtils::toMsg(x, solver_debug_msg.x_nelder_mead);
-                solver_debug_msg.t_nelder_mead = t;
-                break;
-            }
-
             case PositionSolver::SolverMode::L_BFGS_NLOPT:
             {
                 solver_debug_msg.j_l_bfgs = J;
@@ -203,6 +203,47 @@ namespace flychams::coordination
                 solver_debug_msg.t_l_bfgs = t;
                 break;
             }
+
+            case PositionSolver::SolverMode::PSO_ALGORITHM:
+            {
+                solver_debug_msg.j_pso_50p = J;
+                RosUtils::toMsg(x, solver_debug_msg.x_pso_50p);
+                solver_debug_msg.t_pso_50p = t;
+                break;
+            }
+
+            case PositionSolver::SolverMode::ALC_PSO_ALGORITHM:
+            {
+                solver_debug_msg.j_alc_pso_50p = J;
+                RosUtils::toMsg(x, solver_debug_msg.x_alc_pso_50p);
+                solver_debug_msg.t_alc_pso_50p = t;
+                break;
+            }
+
+            case PositionSolver::SolverMode::PSO_ALGORITHM_5000P:
+            {
+                solver_debug_msg.j_pso_5000p = J;
+                RosUtils::toMsg(x, solver_debug_msg.x_pso_5000p);
+                solver_debug_msg.t_pso_5000p = t;
+                break;
+            }
+
+            case PositionSolver::SolverMode::ALC_PSO_ALGORITHM_5000P:
+            {
+                solver_debug_msg.j_alc_pso_5000p = J;
+                RosUtils::toMsg(x, solver_debug_msg.x_alc_pso_5000p);
+                solver_debug_msg.t_alc_pso_5000p = t;
+                break;
+            }
+
+            case PositionSolver::SolverMode::CMA_ES_ALGORITHM:
+            {
+                solver_debug_msg.j_cma_es = J;
+                RosUtils::toMsg(x, solver_debug_msg.x_cma_es);
+                solver_debug_msg.t_cma_es = t;
+                break;
+            }
+
             }
         }
 
