@@ -323,14 +323,13 @@ namespace flychams::coordination
             }
             // Central unit (mean of all selected clusters and maximum radius)
             const auto& [central_P, central_r] = computeCentralCluster(tab_P, tab_r);
-            // Create matrix with central unit
-            core::Matrix3Xr tab_P_central(3, nk + 1);
+            // Create new matrices with central unit
+            core::Matrix3Xr tab_P_central = core::Matrix3Xr::Zero(3, nk + 1);
+            core::RowVectorXr tab_r_central = core::RowVectorXr::Zero(nk + 1);
             tab_P_central.col(0) = central_P;
             tab_P_central.block(0, 1, 3, nk) = tab_P;
-            core::RowVectorXr tab_r_central(nk + 1);
             tab_r_central(0) = central_r;
             tab_r_central.tail(nk) = tab_r;
-
             // Run solver to get optimal position
             float Jo;
             core::Vector3r x_opt = solver->run(tab_P_central, tab_r_central, x, Jo);
