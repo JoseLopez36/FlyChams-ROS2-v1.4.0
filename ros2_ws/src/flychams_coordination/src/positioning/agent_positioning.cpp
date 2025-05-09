@@ -166,12 +166,16 @@ namespace flychams::coordination
             const auto& end = std::chrono::high_resolution_clock::now();
             t = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
+            // Calculate cost using non-convex cost function
+            float J_non_convex = CostFunctions::J0(tab_P, tab_r, x, solver->getCostParams());
+
             // Add results to solver debug message
             switch (mode)
             {
             case PositionSolver::SolverMode::ELLIPSOID_METHOD:
             {
                 solver_debug_msg.j_ellipsoid = J;
+                solver_debug_msg.j_ellipsoid_non_convex = J_non_convex;
                 RosUtils::toMsg(x, solver_debug_msg.x_ellipsoid);
                 solver_debug_msg.t_ellipsoid = t;
 
@@ -183,6 +187,7 @@ namespace flychams::coordination
             case PositionSolver::SolverMode::NELDER_MEAD_NLOPT:
             {
                 solver_debug_msg.j_nelder_mead = J;
+                solver_debug_msg.j_nelder_mead_non_convex = J_non_convex;
                 RosUtils::toMsg(x, solver_debug_msg.x_nelder_mead);
                 solver_debug_msg.t_nelder_mead = t;
                 break;
@@ -191,6 +196,7 @@ namespace flychams::coordination
             case PositionSolver::SolverMode::NESTEROV_ALGORITHM:
             {
                 solver_debug_msg.j_nesterov = J;
+                solver_debug_msg.j_nesterov_non_convex = J_non_convex;
                 RosUtils::toMsg(x, solver_debug_msg.x_nesterov);
                 solver_debug_msg.t_nesterov = t;
                 break;
@@ -199,6 +205,7 @@ namespace flychams::coordination
             case PositionSolver::SolverMode::L_BFGS_NLOPT:
             {
                 solver_debug_msg.j_l_bfgs = J;
+                solver_debug_msg.j_l_bfgs_non_convex = J_non_convex;
                 RosUtils::toMsg(x, solver_debug_msg.x_l_bfgs);
                 solver_debug_msg.t_l_bfgs = t;
                 break;

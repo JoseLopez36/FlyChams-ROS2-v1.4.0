@@ -24,6 +24,11 @@ float32 j_alc_pso_50p
 float32 j_pso_5000p
 float32 j_alc_pso_5000p
 float32 j_cma_es
+# Optimal non-convex cost values
+float32 j_ellipsoid_non_convex
+float32 j_nelder_mead_non_convex
+float32 j_nesterov_non_convex
+float32 j_l_bfgs_non_convex
 # Optimal position values (m)
 geometry_msgs/Point x_ellipsoid
 geometry_msgs/Point x_nelder_mead

@@ -95,6 +95,7 @@ namespace flychams::coordination
         int n() const { return params_.cost_params.n; }
         SolverMode getMode() const { return mode_; }
         int n_tracking() const { return params_.cost_params.n_tracking; }
+        CostFunctions::Parameters getCostParams() const { return params_.cost_params; }
         // Optimization
         core::Vector3r run(const core::Matrix3Xr& tab_P, const core::RowVectorXr& tab_r, const core::Vector3r& x0, float& J);
     };
