@@ -4,12 +4,13 @@
 #include "flychams_coordination/positioning/cost_functions.hpp"
 
 // Solver algorithms
-#include "flychams_coordination/positioning/nelder_mead_nlopt.hpp"
-#include "flychams_coordination/positioning/l_bfgs_nlopt.hpp"
 #include "flychams_coordination/positioning/ellipsoid_method.hpp"
+#include "flychams_coordination/positioning/nelder_mead_nlopt.hpp"
+#include "flychams_coordination/positioning/nesterov_algorithm.hpp"
+#include "flychams_coordination/positioning/l_bfgs_nlopt.hpp"
 #include "flychams_coordination/positioning/pso_algorithm.hpp"
 #include "flychams_coordination/positioning/alc_pso_algorithm.hpp"
-#include "flychams_coordination/positioning/nesterov_algorithm.hpp"
+#include "flychams_coordination/positioning/cma_es_algorithm.hpp"
 
 // Utilities
 #include "flychams_core/types/core_types.hpp"
@@ -31,12 +32,13 @@ namespace flychams::coordination
         // Modes
         enum class SolverMode
         {
-            NELDER_MEAD_NLOPT,
-            L_BFGS_NLOPT,
             ELLIPSOID_METHOD,
+            NELDER_MEAD_NLOPT,
+            NESTEROV_ALGORITHM,
+            L_BFGS_NLOPT,
             PSO_ALGORITHM,
             ALC_PSO_ALGORITHM,
-            NESTEROV_ALGORITHM
+            CMA_ES_ALGORITHM
         };
         // Parameters
         struct Parameters
@@ -75,12 +77,13 @@ namespace flychams::coordination
 
     private: // Data
         // Solver algorithms
-        NelderMeadNLopt nelder_mead_nlopt_;
-        LBFGSNLopt l_bfgs_nlopt_;
         EllipsoidMethod ellipsoid_method_;
+        NelderMeadNLopt nelder_mead_nlopt_;
+        NesterovAlgorithm nesterov_algorithm_;
+        LBFGSNLopt l_bfgs_nlopt_;
         PSOAlgorithm pso_algorithm_;
         ALCPSOAlgorithm alc_pso_algorithm_;
-        NesterovAlgorithm nesterov_algorithm_;
+        CMAESAlgorithm cma_es_algorithm_;
 
     public: // Public methods
         // Configuration

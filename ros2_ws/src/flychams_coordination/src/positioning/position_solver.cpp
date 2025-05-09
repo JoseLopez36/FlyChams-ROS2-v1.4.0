@@ -19,6 +19,21 @@ namespace flychams::coordination
         // Initialize the solver algorithms
         switch (mode_)
         {
+        case SolverMode::ELLIPSOID_METHOD:
+        {
+            // Get Ellipsoid Method parameters
+            EllipsoidMethod::Parameters ellipsoid_method_params;
+            ellipsoid_method_params.x_min = params.x_min;
+            ellipsoid_method_params.x_max = params.x_max;
+            ellipsoid_method_params.eps = params.eps;
+            ellipsoid_method_params.tol = params.tol;
+            ellipsoid_method_params.max_iter = params.max_iter;
+
+            // Initialize the Ellipsoid Method solver with the parameters
+            ellipsoid_method_.init(ellipsoid_method_params, params.cost_params);
+            break;
+        }
+
         case SolverMode::NELDER_MEAD_NLOPT:
         {
             // Get Nelder-Mead parameters
@@ -34,6 +49,22 @@ namespace flychams::coordination
             break;
         }
 
+        case SolverMode::NESTEROV_ALGORITHM:
+        {
+            // Get Nesterov Algorithm parameters
+            NesterovAlgorithm::Parameters nesterov_algorithm_params;
+            nesterov_algorithm_params.x_min = params.x_min;
+            nesterov_algorithm_params.x_max = params.x_max;
+            nesterov_algorithm_params.eps = params.eps;
+            nesterov_algorithm_params.tol = params.tol;
+            nesterov_algorithm_params.max_iter = params.max_iter;
+            nesterov_algorithm_params.lipschitz_constant = params.lipschitz_constant;
+
+            // Initialize the Nesterov Algorithm solver with the parameters
+            nesterov_algorithm_.init(nesterov_algorithm_params, params.cost_params);
+            break;
+        }
+
         case SolverMode::L_BFGS_NLOPT:
         {
             // Get L-BFGS parameters
@@ -46,21 +77,6 @@ namespace flychams::coordination
 
             // Initialize the L-BFGS solver with the parameters
             l_bfgs_nlopt_.init(l_bfgs_nlopt_params, params.cost_params);
-            break;
-        }
-
-        case SolverMode::ELLIPSOID_METHOD:
-        {
-            // Get Ellipsoid Method parameters
-            EllipsoidMethod::Parameters ellipsoid_method_params;
-            ellipsoid_method_params.x_min = params.x_min;
-            ellipsoid_method_params.x_max = params.x_max;
-            ellipsoid_method_params.eps = params.eps;
-            ellipsoid_method_params.tol = params.tol;
-            ellipsoid_method_params.max_iter = params.max_iter;
-
-            // Initialize the Ellipsoid Method solver with the parameters
-            ellipsoid_method_.init(ellipsoid_method_params, params.cost_params);
             break;
         }
 
@@ -106,19 +122,17 @@ namespace flychams::coordination
             break;
         }
 
-        case SolverMode::NESTEROV_ALGORITHM:
+        case SolverMode::CMA_ES_ALGORITHM:
         {
-            // Get Nesterov Algorithm parameters
-            NesterovAlgorithm::Parameters nesterov_algorithm_params;
-            nesterov_algorithm_params.x_min = params.x_min;
-            nesterov_algorithm_params.x_max = params.x_max;
-            nesterov_algorithm_params.eps = params.eps;
-            nesterov_algorithm_params.tol = params.tol;
-            nesterov_algorithm_params.max_iter = params.max_iter;
-            nesterov_algorithm_params.lipschitz_constant = params.lipschitz_constant;
+            // Get CMA-ES Algorithm parameters
+            CMAESAlgorithm::Parameters cma_es_algorithm_params;
+            cma_es_algorithm_params.x_min = params.x_min;
+            cma_es_algorithm_params.x_max = params.x_max;
+            cma_es_algorithm_params.tol = params.tol;
+            cma_es_algorithm_params.max_iter = params.max_iter;
 
-            // Initialize the Nesterov Algorithm solver with the parameters
-            nesterov_algorithm_.init(nesterov_algorithm_params, params.cost_params);
+            // Initialize the CMA-ES Algorithm solver with the parameters
+            cma_es_algorithm_.init(cma_es_algorithm_params, params.cost_params);
             break;
         }
 
@@ -132,21 +146,27 @@ namespace flychams::coordination
         // Destroy the solver algorithms
         switch (mode_)
         {
+        case SolverMode::ELLIPSOID_METHOD:
+        {
+            ellipsoid_method_.destroy();
+            break;
+        }
+
         case SolverMode::NELDER_MEAD_NLOPT:
         {
             nelder_mead_nlopt_.destroy();
             break;
         }
 
-        case SolverMode::L_BFGS_NLOPT:
+        case SolverMode::NESTEROV_ALGORITHM:
         {
-            l_bfgs_nlopt_.destroy();
+            nesterov_algorithm_.destroy();
             break;
         }
 
-        case SolverMode::ELLIPSOID_METHOD:
+        case SolverMode::L_BFGS_NLOPT:
         {
-            ellipsoid_method_.destroy();
+            l_bfgs_nlopt_.destroy();
             break;
         }
 
@@ -162,9 +182,9 @@ namespace flychams::coordination
             break;
         }
 
-        case SolverMode::NESTEROV_ALGORITHM:
+        case SolverMode::CMA_ES_ALGORITHM:
         {
-            nesterov_algorithm_.destroy();
+            cma_es_algorithm_.destroy();
             break;
         }
 
@@ -178,19 +198,24 @@ namespace flychams::coordination
         // Run the optimization based on the mode
         switch (mode_)
         {
+        case SolverMode::ELLIPSOID_METHOD:
+        {
+            return ellipsoid_method_.run(tab_P, tab_r, x0, J);
+        }
+
         case SolverMode::NELDER_MEAD_NLOPT:
         {
             return nelder_mead_nlopt_.run(tab_P, tab_r, x0, J);
         }
 
+        case SolverMode::NESTEROV_ALGORITHM:
+        {
+            return nesterov_algorithm_.run(tab_P, tab_r, x0, J);
+        }
+
         case SolverMode::L_BFGS_NLOPT:
         {
             return l_bfgs_nlopt_.run(tab_P, tab_r, x0, J);
-        }
-
-        case SolverMode::ELLIPSOID_METHOD:
-        {
-            return ellipsoid_method_.run(tab_P, tab_r, x0, J);
         }
 
         case SolverMode::PSO_ALGORITHM:
@@ -203,9 +228,9 @@ namespace flychams::coordination
             return alc_pso_algorithm_.run(tab_P, tab_r, J);
         }
 
-        case SolverMode::NESTEROV_ALGORITHM:
+        case SolverMode::CMA_ES_ALGORITHM:
         {
-            return nesterov_algorithm_.run(tab_P, tab_r, x0, J);
+            return cma_es_algorithm_.run(tab_P, tab_r, J);
         }
 
         default:
