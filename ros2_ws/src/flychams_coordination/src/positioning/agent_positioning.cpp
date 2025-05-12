@@ -69,9 +69,12 @@ namespace flychams::coordination
         // Create publisher for agent setpoint
         agent_.setpoint_pub = topic_tools_->createAgentPositionSetpointPublisher(agent_id_);
         agent_.solver_debug_pub = node_->create_publisher<flychams_interfaces::msg::SolverDebug>(
-            RosUtils::replace("coordination/AGENTID/debug/solvers", "AGENTID", agent_id_), 10);
+            RosUtils::replace("coordination/AGENTID/debug/solver_experiment", "AGENTID", agent_id_), 10);
 
         // Set update timer
+        n_step_ = 0;
+        t_step_ = 0.0f;
+        last_update_time_ = RosUtils::now(node_);
         update_timer_ = RosUtils::createTimer(node_, update_rate_,
             std::bind(&AgentPositioning::update, this), module_cb_group_);
     }
@@ -125,6 +128,14 @@ namespace flychams::coordination
 
     void AgentPositioning::update()
     {
+        // Check if experiment has ended
+        if (n_step_ >= N_)
+        {
+            // Log
+            RCLCPP_INFO(node_->get_logger(), "Agent positioning: Experiment ended");
+            return;
+        }
+
         // Check if we have a valid agent status, position and cluster assignments
         if (!agent_.has_status || !agent_.has_position || !agent_.has_clusters)
         {
@@ -140,6 +151,12 @@ namespace flychams::coordination
             return;
         }
 
+        // Compute time step
+        auto current_time = RosUtils::now(node_);
+        float dt = (current_time - last_update_time_).seconds();
+        last_update_time_ = current_time;
+        t_step_ += dt;
+
         // Convert messages to Eigen types
         Vector3r x0 = RosUtils::fromMsg(agent_.position);
         int n = static_cast<int>(agent_.clusters.centers.size());
@@ -151,9 +168,31 @@ namespace flychams::coordination
             tab_r(i) = agent_.clusters.radii[i];
         }
 
+        // Create solver debug message
+        flychams_interfaces::msg::SolverDebug msg;
+
+        // Fill global data
+        msg.n_iterations = N_;
+        msg.n_clusters = tab_P.cols() - 1;
+        RosUtils::toMsg(x0, msg.x0);
+
+        // Fill per-iteration data
+        msg.n = n_step_ + 1;
+        msg.t = t_step_;
+        for (int i = 1; i < tab_P.cols(); i++)
+        {
+            // Get center and radius
+            PointMsg center;
+            RosUtils::toMsg(tab_P.col(i), center);
+            float radius = tab_r(i);
+
+            // Fill message
+            msg.tab_p.push_back(center);
+            msg.tab_r.push_back(radius);
+        }
+
         // Solve agent positioning with different solvers to compare results
         Vector3r optimal_position;
-        flychams_interfaces::msg::SolverDebug solver_debug_msg;
         for (auto& mode : modes_)
         {
             auto solver = solvers_[mode];
@@ -164,7 +203,7 @@ namespace flychams::coordination
             const auto& start = std::chrono::high_resolution_clock::now();
             x = solver->run(tab_P, tab_r, x0, J);
             const auto& end = std::chrono::high_resolution_clock::now();
-            t = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+            t = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1.0e3f;
 
             // Calculate cost using non-convex cost function
             float J_non_convex = CostFunctions::J0(tab_P, tab_r, x, solver->getCostParams());
@@ -174,83 +213,82 @@ namespace flychams::coordination
             {
             case PositionSolver::SolverMode::ELLIPSOID_METHOD:
             {
-                solver_debug_msg.j_ellipsoid = J;
-                solver_debug_msg.j_ellipsoid_non_convex = J_non_convex;
-                RosUtils::toMsg(x, solver_debug_msg.x_ellipsoid);
-                solver_debug_msg.t_ellipsoid = t;
-
-                // Use ellipsoid method as optimal position for moving the agent
-                optimal_position = x;
+                msg.j_ellipsoid = J;
+                msg.j_ellipsoid_non_convex = J_non_convex;
+                RosUtils::toMsg(x, msg.x_ellipsoid);
+                msg.t_ellipsoid = t;
                 break;
             }
 
             case PositionSolver::SolverMode::NELDER_MEAD_NLOPT:
             {
-                solver_debug_msg.j_nelder_mead = J;
-                solver_debug_msg.j_nelder_mead_non_convex = J_non_convex;
-                RosUtils::toMsg(x, solver_debug_msg.x_nelder_mead);
-                solver_debug_msg.t_nelder_mead = t;
+                msg.j_nelder_mead = J;
+                msg.j_nelder_mead_non_convex = J_non_convex;
+                RosUtils::toMsg(x, msg.x_nelder_mead);
+                msg.t_nelder_mead = t;
                 break;
             }
 
             case PositionSolver::SolverMode::NESTEROV_ALGORITHM:
             {
-                solver_debug_msg.j_nesterov = J;
-                solver_debug_msg.j_nesterov_non_convex = J_non_convex;
-                RosUtils::toMsg(x, solver_debug_msg.x_nesterov);
-                solver_debug_msg.t_nesterov = t;
+                msg.j_nesterov = J;
+                msg.j_nesterov_non_convex = J_non_convex;
+                RosUtils::toMsg(x, msg.x_nesterov);
+                msg.t_nesterov = t;
                 break;
             }
 
             case PositionSolver::SolverMode::L_BFGS_NLOPT:
             {
-                solver_debug_msg.j_l_bfgs = J;
-                solver_debug_msg.j_l_bfgs_non_convex = J_non_convex;
-                RosUtils::toMsg(x, solver_debug_msg.x_l_bfgs);
-                solver_debug_msg.t_l_bfgs = t;
+                msg.j_l_bfgs = J;
+                msg.j_l_bfgs_non_convex = J_non_convex;
+                RosUtils::toMsg(x, msg.x_l_bfgs);
+                msg.t_l_bfgs = t;
+
+                // Use L-BFGS method as optimal position for driving the agent
+                optimal_position = x;
                 break;
             }
 
             case PositionSolver::SolverMode::PSO_ALGORITHM:
             {
-                solver_debug_msg.j_pso_50p = J;
-                RosUtils::toMsg(x, solver_debug_msg.x_pso_50p);
-                solver_debug_msg.t_pso_50p = t;
+                msg.j_pso_50p = J;
+                RosUtils::toMsg(x, msg.x_pso_50p);
+                msg.t_pso_50p = t;
                 break;
             }
 
             case PositionSolver::SolverMode::ALC_PSO_ALGORITHM:
             {
-                solver_debug_msg.j_alc_pso_50p = J;
-                RosUtils::toMsg(x, solver_debug_msg.x_alc_pso_50p);
-                solver_debug_msg.t_alc_pso_50p = t;
+                msg.j_alc_pso_50p = J;
+                RosUtils::toMsg(x, msg.x_alc_pso_50p);
+                msg.t_alc_pso_50p = t;
                 break;
             }
 
             case PositionSolver::SolverMode::PSO_ALGORITHM_5000P:
             {
-                solver_debug_msg.j_pso_5000p = J;
-                RosUtils::toMsg(x, solver_debug_msg.x_pso_5000p);
-                solver_debug_msg.t_pso_5000p = t;
+                msg.j_pso_5000p = J;
+                RosUtils::toMsg(x, msg.x_pso_5000p);
+                msg.t_pso_5000p = t;
                 break;
             }
 
             case PositionSolver::SolverMode::ALC_PSO_ALGORITHM_5000P:
             {
-                solver_debug_msg.j_alc_pso_5000p = J;
-                RosUtils::toMsg(x, solver_debug_msg.x_alc_pso_5000p);
-                solver_debug_msg.t_alc_pso_5000p = t;
+                msg.j_alc_pso_5000p = J;
+                RosUtils::toMsg(x, msg.x_alc_pso_5000p);
+                msg.t_alc_pso_5000p = t;
                 break;
             }
 
             case PositionSolver::SolverMode::CMA_ES_ALGORITHM:
             {
-                solver_debug_msg.j_cma_es = J;
-                RosUtils::toMsg(x, solver_debug_msg.x_cma_es);
-                solver_debug_msg.t_cma_es = t;
+                msg.j_cma_es = J;
+                RosUtils::toMsg(x, msg.x_cma_es);
+                msg.t_cma_es = t;
                 break;
             }
-
             }
         }
 
@@ -260,7 +298,13 @@ namespace flychams::coordination
         agent_.setpoint_pub->publish(agent_.setpoint);
 
         // Publish solver comparison results
-        agent_.solver_debug_pub->publish(solver_debug_msg);
+        agent_.solver_debug_pub->publish(msg);
+
+        // Increment step
+        n_step_++;
+
+        // Log
+        RCLCPP_INFO(node_->get_logger(), "Agent positioning experiment: Completed %d iterations", n_step_);
     }
 
     // ════════════════════════════════════════════════════════════════════════════

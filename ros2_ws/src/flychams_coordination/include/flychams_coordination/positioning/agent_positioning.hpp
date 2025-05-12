@@ -82,10 +82,15 @@ namespace flychams::coordination
         PositionSolver::Parameters solver_params_;
 
     private: // Data
+        // Experiment data
+        int n_step_;
+        float t_step_;
         // Agent
         Agent agent_;
         // Position solvers
         std::unordered_map<PositionSolver::SolverMode, PositionSolver::SharedPtr> solvers_;
+        // Time step
+        core::Time last_update_time_;
 
     private: // Callbacks
         void statusCallback(const core::AgentStatusMsg::SharedPtr msg);
@@ -102,6 +107,10 @@ namespace flychams::coordination
     private: // ROS components
         // Timer
         core::TimerPtr update_timer_;
+
+    private: // Experiment parameters
+        // General parameters
+        const int N_ = 1000; // Number of iterations per algorithm
     };
 
 } // namespace flychams::coordination

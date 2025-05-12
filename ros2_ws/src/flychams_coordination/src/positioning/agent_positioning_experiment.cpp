@@ -224,7 +224,6 @@ namespace flychams::coordination
                 msg.t_cma_es = t;
                 break;
             }
-
             }
         }
 
