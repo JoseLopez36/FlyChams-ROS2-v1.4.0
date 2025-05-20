@@ -1,4 +1,4 @@
-# Flying Chameleons ROS2 v1.3.1: Multi-UAV System for Autonomous Target Tracking
+# Flying Chameleons ROS2: Multi-UAV System for Autonomous Target Tracking
 
 A ROS2-based system for coordinated multi-UAV target tracking using various advanced simulation frameworks (e.g. AirSim, Unreal Engine 5, etc.).
 
