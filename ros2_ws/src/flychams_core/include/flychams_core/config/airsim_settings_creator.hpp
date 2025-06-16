@@ -274,7 +274,7 @@ namespace flychams::core
                     }},
                     {"X", mount_pos.x()}, {"Y", -mount_pos.y()}, {"Z", -mount_pos.z()},
                     {"Roll", 0.0f}, {"Pitch", MathUtils::radToDeg(-mount_ori.y())}, {"Yaw", 0.0f},
-                    {"EnableGimbal", true}, {"CameraVisible", true}
+                    {"EnableGimbal", true}, {"CameraVisible", true}, {"CameraScale", 0.7f}
                 };
             }
         }

@@ -89,7 +89,13 @@ namespace flychams::control
 			const auto& head_ptr = config_tools_->getHead(agent_id_, head_id);
 			const float& focal = agent_.setpoints.focals[i];
 			const float& sensor_width = head_ptr->camera.sensor_size(0);
-			const auto& angles = agent_.setpoints.angles[i];
+			auto& angles = agent_.setpoints.angles[i];
+			if (i == 0)
+			{
+				angles.x = 0.0f;
+				angles.y = M_PI_2f;
+				angles.z = M_PI_2f;
+			}
 
 			// Compute command for this head
 			const auto& [head_cmd_fov, head_cmd_ori] = getCommand(focal, sensor_width, angles);
