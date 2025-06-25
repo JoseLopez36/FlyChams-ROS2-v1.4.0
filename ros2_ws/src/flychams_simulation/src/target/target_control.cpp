@@ -159,12 +159,19 @@ namespace flychams::simulation
 
     void TargetControl::spawnCluster(const ID& cluster_id, const PointMsg& initial_center, const float& initial_radius)
     {
-        // Highlight color (cyan with low alpha)
+        // // Highlight color (cyan with low alpha)
+        // ColorMsg highlight_color;
+        // highlight_color.r = 0.0f;
+        // highlight_color.g = 1.0f;
+        // highlight_color.b = 1.0f;
+        // highlight_color.a = 0.005f;
+
+        // Highlight color (orange with medium alpha)
         ColorMsg highlight_color;
-        highlight_color.r = 0.0f;
-        highlight_color.g = 1.0f;
-        highlight_color.b = 1.0f;
-        highlight_color.a = 0.005f;
+        highlight_color.r = 1.0f;
+        highlight_color.g = 0.5f;
+        highlight_color.b = 0.0f;
+        highlight_color.a = 0.15f;
 
         // Add cluster to simulation
         framework_tools_->addClusterGroup({ cluster_id }, { initial_center }, { initial_radius }, true, { highlight_color });
