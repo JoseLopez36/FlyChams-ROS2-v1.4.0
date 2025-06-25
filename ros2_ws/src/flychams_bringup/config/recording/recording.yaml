@@ -1,0 +1,8 @@
+/airsim/**:
+  ros__parameters:
+    # AirSim camera recording parameters
+    camera_name: "HEAD02"
+    images_root: "/home/testuser/FlyChams-ROS2/experiments/images"
+    fps: 10.0
+    host_ip: "localhost"
+    host_port: 41451

@@ -36,6 +36,12 @@ def generate_launch_description():
         'core',
         'frames.yaml'
     ])
+    recording_path = PathJoinSubstitution([
+        FindPackageShare('flychams_bringup'),
+        'config',
+        'recording',
+        'recording.yaml'
+    ])
     
     # Package parameters
     control_path = PathJoinSubstitution([
@@ -96,7 +102,9 @@ def generate_launch_description():
         'metrics_factory': launch.get('metrics_factory', [True, 'info']),
         'marker_factory': launch.get('marker_factory', [True, 'info']),
         'target_state': launch.get('target_state', [True, 'info']),
-        'target_control': launch.get('target_control', [True, 'info'])
+        'target_control': launch.get('target_control', [True, 'info']),
+        # Recording nodes
+        'airsim_record_camera': launch.get('airsim_record_camera', [True, 'info']),
     }
 
     # ============= CONTROL NODES =============
@@ -378,6 +386,24 @@ def generate_launch_description():
                     topics_path, 
                     frames_path, 
                     simulation_path,
+                    {'use_sim_time': True}
+                ]
+            )
+        )
+
+    # ============= RECORDING NODES =============
+    # Conditionally add AirSim Record Camera node
+    if nodes['airsim_record_camera'][0]:
+        ld.append(
+            Node(
+                package='airsim_wrapper',
+                executable='airsim_record_camera',
+                name='airsim_record_camera',
+                output='screen',
+                namespace='airsim',
+                arguments=['--ros-args', '--log-level', nodes['airsim_record_camera'][1]],
+                parameters=[
+                    recording_path,
                     {'use_sim_time': True}
                 ]
             )

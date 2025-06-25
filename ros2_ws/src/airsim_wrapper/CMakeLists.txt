@@ -71,7 +71,13 @@ ament_target_dependencies(airsim_get_image
   rclcpp
 )
 
-install(TARGETS airsim_node airsim_get_image
+add_executable(airsim_record_camera src/airsim_record_camera.cpp)
+target_link_libraries(airsim_record_camera airsim_ros AirLib)
+ament_target_dependencies(airsim_record_camera
+  rclcpp
+)
+
+install(TARGETS airsim_node airsim_get_image airsim_record_camera
   DESTINATION lib/${PROJECT_NAME})
 
 install(TARGETS airsim_ros
@@ -100,6 +106,6 @@ ament_export_dependencies(rosidl_default_runtime)
 ament_export_dependencies(airsim_interfaces)
 
 ament_export_include_directories(${INCLUDE_DIRS})
-ament_export_libraries(airsim_settings_parser airsim_ros airsim_get_image)
+ament_export_libraries(airsim_settings_parser airsim_ros airsim_get_image airsim_record_camera)
 
 ament_package()

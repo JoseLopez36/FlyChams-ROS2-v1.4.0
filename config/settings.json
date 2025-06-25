@@ -49,7 +49,7 @@
         ]
     },
     "Vehicles": {
-        "AGENT01": {
+        "AGENT02": {
             "PawnPath": "FlyChamsHexacopter",
             "X": 0.0,
             "Y": -0.0,
@@ -104,15 +104,15 @@
                 }
             },
             "Cameras": {
-                "HEAD01": {
+                "HEAD06": {
                     "CaptureSettings": [
                         {
                             "ImageType": 0,
-                            "Width": 2560,
-                            "Height": 1440,
-                            "SensorWidth": 0.0062870001420378685,
-                            "SensorHeight": 0.0035359999164938927,
-                            "FOV_Degrees": 161.92466735839844,
+                            "Width": 7680,
+                            "Height": 4320,
+                            "SensorWidth": 0.013199999928474426,
+                            "SensorHeight": 0.007424999959766865,
+                            "FOV_Degrees": 162.76870727539063,
                             "K1": -0.029999999329447746,
                             "K2": 0.0020000000949949026,
                             "K3": 0.0,
@@ -160,262 +160,6 @@
                     ],
                     "X": 0.0,
                     "Y": -0.0,
-                    "Z": 0.09000000357627869,
-                    "Roll": 0.0,
-                    "Pitch": -90.0,
-                    "Yaw": 0.0,
-                    "EnableGimbal": true,
-                    "CameraVisible": true,
-                    "CameraScale": 0.699999988079071
-                },
-                "HEAD02": {
-                    "CaptureSettings": [
-                        {
-                            "ImageType": 0,
-                            "Width": 1920,
-                            "Height": 1080,
-                            "SensorWidth": 0.013199999928474426,
-                            "SensorHeight": 0.007424999959766865,
-                            "FOV_Degrees": 66.84961700439453,
-                            "K1": -0.029999999329447746,
-                            "K2": 0.0020000000949949026,
-                            "K3": 0.0,
-                            "P1": 0.0005000000237487257,
-                            "P2": -0.00039999998989515007,
-                            "LumenGIEnable": true,
-                            "LumenReflectionEnable": true,
-                            "LumenFinalQuality": 2,
-                            "LumenSceneDetail": 2,
-                            "LumenSceneLightningDetail": 2
-                        }
-                    ],
-                    "Gimbal": {
-                        "YawMin": -320.0,
-                        "PitchMin": -40.0,
-                        "RollMin": -20.0,
-                        "YawMax": 320.0,
-                        "PitchMax": 130.0,
-                        "RollMax": 20.0,
-                        "YawSpeed": 270.0,
-                        "PitchSpeed": 180.0,
-                        "RollSpeed": 180.0,
-                        "Roll": 0.0,
-                        "Pitch": 0.0,
-                        "Yaw": -0.0
-                    },
-                    "NoiseSettings": [
-                        {
-                            "Enabled": true,
-                            "ImageType": 0,
-                            "RandContrib": 0.0010000000474974513,
-                            "RandSpeed": 50000.0,
-                            "RandSize": 100.0,
-                            "RandDensity": 2,
-                            "HorzWaveContrib": 0.00039999998989515007,
-                            "HorzWaveStrength": 0.000699999975040555,
-                            "HorzWaveVertSize": 1.0,
-                            "HorzWaveScreenSize": 1.0,
-                            "HorzNoiseLinesContrib": 0.0007999999797903001,
-                            "HorzNoiseLinesDensityY": 9.999999747378752e-05,
-                            "HorzNoiseLinesDensityXY": 0.004000000189989805,
-                            "HorzDistortionContrib": 0.0,
-                            "HorzDistortionStrength": 0.0
-                        }
-                    ],
-                    "X": 0.20000000298023224,
-                    "Y": 0.18000000715255737,
-                    "Z": 0.09000000357627869,
-                    "Roll": 0.0,
-                    "Pitch": -90.0,
-                    "Yaw": 0.0,
-                    "EnableGimbal": true,
-                    "CameraVisible": true,
-                    "CameraScale": 0.699999988079071
-                },
-                "HEAD03": {
-                    "CaptureSettings": [
-                        {
-                            "ImageType": 0,
-                            "Width": 1920,
-                            "Height": 1080,
-                            "SensorWidth": 0.013199999928474426,
-                            "SensorHeight": 0.007424999959766865,
-                            "FOV_Degrees": 66.84961700439453,
-                            "K1": -0.029999999329447746,
-                            "K2": 0.0020000000949949026,
-                            "K3": 0.0,
-                            "P1": 0.0005000000237487257,
-                            "P2": -0.00039999998989515007,
-                            "LumenGIEnable": true,
-                            "LumenReflectionEnable": true,
-                            "LumenFinalQuality": 2,
-                            "LumenSceneDetail": 2,
-                            "LumenSceneLightningDetail": 2
-                        }
-                    ],
-                    "Gimbal": {
-                        "YawMin": -320.0,
-                        "PitchMin": -40.0,
-                        "RollMin": -20.0,
-                        "YawMax": 320.0,
-                        "PitchMax": 130.0,
-                        "RollMax": 20.0,
-                        "YawSpeed": 270.0,
-                        "PitchSpeed": 180.0,
-                        "RollSpeed": 180.0,
-                        "Roll": 0.0,
-                        "Pitch": 0.0,
-                        "Yaw": -90.0
-                    },
-                    "NoiseSettings": [
-                        {
-                            "Enabled": true,
-                            "ImageType": 0,
-                            "RandContrib": 0.0010000000474974513,
-                            "RandSpeed": 50000.0,
-                            "RandSize": 100.0,
-                            "RandDensity": 2,
-                            "HorzWaveContrib": 0.00039999998989515007,
-                            "HorzWaveStrength": 0.000699999975040555,
-                            "HorzWaveVertSize": 1.0,
-                            "HorzWaveScreenSize": 1.0,
-                            "HorzNoiseLinesContrib": 0.0007999999797903001,
-                            "HorzNoiseLinesDensityY": 9.999999747378752e-05,
-                            "HorzNoiseLinesDensityXY": 0.004000000189989805,
-                            "HorzDistortionContrib": 0.0,
-                            "HorzDistortionStrength": 0.0
-                        }
-                    ],
-                    "X": 0.20000000298023224,
-                    "Y": -0.18000000715255737,
-                    "Z": 0.09000000357627869,
-                    "Roll": 0.0,
-                    "Pitch": -90.0,
-                    "Yaw": 0.0,
-                    "EnableGimbal": true,
-                    "CameraVisible": true,
-                    "CameraScale": 0.699999988079071
-                },
-                "HEAD04": {
-                    "CaptureSettings": [
-                        {
-                            "ImageType": 0,
-                            "Width": 1920,
-                            "Height": 1080,
-                            "SensorWidth": 0.013199999928474426,
-                            "SensorHeight": 0.007424999959766865,
-                            "FOV_Degrees": 66.84961700439453,
-                            "K1": -0.029999999329447746,
-                            "K2": 0.0020000000949949026,
-                            "K3": 0.0,
-                            "P1": 0.0005000000237487257,
-                            "P2": -0.00039999998989515007,
-                            "LumenGIEnable": true,
-                            "LumenReflectionEnable": true,
-                            "LumenFinalQuality": 2,
-                            "LumenSceneDetail": 2,
-                            "LumenSceneLightningDetail": 2
-                        }
-                    ],
-                    "Gimbal": {
-                        "YawMin": -320.0,
-                        "PitchMin": -40.0,
-                        "RollMin": -20.0,
-                        "YawMax": 320.0,
-                        "PitchMax": 130.0,
-                        "RollMax": 20.0,
-                        "YawSpeed": 270.0,
-                        "PitchSpeed": 180.0,
-                        "RollSpeed": 180.0,
-                        "Roll": 0.0,
-                        "Pitch": 0.0,
-                        "Yaw": -180.0
-                    },
-                    "NoiseSettings": [
-                        {
-                            "Enabled": true,
-                            "ImageType": 0,
-                            "RandContrib": 0.0010000000474974513,
-                            "RandSpeed": 50000.0,
-                            "RandSize": 100.0,
-                            "RandDensity": 2,
-                            "HorzWaveContrib": 0.00039999998989515007,
-                            "HorzWaveStrength": 0.000699999975040555,
-                            "HorzWaveVertSize": 1.0,
-                            "HorzWaveScreenSize": 1.0,
-                            "HorzNoiseLinesContrib": 0.0007999999797903001,
-                            "HorzNoiseLinesDensityY": 9.999999747378752e-05,
-                            "HorzNoiseLinesDensityXY": 0.004000000189989805,
-                            "HorzDistortionContrib": 0.0,
-                            "HorzDistortionStrength": 0.0
-                        }
-                    ],
-                    "X": -0.20000000298023224,
-                    "Y": -0.18000000715255737,
-                    "Z": 0.09000000357627869,
-                    "Roll": 0.0,
-                    "Pitch": -90.0,
-                    "Yaw": 0.0,
-                    "EnableGimbal": true,
-                    "CameraVisible": true,
-                    "CameraScale": 0.699999988079071
-                },
-                "HEAD05": {
-                    "CaptureSettings": [
-                        {
-                            "ImageType": 0,
-                            "Width": 1920,
-                            "Height": 1080,
-                            "SensorWidth": 0.013199999928474426,
-                            "SensorHeight": 0.007424999959766865,
-                            "FOV_Degrees": 66.84961700439453,
-                            "K1": -0.029999999329447746,
-                            "K2": 0.0020000000949949026,
-                            "K3": 0.0,
-                            "P1": 0.0005000000237487257,
-                            "P2": -0.00039999998989515007,
-                            "LumenGIEnable": true,
-                            "LumenReflectionEnable": true,
-                            "LumenFinalQuality": 2,
-                            "LumenSceneDetail": 2,
-                            "LumenSceneLightningDetail": 2
-                        }
-                    ],
-                    "Gimbal": {
-                        "YawMin": -320.0,
-                        "PitchMin": -40.0,
-                        "RollMin": -20.0,
-                        "YawMax": 320.0,
-                        "PitchMax": 130.0,
-                        "RollMax": 20.0,
-                        "YawSpeed": 270.0,
-                        "PitchSpeed": 180.0,
-                        "RollSpeed": 180.0,
-                        "Roll": 0.0,
-                        "Pitch": 0.0,
-                        "Yaw": -270.0
-                    },
-                    "NoiseSettings": [
-                        {
-                            "Enabled": true,
-                            "ImageType": 0,
-                            "RandContrib": 0.0010000000474974513,
-                            "RandSpeed": 50000.0,
-                            "RandSize": 100.0,
-                            "RandDensity": 2,
-                            "HorzWaveContrib": 0.00039999998989515007,
-                            "HorzWaveStrength": 0.000699999975040555,
-                            "HorzWaveVertSize": 1.0,
-                            "HorzWaveScreenSize": 1.0,
-                            "HorzNoiseLinesContrib": 0.0007999999797903001,
-                            "HorzNoiseLinesDensityY": 9.999999747378752e-05,
-                            "HorzNoiseLinesDensityXY": 0.004000000189989805,
-                            "HorzDistortionContrib": 0.0,
-                            "HorzDistortionStrength": 0.0
-                        }
-                    ],
-                    "X": -0.20000000298023224,
-                    "Y": 0.18000000715255737,
                     "Z": 0.09000000357627869,
                     "Roll": 0.0,
                     "Pitch": -90.0,
