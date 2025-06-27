@@ -86,11 +86,11 @@ namespace flychams::coordination
             const auto& rho = window_params.rho;
             const auto& s_ref = window_params.s_ref;
 
-            // Compute distance between target and camera
-            float d = (x - z).norm();
+            // Compute height difference between target and camera
+            float h = x(2) - z(2);
 
             // Attempt to adjust the resolution factor to achieve the desired apparent size of the object
-            float lambda = (d * s_ref) / (r * f);
+            float lambda = (h * s_ref) / (r * f);
 
             // Clamp the resolution factor within the camera's resolution limits
             lambda = std::max(std::min(lambda, lambda_max), lambda_min);
@@ -101,7 +101,7 @@ namespace flychams::coordination
             size(1) = static_cast<int>(std::round(static_cast<float>(tracking_height) / lambda));
 
             // Compute actual projected size after clamping
-            float s_proj_pix = (lambda * r * f) / (d * rho);
+            float s_proj_pix = (lambda * r * f) / (h * rho);
 
             // Return window size, resolution factor and projected size
             return std::make_tuple(size, lambda, s_proj_pix);
