@@ -5,6 +5,7 @@
 
 // Standard messages
 #include <std_msgs/msg/header.hpp>
+#include <std_msgs/msg/float32.hpp>
 #include <std_msgs/msg/string.hpp>
 
 // Geometry messages
@@ -106,6 +107,8 @@ namespace flychams::core
 
     // Header
     using HeaderMsg = std_msgs::msg::Header;
+    // Float32
+    using Float32Msg = std_msgs::msg::Float32;
     // Pose and twist
     using PointMsg = geometry_msgs::msg::Point;
     using PointStampedMsg = geometry_msgs::msg::PointStamped;

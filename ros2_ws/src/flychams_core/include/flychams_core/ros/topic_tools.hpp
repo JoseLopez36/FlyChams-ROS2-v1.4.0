@@ -35,6 +35,7 @@ namespace flychams::core
             agent_topics_.assignment_pattern = topic_config.agent_assignment;
             agent_topics_.clusters_pattern = topic_config.agent_clusters;
             agent_topics_.position_setpoint_pattern = topic_config.agent_position_setpoint;
+            agent_topics_.optimization_duration_pattern = topic_config.agent_optimization_duration;
             agent_topics_.tracking_setpoints_pattern = topic_config.agent_tracking_setpoints;
             agent_topics_.metrics_pattern = topic_config.agent_metrics;
             agent_topics_.markers_pattern = topic_config.agent_markers;
@@ -84,6 +85,7 @@ namespace flychams::core
             std::string assignment_pattern;
             std::string clusters_pattern;
             std::string position_setpoint_pattern;
+            std::string optimization_duration_pattern;
             std::string tracking_setpoints_pattern;
             std::string metrics_pattern;
             std::string markers_pattern;
@@ -155,6 +157,10 @@ namespace flychams::core
         std::string getAgentPositionSetpointTopic(const ID& agent_id)
         {
             return RosUtils::replace(agent_topics_.position_setpoint_pattern, "AGENTID", agent_id);
+        }
+        std::string getAgentOptimizationDurationTopic(const ID& agent_id)
+        {
+            return RosUtils::replace(agent_topics_.optimization_duration_pattern, "AGENTID", agent_id);
         }
         std::string getAgentTrackingSetpointsTopic(const ID& agent_id)
         {
@@ -247,6 +253,10 @@ namespace flychams::core
         {
             return node_->create_publisher<PointStampedMsg>(getAgentPositionSetpointTopic(agent_id), 10);
         }
+        PublisherPtr<Float32Msg> createAgentOptimizationDurationPublisher(const ID& agent_id)
+        {
+            return node_->create_publisher<Float32Msg>(getAgentOptimizationDurationTopic(agent_id), 10);
+        }
         PublisherPtr<AgentTrackingSetpointsMsg> createAgentTrackingSetpointsPublisher(const ID& agent_id)
         {
             return node_->create_publisher<AgentTrackingSetpointsMsg>(getAgentTrackingSetpointsTopic(agent_id), 10);
@@ -337,6 +347,10 @@ namespace flychams::core
         SubscriberPtr<PointStampedMsg> createAgentPositionSetpointSubscriber(const ID& agent_id, const std::function<void(const PointStampedMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {
             return node_->create_subscription<PointStampedMsg>(getAgentPositionSetpointTopic(agent_id), 10, callback, options);
+        }
+        SubscriberPtr<Float32Msg> createAgentOptimizationDurationSubscriber(const ID& agent_id, const std::function<void(const Float32Msg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
+        {
+            return node_->create_subscription<Float32Msg>(getAgentOptimizationDurationTopic(agent_id), 10, callback, options);
         }
         SubscriberPtr<AgentTrackingSetpointsMsg> createAgentTrackingSetpointsSubscriber(const ID& agent_id, const std::function<void(const AgentTrackingSetpointsMsg::SharedPtr)>& callback, const rclcpp::SubscriptionOptions& options = rclcpp::SubscriptionOptions())
         {

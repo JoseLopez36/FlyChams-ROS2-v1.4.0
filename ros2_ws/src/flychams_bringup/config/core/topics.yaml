@@ -11,6 +11,7 @@
       assignment: "coordination/AGENTID/assignment"                 # AgentAssignment.msg (custom)
       clusters: "coordination/AGENTID/clusters"                     # AgentClusters.msg (custom)
       position_setpoint: "coordination/AGENTID/setpoint/position"   # PointStamped.msg
+      optimization_duration: "coordination/AGENTID/optimization_duration" # Float32.msg
       tracking_setpoints: "coordination/AGENTID/setpoint/tracking"  # AgentTrackingSetpoints.msg (custom)
       metrics: "dashboard/AGENTID/metrics"                          # AgentMetrics.msg (custom)
       markers: "dashboard/AGENTID/markers"                          # MarkerArray.msg

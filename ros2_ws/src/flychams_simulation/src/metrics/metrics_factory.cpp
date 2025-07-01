@@ -70,6 +70,13 @@ namespace flychams::simulation
                 this->agentPositionSetpointCallback(agent_id, msg);
             }, sub_options_with_module_cb_group_);
 
+        // Create agent optimization duration subscriber
+        agents_[agent_id].optimization_duration_sub = topic_tools_->createAgentOptimizationDurationSubscriber(agent_id,
+            [this, agent_id](const Float32Msg::SharedPtr msg)
+            {
+                this->agentOptimizationDurationCallback(agent_id, msg);
+            }, sub_options_with_module_cb_group_);
+
         // Create agent tracking setpoints subscriber
         agents_[agent_id].tracking_setpoints_sub = topic_tools_->createAgentTrackingSetpointsSubscriber(agent_id,
             [this, agent_id](const AgentTrackingSetpointsMsg::SharedPtr msg)
@@ -153,6 +160,12 @@ namespace flychams::simulation
     {
         // Update agent position setpoint
         agents_[agent_id].metrics.setpoint = msg->point;
+    }
+
+    void MetricsFactory::agentOptimizationDurationCallback(const ID& agent_id, const Float32Msg::SharedPtr msg)
+    {
+        // Update agent optimization duration
+        agents_[agent_id].metrics.optimization_duration = msg->data;
     }
 
     void MetricsFactory::agentTrackingSetpointsCallback(const ID& agent_id, const AgentTrackingSetpointsMsg::SharedPtr msg)
@@ -264,6 +277,8 @@ namespace flychams::simulation
         metrics.setpoint.x = 0.0f;
         metrics.setpoint.y = 0.0f;
         metrics.setpoint.z = 0.0f;
+        // Optimization data
+        metrics.optimization_duration = 0.0f;
         // Position and movement metrics
         metrics.distance_traveled = 0.0f;
         metrics.speed = 0.0f;

@@ -536,6 +536,7 @@ namespace flychams::core
             config_ptr->topics.agent_assignment = RosUtils::getParameter<std::string>(node_, "agent_topics.assignment");
             config_ptr->topics.agent_clusters = RosUtils::getParameter<std::string>(node_, "agent_topics.clusters");
             config_ptr->topics.agent_position_setpoint = RosUtils::getParameter<std::string>(node_, "agent_topics.position_setpoint");
+            config_ptr->topics.agent_optimization_duration = RosUtils::getParameter<std::string>(node_, "agent_topics.optimization_duration");
             config_ptr->topics.agent_tracking_setpoints = RosUtils::getParameter<std::string>(node_, "agent_topics.tracking_setpoints");
             config_ptr->topics.agent_metrics = RosUtils::getParameter<std::string>(node_, "agent_topics.metrics");
             config_ptr->topics.agent_markers = RosUtils::getParameter<std::string>(node_, "agent_topics.markers");

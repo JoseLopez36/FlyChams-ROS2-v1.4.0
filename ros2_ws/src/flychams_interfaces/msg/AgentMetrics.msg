@@ -9,6 +9,9 @@ float32[] focals                     # Associated tracking focal length for this
 float32[] resolution_factors         # Associated tracking resolution factor for this cluster (only used if tracking_mode == 1)
 float32[] projected_sizes            # Associated tracking projected size for this cluster
 
+# Optimization data
+float32 optimization_duration        # Time taken to compute the optimal position (ms)
+
 # Position and movement metrics
 float32 distance_traveled            # Total distance covered by the UAV (m)
 float32 speed                        # Current speed of the UAV (m/s)

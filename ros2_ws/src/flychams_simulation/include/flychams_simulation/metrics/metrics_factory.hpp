@@ -51,13 +51,14 @@ namespace flychams::simulation
             // Subscribers
             core::SubscriberPtr<core::PointStampedMsg> position_sub;
             core::SubscriberPtr<core::PointStampedMsg> position_setpoint_sub;
+            core::SubscriberPtr<core::Float32Msg> optimization_duration_sub;
             core::SubscriberPtr<core::AgentTrackingSetpointsMsg> tracking_setpoints_sub;
             // Publisher
             core::PublisherPtr<core::AgentMetricsMsg> metrics_pub;
             // Constructor
             Agent()
-                : metrics(), prev_metrics(), position_sub(), position_setpoint_sub(), 
-                tracking_setpoints_sub(), metrics_pub()
+                : metrics(), prev_metrics(), position_sub(), position_setpoint_sub(),
+                optimization_duration_sub(), tracking_setpoints_sub(), metrics_pub()
             {
             }
         };
@@ -121,6 +122,7 @@ namespace flychams::simulation
     private: // Callbacks
         void agentPositionCallback(const core::ID& agent_id, const core::PointStampedMsg::SharedPtr msg);
         void agentPositionSetpointCallback(const core::ID& agent_id, const core::PointStampedMsg::SharedPtr msg);
+        void agentOptimizationDurationCallback(const core::ID& agent_id, const core::Float32Msg::SharedPtr msg);
         void agentTrackingSetpointsCallback(const core::ID& agent_id, const core::AgentTrackingSetpointsMsg::SharedPtr msg);
         void targetPositionCallback(const core::ID& target_id, const core::PointStampedMsg::SharedPtr msg);
         void clusterGeometryCallback(const core::ID& cluster_id, const core::ClusterGeometryMsg::SharedPtr msg);

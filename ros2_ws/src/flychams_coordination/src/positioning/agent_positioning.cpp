@@ -52,6 +52,7 @@ namespace flychams::coordination
 
         // Create publisher for agent setpoint
         agent_.setpoint_pub = topic_tools_->createAgentPositionSetpointPublisher(agent_id_);
+        agent_.optimization_duration_pub = topic_tools_->createAgentOptimizationDurationPublisher(agent_id_);
 
         // Set update timer
         update_timer_ = RosUtils::createTimer(node_, update_rate_,
@@ -67,6 +68,7 @@ namespace flychams::coordination
         agent_.position_sub.reset();
         agent_.clusters_sub.reset();
         agent_.setpoint_pub.reset();
+        agent_.optimization_duration_pub.reset();
         // Destroy update timer
         update_timer_.reset();
     }
@@ -130,14 +132,22 @@ namespace flychams::coordination
 
         // Solve agent positioning
         float J;
+        const auto& start = std::chrono::high_resolution_clock::now();
         Vector3r optimal_position = solver_->run(tab_P, tab_r, x0, J);
-        RCLCPP_INFO(node_->get_logger(), "Agent positioning: Computed optimal position (J = %.2f): (xOpt = %.2f, %.2f, %.2f)",
-            J, optimal_position(0), optimal_position(1), optimal_position(2));
+        const auto& end = std::chrono::high_resolution_clock::now();
+        float time_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+        RCLCPP_INFO(node_->get_logger(), "Agent positioning: Computed optimal position (J = %.2f): (xOpt = %.2f, %.2f, %.2f) in %.2f us",
+            J, optimal_position(0), optimal_position(1), optimal_position(2), time_elapsed);
 
         // Publish position
         agent_.setpoint.header.stamp = RosUtils::now(node_);
         RosUtils::toMsg(optimal_position, agent_.setpoint.point);
         agent_.setpoint_pub->publish(agent_.setpoint);
+
+        // Publish optimization duration
+        Float32Msg duration_msg;
+        duration_msg.data = time_elapsed;
+        agent_.optimization_duration_pub->publish(duration_msg);
     }
 
     // ════════════════════════════════════════════════════════════════════════════
