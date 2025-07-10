@@ -288,6 +288,8 @@ namespace flychams::core
         float sensor_width;
         float sensor_height;
         // Regularized pixel size (m/pix)
+        float rho_x;
+        float rho_y;
         float rho;
         // Camera intrinsic matrix K
         Matrix3r K;
@@ -323,6 +325,8 @@ namespace flychams::core
         int tracking_width;
         int tracking_height;
         // Regularized pixel size (m/pix)
+        float rho_x;
+        float rho_y;
         float rho;
         // Apparent target sizes (pix)
         float s_min_pix;
@@ -426,6 +430,6 @@ namespace flychams::core
         int w;
         int h;
         bool is_out_of_bounds;
-    };  
+    };
 
 } // namespace flychams::core 

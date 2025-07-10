@@ -17,6 +17,7 @@ namespace flychams::simulation
         // Initialize data
         targets_.clear();
         clusters_.clear();
+        spawn_index_ = 0;
 
         // Set update timer
         update_timer_ = RosUtils::createTimer(node_, update_rate_,
@@ -50,10 +51,13 @@ namespace flychams::simulation
 
         // Spawn target in simulation
         PointMsg initial_position;
-        initial_position.x = -500.0f;
-        initial_position.y = -500.0f;
+        initial_position.x = -500.0f + spawn_index_ * 2.0f;
+        initial_position.y = -500.0f + spawn_index_ * 2.0f;
         initial_position.z = 0.0f;
         spawnTarget(target_id, initial_position, config_tools_->getTarget(target_id)->type);
+
+        // Increment spawn index
+        spawn_index_++;
 
         // Delay to ensure target is spawned
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -79,11 +83,14 @@ namespace flychams::simulation
 
         // Spawn cluster in simulation
         PointMsg initial_position;
-        initial_position.x = -500.0f;
-        initial_position.y = -500.0f;
+        initial_position.x = -500.0f + spawn_index_ * 2.0f;
+        initial_position.y = -500.0f + spawn_index_ * 2.0f;
         initial_position.z = 0.0f;
         float initial_radius = 1.0f;
         spawnCluster(cluster_id, initial_position, initial_radius);
+
+        // Increment spawn index
+        spawn_index_++;
 
         // Delay to ensure cluster is spawned
         std::this_thread::sleep_for(std::chrono::milliseconds(100));

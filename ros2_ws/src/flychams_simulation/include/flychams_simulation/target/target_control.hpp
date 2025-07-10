@@ -70,6 +70,8 @@ namespace flychams::simulation
         std::unordered_map<core::ID, Target> targets_;
         // Clusters
         std::unordered_map<core::ID, Cluster> clusters_;
+        // Other
+        int spawn_index_;
 
     public: // Public methods
         void addCluster(const core::ID& cluster_id);

@@ -43,7 +43,7 @@ namespace flychams::coordination
             core::Vector2r p = core::MathUtils::projectPoint(z, central_head_T, central_head_params.K);
 
             // Compute window size
-            const auto [size, lambda, s_proj_pix] = computeWindowSize(z, r, x, central_head_params, window_params);
+            const auto [size, lambda, s_proj_pix] = computeWindowSize(z, r, x, p, central_head_params, window_params);
 
             // Compute window corner
             const core::Vector2i corner = computeWindowCorner(p, size);
@@ -68,29 +68,39 @@ namespace flychams::coordination
         }
 
     private: // Implementation
-        std::tuple<core::Vector2i, float, float> computeWindowSize(const core::Vector3r& z, const float& r, const core::Vector3r& x, const core::HeadParameters& central_params, const core::WindowParameters& window_params)
+        std::tuple<core::Vector2i, float, float> computeWindowSize(const core::Vector3r& z, const float& r, const core::Vector3r& x, const core::Vector2r& p, const core::HeadParameters& central_params, const core::WindowParameters& window_params)
         {
             // Args:
             // z: Target position in world frame (m)
             // r: Equivalent radius of the target's area of interest (m)
             // x: Source camera position in world frame (m)
+            // p: Projected point on central camera (pix)
             // central_params: Central head parameters
             // window_params: Window parameters
 
             // Extract parameters
             const auto& f = central_params.f_ref;
+            const auto& full_width = window_params.full_width;
+            const auto& full_height = window_params.full_height;
             const auto& tracking_width = window_params.tracking_width;
             const auto& tracking_height = window_params.tracking_height;
             const auto& lambda_min = window_params.lambda_min;
             const auto& lambda_max = window_params.lambda_max;
+            const auto& rho_x = window_params.rho_x;
+            const auto& rho_y = window_params.rho_y;
             const auto& rho = window_params.rho;
             const auto& s_ref = window_params.s_ref;
 
-            // Compute height difference between target and camera
-            float h = x(2) - z(2);
+            // Compute distance between target and camera
+            float d = (x - z).norm();
+
+            // Calculate the correction distance
+            float u = full_width / 2.0f;
+            float v = full_height / 2.0f;
+            float l = std::sqrt(std::pow(p(0) - u, 2) * std::pow(rho_x, 2) + std::pow(p(1) - v, 2) * std::pow(rho_y, 2));
 
             // Attempt to adjust the resolution factor to achieve the desired apparent size of the object
-            float lambda = (h * s_ref) / (r * f);
+            float lambda = (d * s_ref) / (r * std::sqrt(std::pow(f, 2) + std::pow(l, 2)));
 
             // Clamp the resolution factor within the camera's resolution limits
             lambda = std::max(std::min(lambda, lambda_max), lambda_min);
@@ -101,7 +111,7 @@ namespace flychams::coordination
             size(1) = static_cast<int>(std::round(static_cast<float>(tracking_height) / lambda));
 
             // Compute actual projected size after clamping
-            float s_proj_pix = (lambda * r * f) / (h * rho);
+            float s_proj_pix = (lambda * r * std::sqrt(std::pow(f, 2) + std::pow(l, 2))) / (d * rho);
 
             // Return window size, resolution factor and projected size
             return std::make_tuple(size, lambda, s_proj_pix);

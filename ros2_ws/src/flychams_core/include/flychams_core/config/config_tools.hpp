@@ -254,14 +254,14 @@ namespace flychams::core
             params.sensor_height = camera.sensor_size(1);
 
             // Regularized pixel size (m/pix)
-            float rho_x = params.sensor_width / static_cast<float>(params.width);       // [m/pix]
-            float rho_y = params.sensor_height / static_cast<float>(params.height);     // [m/pix]
-            params.rho = std::sqrt(rho_x * rho_y);                                      // [m/pix]
+            params.rho_x = params.sensor_width / static_cast<float>(params.width);       // [m/pix]
+            params.rho_y = params.sensor_height / static_cast<float>(params.height);     // [m/pix]
+            params.rho = std::sqrt(params.rho_x * params.rho_y);                         // [m/pix]
 
             // Camera reference intrinsic matrix K
             params.K = Matrix3r::Identity();
-            params.K(0, 0) = params.f_ref / rho_x;
-            params.K(1, 1) = params.f_ref / rho_y;
+            params.K(0, 0) = params.f_ref / params.rho_x;
+            params.K(1, 1) = params.f_ref / params.rho_y;
             params.K(0, 2) = params.width / 2.0f;
             params.K(1, 2) = params.height / 2.0f;
 
@@ -337,7 +337,9 @@ namespace flychams::core
             params.tracking_width = window_ptr->resolution(0);
             params.tracking_height = window_ptr->resolution(1);
 
-            // Get rho
+            // Regularized pixel size (m/pix)
+            params.rho_x = central_head_params.rho_x;
+            params.rho_y = central_head_params.rho_y;
             params.rho = central_head_params.rho;
 
             // Calculate ROI parameters
