@@ -14,11 +14,11 @@
     drone_control:
       update_rate: 10.0         # (Hz)
       control_mode: 0           # 0: position, 1: velocity
-      min_speed: 1.0            # (m/s)
-      max_speed: 3.0            # (m/s)
+      min_speed: 1.5            # (m/s)
+      max_speed: 4.0            # (m/s)
       min_distance: 0.10        # (m)
       max_distance: 20.0        # (m)
-      max_acceleration: 0.2     # (m/s^2)
+      max_acceleration: 0.5     # (m/s^2)
       
     # Head control parameters
     head_control:
