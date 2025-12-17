@@ -281,6 +281,10 @@ FlyChams-ROS2/
 3. **Real Hardware Integration**
    - Current implementation focuses on simulation; real hardware integration will be available in future releases.
 
+## License
+
+This project is licensed under the [Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/). See [`LICENSE`](LICENSE).
+
 ## Contact
 
 For more information, please contact [josloprui6@alum.us.es](mailto:josloprui6@alum.us.es).
