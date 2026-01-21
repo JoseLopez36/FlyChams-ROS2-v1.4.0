@@ -1,5 +1,11 @@
 # Flying Chameleons ROS2: Multi-UAV System for Autonomous Target Tracking
 
+[![ROS2 Humble](https://img.shields.io/badge/ROS2-Humble-blue.svg)](https://docs.ros.org/en/humble/)
+[![Unreal Engine 5](https://img.shields.io/badge/Unreal_Engine-5-313131?logo=unrealengine&logoColor=white)](https://www.unrealengine.com/)
+[![AirSim](https://img.shields.io/badge/AirSim-Enabled-blue)](https://microsoft.github.io/AirSim/)
+[![PX4](https://img.shields.io/badge/PX4-Autopilot-black)](https://px4.io/)
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
+
 A ROS2-based system for coordinated multi-UAV target tracking using various advanced simulation frameworks (e.g. AirSim, Unreal Engine 5, etc.).
 
 ## Overview
@@ -12,6 +18,13 @@ The project leverages:
 - **PX4** for commercial flight control
 - **ROS2** for the distributed robotics framework
 
+---
+
+<div align="center">
+  <img src="media/images/MultiWindowSimulation.png" alt="Full Simulation Environment" width="100%"/>
+  <p><em>Complete simulation view showing the UE5 environment, operator GUI, and real-time RViZ data.</em></p>
+</div>
+
 ## Key Features
 
 - Multi-agent coordination for optimal target coverage
@@ -20,6 +33,39 @@ The project leverages:
 - Real-time visualization and monitoring tools
 - Configurable missions via Excel configuration files
 - Realistic simulation in photorealistic Unreal Engine environments
+
+## Research
+
+This project is part of a broader research initiative by the Department of System Engineering and Automation at the University of Seville. It is associated with the following scientific publications:
+
+1. **Flying Chameleons: A New Concept for Minimum-Deployment, Multiple-Target Tracking Drones**
+   
+   *Sensors, 2022* | [DOI](https://doi.org/10.3390/s22062359)
+   
+   > This article introduces the innovative concept of "Flying Chameleons", autonomous aerial vehicles equipped with multiple independently steerable cameras for simultaneous tracking of multiple mobile targets. The proposal seeks to maximize efficiency in surveillance and tracking applications while minimizing resource deployment, offering an alternative to traditional approaches that require multiple vehicles or shared attention strategies.
+
+2. **Optimal Positioning Strategy for Multi-camera, Zooming Drones**
+   
+   *IEEE/CAA Journal of Automatica Sinica, 2024* | [DOI](https://doi.org/10.1109/JAS.2024.124455)
+   
+   > This research extends the "Flying Chameleons" concept by incorporating zoom capabilities in the onboard cameras. It addresses the resulting non-convex optimization problem through convex relaxation techniques, allowing the aerial agent to dynamically adjust the focal lengths of the cameras to balance the real distance to targets with the required level of visual detail.
+
+3. **Monitoring through Multi-camera Aerial Vehicles: A Case Study Using Unreal Engine**
+   
+   *Jornadas de Automática (JJAA) 2024, Málaga* | [DOI](https://doi.org/10.17979/ja-cea.2024.45.10800)
+   
+   > This work generalizes the multi-camera agent concept to enable collaboration among multiple agents in a single monitoring mission. Additionally, it explores the potential of Unreal Engine 5 as a photorealistic graphical simulation tool for implementing and validating the proposal. Note: This work was selected for presentation among the 6 works chosen at the Jornadas de Automática 2024 in Málaga.
+
+## 🎥 Demos & Validation
+
+**Flight Demonstration** - [📹 View Video](media/videos/Demo.mp4)  
+*Target acquisition and tracking in the Unreal Engine 5 simulation environment.*
+
+**MATLAB Test** - [📹 View Video](media/videos/MatlabTest.mp4)  
+*Target acquisition and tracking in Matlab*
+
+**Camera Gimbal Mechanics** - [📹 Gimbal Movement](media/videos/GimbalMovement.gif)  
+*Independent gimbal control test*
 
 ## System Architecture
 
